@@ -10,7 +10,8 @@ Start here when a request names a tab or a part of the screen. All paths are und
 
 | Tab or part of the screen | Code | Styling |
 | --- | --- | --- |
-| Top bar, navigation buttons, Scale selector | `index.html`, clicks in `app/31-import-events-boot.js` | `css/01-layout-topbar.css` |
+| Top bar, navigation buttons, Help menu (Learn, Guide, Scale) | `index.html`, clicks in `app/31-import-events-boot.js` | `css/01-layout-topbar.css` |
+| Search box, and the two page menus on narrow screens | `app/46-search.js` | `css/01-layout-topbar.css` |
 | Home (incl. weekly action plan, ask a question) | `app/40-home.js` | `css/06-home-player-card.css` |
 | My squad: Overview and position tabs | `app/19-my-squad.js` | `css/04-my-squad.css` |
 | My squad: My tactic | `app/32-my-tactic-reading.js`, `app/33-my-tactic-analysis.js` | `css/08-planner-my-tactic.css` |
@@ -20,6 +21,7 @@ Start here when a request names a tab or a part of the screen. All paths are und
 | My squad: Season review | `app/36-effectiveness-season-review.js` | `css/05-scouting-review-learn.css` |
 | Data Hub | `app/38-data-hub.js` | `css/07-data-hub.css` |
 | Matches (results, last game, next opponent, tactic changes) | `app/41-matches.js`; next game read from the inbox in `save-reader/06-team-totals-matches.js` | `css/07-data-hub.css` (the `mx…` classes) |
+| Matches: Brief (matchday one-pager) | `app/45-matchday-brief.js` | `css/07-data-hub.css` |
 | Matches: Diagnose and opposition instructions | `app/44-diagnose.js` | `css/03-sections-tiles.css` |
 | Scouting (wonderkids, targets, contracts, shortlist) | `app/34-scouting.js` | `css/05-scouting-review-learn.css` |
 | Staff | `app/30-staff.js`, staff review in `app/37-staff-review-similar.js` | `css/03-sections-tiles.css` |
@@ -41,13 +43,13 @@ How the tool looks. One file per area of the screen.
 
 | File | What it does | Lines | Size |
 | --- | --- | ---: | ---: |
-| `src/css/01-layout-topbar.css` | Page layout, top bar, loaded files, filters, chips, grid | 125 | 9 KB |
+| `src/css/01-layout-topbar.css` | Page layout, top bar (search box, Help menu, narrow-screen page menus), loaded files, filters, chips, grid, print colours | 142 | 11 KB |
 | `src/css/02-table-scatter-drawer.css` | Main player table, scatter chart, player side panel | 89 | 7 KB |
 | `src/css/03-sections-tiles.css` | Shared building blocks: sections, tiles, tags, tiers, stacked bars, comparisons | 138 | 12 KB |
 | `src/css/04-my-squad.css` | My squad pages and suggested tactic | 97 | 9 KB |
 | `src/css/05-scouting-review-learn.css` | Scouting, wide data pages, season review, navigation groups, Learn | 46 | 5 KB |
 | `src/css/06-home-player-card.css` | Home page and player card | 34 | 4 KB |
-| `src/css/07-data-hub.css` | Data Hub, and the Matches pages (`mx…` classes) | 80 | 8 KB |
+| `src/css/07-data-hub.css` | Data Hub, and the Matches pages incl. the Brief (`mx…` classes) | 84 | 9 KB |
 | `src/css/08-planner-my-tactic.css` | Planner and My tactic | 69 | 7 KB |
 | `src/css/09-all-data.css` | All data table | 64 | 6 KB |
 | `src/css/10-save-data-position-map.css` | Save & data page, position map pitch | 50 | 4 KB |
@@ -66,7 +68,7 @@ Everything the tool does, one feature per file. All files share one scope, so a 
 | `src/app/15-analytics-state.js` | Shared analytics, app state and browser storage | 130 | 9 KB |
 | `src/app/16-view-helpers-colour.js` | Helpers for the current view, colour scales | 159 | 11 KB |
 | `src/app/17-charts.js` | Charts | 205 | 16 KB |
-| `src/app/18-render.js` | Main page rendering | 260 | 24 KB |
+| `src/app/18-render.js` | Main page rendering | 261 | 25 KB |
 | `src/app/19-my-squad.js` | My squad | 416 | 35 KB |
 | `src/app/20-best-xi.js` | Formation and roles: best XI | 190 | 20 KB |
 | `src/app/21-suggested-tactic.js` | Suggested tactic (My squad > Tactic) | 487 | 52 KB |
@@ -89,10 +91,12 @@ Everything the tool does, one feature per file. All files share one scope, so a 
 | `src/app/38-data-hub.js` | Data Hub: team performance against the league | 249 | 33 KB |
 | `src/app/39-learn-player-card.js` | Learn pages, info tips, player card | 138 | 22 KB |
 | `src/app/40-home.js` | Home page, weekly action plan, ask-a-question | 180 | 22 KB |
-| `src/app/41-matches.js` | Matches: results, last-game review, next opponent (opens on your next game, any competition), tactic-change log | 289 | 40 KB |
+| `src/app/41-matches.js` | Matches: results, last-game review, next opponent (opens on your next game, any competition), tactic-change log; shared helpers for the Brief | 303 | 41 KB |
 | `src/app/42-save-folder-export-tactic.js` | Linked save folder (auto-loads the newest save, backups included) and exporting a tactic to FM (.fmf) | 234 | 22 KB |
 | `src/app/43-player-traits.js` | Player traits and their effect on roles | 199 | 25 KB |
 | `src/app/44-diagnose.js` | Diagnose (player, role or system?) and opposition instructions | 179 | 22 KB |
+| `src/app/45-matchday-brief.js` | Matches > Brief: your next game on one narrow, printable page | 32 | 4 KB |
+| `src/app/46-search.js` | Search box (players and clubs), Help menu closing, narrow-screen page menus | 58 | 5 KB |
 
 ## FM save reader (src/save-reader)
 

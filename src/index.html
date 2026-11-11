@@ -22,11 +22,16 @@
     <span class="navlab">Your club</span><button data-mode="home" aria-pressed="false" data-tip="Your club on one page: how you're doing, who's playing well, what to fix">Home</button><button data-mode="hub" aria-pressed="false" data-tip="Your team against the league, section by section"><span class="my">Data </span>Hub</button><button data-mode="matches" aria-pressed="false" data-tip="Every result, your last game reviewed, your next opponent, and whether tactic changes worked">Matches</button><button data-mode="squad" aria-pressed="false" data-tip="Your players: depth, tactic, season review, planner"><span class="my">My </span><span class="cap">squad</span></button><button data-mode="staff" aria-pressed="false" data-tip="Your staff and the best available">Staff</button>
     <span class="navsep" aria-hidden="true"></span><span class="navlab">Players</span><button data-mode="scout" aria-pressed="false" data-tip="Wonderkids, transfer targets, contracts, shortlist">Scout<span class="my">ing</span></button><button data-mode="stats" aria-pressed="true" data-tip="Rank every player in a position by this season's stats">Stats</button><button data-mode="attr" aria-pressed="false" data-tip="Rank every player in a position by attributes">Attr<span class="my">ibutes</span></button><button data-mode="all" aria-pressed="false" data-tip="Every player and every number in one table, for advanced filtering">All<span class="my"> data</span></button>
   </div>
+  <select class="navsel" aria-label="Your club pages"><option value="">Your club</option><option value="home">Home</option><option value="hub">Data Hub</option><option value="matches">Matches</option><option value="squad">My squad</option><option value="staff">Staff</option></select>
+  <select class="navsel" aria-label="Player pages"><option value="">Players</option><option value="scout">Scouting</option><option value="stats">Stats</option><option value="attr">Attributes</option><option value="all">All data</option></select>
+  <div class="gsearch"><input type="search" id="gSearch" placeholder="Search players and clubs ( / )" aria-label="Search players and clubs" autocomplete="off" spellcheck="false"><div id="gResults" hidden></div></div>
   <nav class="ptabs" id="postabs" aria-label="Position"></nav>
   <button class="guidebtn databtn" id="dataBtn" data-act="datapage" aria-pressed="false">Data</button>
-  <button class="guidebtn learnbtn" data-mode="learn" aria-pressed="false">Learn</button>
-  <button class="guidebtn" id="guideBtn" data-act="guide" aria-pressed="false">Guide</button>
-  <label class="uiscale" title="Interface scale, like FM27's: smaller fits more on screen"><span class="small muted">Scale</span><select id="uiScale"><option value="80">80%</option><option value="90">90%</option><option value="100">100%</option><option value="110">110%</option><option value="125">125%</option></select></label>
+  <details class="helpmenu"><summary class="guidebtn">Help</summary><div class="helppop">
+    <button class="guidebtn learnbtn" data-mode="learn" aria-pressed="false">Learn the basics</button>
+    <button class="guidebtn" id="guideBtn" data-act="guide" aria-pressed="false">Guide to Scout Lab</button>
+    <label class="uiscale" title="Interface scale, like FM27's: smaller fits more on screen"><span class="small muted">Scale</span><select id="uiScale"><option value="80">80%</option><option value="90">90%</option><option value="100">100%</option><option value="110">110%</option><option value="125">125%</option></select></label>
+  </div></details>
   <span id="savenote"></span>
 </div></header>
 <main class="wrap" id="main"><p class="muted">Loading…</p></main>
@@ -96,5 +101,7 @@
 {{include: app/42-save-folder-export-tactic.js}}
 {{include: app/43-player-traits.js}}
 {{include: app/44-diagnose.js}}
+{{include: app/45-matchday-brief.js}}
+{{include: app/46-search.js}}
 
 </script>

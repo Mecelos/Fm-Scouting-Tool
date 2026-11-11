@@ -1,7 +1,7 @@
 // ---------- Matches: every result from the save, a review of the last game, the next opponent, and whether tactic changes worked ----------
 // Scores and goals (minute, who, how) come from the save's match records. Team and player numbers for one game come from the
 // difference between two saves: load your save after every game and the last one is reviewed on its own.
-const MX_TABS = [["diag", "Diagnose"], ["last", "Last game"], ["results", "Results"], ["opp", "Next opponent"], ["changes", "Tactic changes"]];
+const MX_TABS = [["brief", "Brief"], ["diag", "Diagnose"], ["last", "Last game"], ["results", "Results"], ["opp", "Next opponent"], ["changes", "Tactic changes"]];
 const MX_BUCKETS = [[1, 15, "1–15'"], [16, 30, "16–30'"], [31, 45, "31–45'+"], [46, 60, "46–60'"], [61, 75, "61–75'"], [76, 130, "76–90'+"]];
 const MX_TYPE = { 0: "", 1: "set piece", 2: "penalty", 3: "own goal" };
 const mxFriendly = name => /friendl|testimonial/i.test(name || "");
@@ -179,33 +179,47 @@ function mxOppOptions(B, lt, next) { // your league, then every other competitio
   const up = (SAVE.upcoming || []).filter(x => !seen.has(x.team) && B.byTeam.has(x.team)).map(x => x.team); if (up.length) groups.push(["Upcoming", [...new Set(up)]]);
   return groups;
 }
-function mxOpp(B) {
+// a team's last five competitive games in the save, oldest first
+function mxLast5(B, t) {
+  const M = B.M; return B.order.filter(r => (M.home[r] === t || M.away[r] === t) && M.hg[r] !== 255 && !mxFriendly(M.comps[M.comp[r]])).slice(-5).map(r => { const h = M.home[r] === t, a = h ? M.hg[r] : M.ag[r], b = h ? M.ag[r] : M.hg[r]; return { res: a > b ? "W" : a < b ? "L" : "D", s: `${a}–${b}`, o: mxName(B, h ? M.away[r] : M.home[r]), h }; });
+}
+// danger men: a club's players with the most goals + assists this league season
+function mxDanger(club) {
+  const st = SAVE.stats.league, danger = [];
+  if (st) for (let p = 0; p < SAVE.n; p++) { if (SAVE.clubIdx[p] !== club || !(st.row[p] >= 0)) continue; const c = fl => { const a = st.cols[fl]; const v = a ? a[st.row[p]] : NaN; return v === v ? v : 0; };
+    if (c("minutes") < 270) continue; danger.push({ p, ga: c("goals") + c("assists"), g: c("goals"), a: c("assists"), xg: c("expected_goals"), r: st.cols.average_rating ? st.cols.average_rating[st.row[p]] : NaN, min: c("minutes") }); }
+  return danger.sort((a, b) => b.ga - a.ga || b.xg - a.xg);
+}
+// which team Next opponent and the Brief are about: your pick, else your next game, else a league team you've met least
+function mxOppPick(B) {
   const D0 = B.D, f = hubF(), lt = D0.comp ? mxTable(B, D0.comp.c) : [];
   const met = new Map(); B.comp.forEach(x => met.set(x.opp, (met.get(x.opp) || 0) + 1));
   const pos = t => lt.findIndex(x => x.t === t), next = mxNextGame(), nextKey = next ? next.date + "|" + next.team : "none";
   if (f.mxOppNext !== nextKey) { f.mxOppNext = nextKey; f.mxOpp = ""; }   // a new next game: show it, not an old pick
-  if (next && !B.byTeam.has(next.team)) {   // next game is against a team the save has no numbers for
-    if (!f.mxOpp) return `<section class="panel"><div class="ph"><h3>Next opponent</h3></div><p>Your next game: <b>${esc(mxClubName(B, next.team, next.club))}</b>, ${esc(mxDay(next.date))}.</p>
-      <p class="small muted">Little data: your save has no stats for ${esc(mxClubName(B, next.team, next.club))} (FM only records full stats for leagues that are loaded in your game), so there's no report on them. Pick a team to scout instead:</p>
-      <select class="hubin" data-f="mxOpp"><option value="">Choose a team</option>${mxOppOptions(B, lt, next).map(([g, ts]) => `<optgroup label="${esc(g)}">${ts.map(t => `<option value="${t}">${esc(mxName(B, t))}</option>`).join("")}</optgroup>`).join("")}</select></section>`;
-  }
-  const groups = mxOppOptions(B, lt, next), all = groups.flatMap(g => g[1]);
-  if (!all.length) return `<section class="panel"><p class="muted">No opponents found in this save.</p></section>`;
+  const groups = mxOppOptions(B, lt, next); let all = groups.flatMap(g => g[1]);
+  if (f.mxOpp && !all.includes(+f.mxOpp) && +f.mxOpp !== B.me && B.byTeam.has(+f.mxOpp)) { groups.push(["Searched", [+f.mxOpp]]); all.push(+f.mxOpp); }   // a club opened from the search box
+  const noData = !!(next && !B.byTeam.has(next.team) && !f.mxOpp);   // next game is against a team the save has no numbers for
   const guess = D0.teams.filter(x => x.t !== B.me).sort((a, b) => (met.get(a.t) || 0) - (met.get(b.t) || 0) || pos(a.t) - pos(b.t))[0];
-  const pick = all.includes(+f.mxOpp) ? +f.mxOpp : next && all.includes(next.team) ? next.team : guess ? guess.t : all[0];
+  const pick = noData || !all.length ? null : all.includes(+f.mxOpp) ? +f.mxOpp : next && all.includes(next.team) ? next.team : guess ? guess.t : all[0];
+  return { lt, met, pos, next, groups, all, pick, noData };
+}
+function mxOpp(B) {
+  const D0 = B.D, P = mxOppPick(B), { lt, met, pos, next, groups, all, pick } = P;
+  if (P.noData) {
+    return `<section class="panel"><div class="ph"><h3>Next opponent</h3></div><p>Your next game: <b>${esc(mxClubName(B, next.team, next.club))}</b>, ${esc(mxDay(next.date))}.</p>
+      <p class="small muted">Little data: your save has no stats for ${esc(mxClubName(B, next.team, next.club))} (FM only records full stats for leagues that are loaded in your game), so there's no report on them. Pick a team to scout instead:</p>
+      <select class="hubin" data-f="mxOpp"><option value="">Choose a team</option>${groups.map(([g, ts]) => `<optgroup label="${esc(g)}">${ts.map(t => `<option value="${t}">${esc(mxName(B, t))}</option>`).join("")}</optgroup>`).join("")}</select></section>`;
+  }
+  if (!all.length) return `<section class="panel"><p class="muted">No opponents found in this save.</p></section>`;
   const od = mxOppData(B, pick); if (!od) return `<section class="panel"><p class="muted">No numbers for ${esc(mxName(B, pick))} in this save.</p></section>`;
   const D = od.D, i = od.i, T = D.teams[i], cur = { t: pick, i }, name = mxName(B, cur.t), isNext = next && next.team === cur.t;
   const thin = T.g < 3;
   const row = lt[pos(cur.t)], tm = mxTiming(B, cur.t, true), tw = mxTimingWords(tm, "They");
-  const M = B.M, last = B.order.filter(r => (M.home[r] === cur.t || M.away[r] === cur.t) && M.hg[r] !== 255 && !mxFriendly(M.comps[M.comp[r]])).slice(-5).map(r => { const h = M.home[r] === cur.t, a = h ? M.hg[r] : M.ag[r], b = h ? M.ag[r] : M.hg[r]; return { res: a > b ? "W" : a < b ? "L" : "D", s: `${a}–${b}`, o: mxName(B, h ? M.away[r] : M.home[r]), h }; });
+  const last = mxLast5(B, cur.t);
   const ms = MX_OPP_M.filter(m => HUB_M[m] && D.pct[m][i] != null), STY = ["crs", "pas", "spr", "fouls", "drb"];
   const q = ms.filter(m => !STY.includes(m)).sort((a, b) => D.pct[b][i] - D.pct[a][i]), strong = q.slice(0, 3).filter(m => D.pct[m][i] >= 60), weak = q.slice(-3).reverse().filter(m => D.pct[m][i] < 40);
   const met_ = m => `<li><b>${esc(HUB_M[m][0])}</b>${itip(m)} <span class="${hubCls(D.pct[m][i])}">${D.rank[m][i]}${["st", "nd", "rd"][((D.rank[m][i] + 90) % 100 - 10) % 10 - 1] || "th"} of ${D.n}</span> <span class="muted small">(${hubFmt(m, D.val[m][i])}, league ${hubFmt(m, D.avg[m])})</span></li>`;
-  // danger men: their players with the most goals + assists this league season
-  const st = SAVE.stats.league, danger = [];
-  if (st) for (let p = 0; p < SAVE.n; p++) { if (SAVE.clubIdx[p] !== T.club || !(st.row[p] >= 0)) continue; const c = fl => { const a = st.cols[fl]; const v = a ? a[st.row[p]] : NaN; return v === v ? v : 0; };
-    if (c("minutes") < 270) continue; danger.push({ p, ga: c("goals") + c("assists"), g: c("goals"), a: c("assists"), xg: c("expected_goals"), r: st.cols.average_rating ? st.cols.average_rating[st.row[p]] : NaN, min: c("minutes") }); }
-  danger.sort((a, b) => b.ga - a.ga || b.xg - a.xg);
+  const danger = mxDanger(T.club);
   const tips = mxOppTips(D, i, tm);
   const lg = D0.comp ? D0.comp.name : "your league";
   const intro = isNext ? `Your next game, from your inbox: <b>${esc(name)}</b>, ${esc(mxDay(next.date))}. Pick another team to scout anyone else.`
@@ -269,14 +283,14 @@ function renderMatches(main) {
   if (!SAVE) { main.innerHTML = `<section class="panel"><h3>Matches</h3><p class="muted">Load your save to see every result, a review of your last game and a report on your next opponent.</p><button class="primary" data-act="datapage">Load your save</button></section>`; return; }
   const B = mxBase();
   if (!B) { main.innerHTML = `<section class="panel addpanel"><h3>Load your save once more</h3><p class="muted">Matches reads every score and goal in your save, which this stored copy of your save was read without.</p><button class="primary" data-act="datapage">Load your save</button></section>`; return; }
-  const tab = MX_TABS.some(x => x[0] === S.mxTab) ? S.mxTab : "diag";
+  const tab = MX_TABS.some(x => x[0] === S.mxTab) ? S.mxTab : "brief";
   if (!TSNAPS && DB.db) tsnapList().then(() => { if (S.mode === "matches") render(); });
   main.innerHTML = `<section class="homehead"><div><h2>Matches</h2><p class="muted">${esc(B.D.comp ? B.D.comp.name : "")} · ${B.comp.length} competitive games</p></div>${learnToggle()}</section>` +
-    (tab === "diag" ? mxDiagnose(B) : tab === "last" ? mxLast(B) : tab === "results" ? mxResults(B) : tab === "opp" ? mxOpp(B) : mxChanges(B));
+    (tab === "brief" ? mxBrief(B) : tab === "diag" ? mxDiagnose(B) : tab === "last" ? mxLast(B) : tab === "results" ? mxResults(B) : tab === "opp" ? mxOpp(B) : mxChanges(B));
   renderSaveNote();
   if (S.sel != null && S.adCtx) inAdCtx(() => openPlayer(panelScore(), S.sel, true));
 }
-const mxTabsHtml = () => { const t = MX_TABS.some(x => x[0] === S.mxTab) ? S.mxTab : "diag"; return MX_TABS.map(([k, l]) => `<button class="ptab" data-mxtab="${k}" aria-selected="${!S.guide && !S.dataPage && k === t}">${l}</button>`).join(""); };
+const mxTabsHtml = () => { const t = MX_TABS.some(x => x[0] === S.mxTab) ? S.mxTab : "brief"; return MX_TABS.map(([k, l]) => `<button class="ptab" data-mxtab="${k}" aria-selected="${!S.guide && !S.dataPage && k === t}">${l}</button>`).join(""); };
 document.addEventListener("click", e => {
   const t = e.target.closest("[data-mxtab], [data-mxact], [data-tlogrm]"); if (!t) return;
   if (t.dataset.mxtab) { S.guide = false; S.dataPage = false; S.mode = "matches"; S.mxTab = t.dataset.mxtab; S.sel = null; S.adCtx = null; render(); window.scrollTo(0, 0); return; }

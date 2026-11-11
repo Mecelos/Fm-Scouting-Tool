@@ -39,6 +39,7 @@ function render() {
 }
 
 function renderTabs() {
+  if (typeof gsSyncNav === "function") gsSyncNav();
   document.querySelectorAll("[data-mode]").forEach(b => b.setAttribute("aria-pressed", !S.guide && !S.dataPage && b.dataset.mode === S.mode));
   const gb = $("#guideBtn"); if (gb) gb.setAttribute("aria-pressed", !!S.guide);
   const db = $("#dataBtn"); if (db) db.setAttribute("aria-pressed", !!S.dataPage && !S.guide);

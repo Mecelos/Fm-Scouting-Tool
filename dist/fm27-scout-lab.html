@@ -45,6 +45,23 @@ code { font-size: 12.5px; background: var(--panel2); padding: 1px 5px; border-ra
 #savenote { font-size: 12px; color: var(--muted); white-space: nowrap; }
 .uiscale { display: inline-flex; align-items: center; gap: 4px; } .uiscale select { font-size: 12px; padding: 1px 4px; }
 @media (max-width: 700px) { .uiscale { display: none; } }
+/* search box, Help menu, and the two page menus that replace the buttons on narrow screens */
+.gsearch { position: relative; flex: 0 1 230px; min-width: 130px; }
+.gsearch input { width: 100%; border-radius: 999px; padding: 4px 12px; }
+#gResults, .helppop { position: absolute; top: calc(100% + 6px); background: var(--panel); border: 1px solid var(--line2); border-radius: var(--r); box-shadow: 0 10px 30px rgba(0, 0, 0, .5); padding: 4px; z-index: 40; }
+#gResults { left: 0; width: max(100%, 320px); max-width: 92vw; max-height: 70vh; overflow: auto; }
+.gsrow { display: flex; flex-direction: column; width: 100%; text-align: left; border: 0; background: none; padding: 5px 8px; border-radius: 6px; }
+.gsrow[aria-selected="true"], .gsrow:hover { background: var(--panel2); }
+.gsnone { margin: 6px 8px; }
+.helpmenu { position: relative; } .helpmenu > summary { list-style: none; display: inline-block; cursor: pointer; user-select: none; } .helpmenu > summary::-webkit-details-marker { display: none; }
+.helpmenu[open] > summary, .helpmenu:has([aria-pressed="true"]) > summary { border-color: var(--accent); color: var(--ink); }
+.helppop { right: 0; display: grid; gap: 2px; min-width: 190px; padding: 6px; }
+.helppop .guidebtn { text-align: left; border-color: transparent; border-radius: 6px; white-space: nowrap; }
+.helppop .guidebtn:hover { background: var(--panel2); }
+.helppop .uiscale { padding: 4px 12px; justify-content: space-between; }
+.navsel { display: none; border-radius: 999px; padding: 4px 8px; font-weight: 600; } .navsel.on { border-color: var(--accent); color: var(--accent); }
+@media (max-width: 700px) { .top .modes { display: none; } .top .navsel { display: inline-block; order: 1; } .top .gsearch { order: 2; flex: 1 1 110px; } .top .databtn, .top .helpmenu { order: 2; } }
+@media print { :root { color-scheme: light; --bg: #fff; --panel: #fff; --panel2: #f2f2f2; --line: #ccc; --line2: #bbb; --ink: #111; --ink2: #333; --muted: #555; } html, body { background: #fff; } .top, #drawer, #scrim, #tip, .homehead, .mxbbtns { display: none !important; } }
 
 main { display: grid; gap: 8px; padding-block: 8px 32px; }
 main > * { min-width: 0; }
@@ -580,6 +597,10 @@ button.fit { background: none; font: inherit; font-size: 12.5px; cursor: pointer
 .mxscore { display: flex; align-items: center; gap: 10px; margin: 6px 0 10px; } .mxscore .mxres { width: 30px; height: 30px; font-size: 15px; } .mxsc { font-size: 20px; }
 .mxgoals { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 8px; } .mxgoals p { margin: 2px 0; }
 .mxtip { background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; font-size: 13.5px; margin-top: 8px; }
+.mxbrief { max-width: 620px; width: 100%; justify-self: center; }
+.mxbhead { display: flex; flex-direction: column; gap: 2px; margin-bottom: 6px; } .mxbbtns { display: inline-flex; gap: 6px; }
+.mxbform { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 6px 0; } .mxbform > div { display: flex; align-items: center; gap: 4px; } .mxbform .muted { margin-right: 4px; }
+.mxbrief .gtable.mxbtab { width: 100%; } .mxblist { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
 .mxnote { background: var(--panel2); border-left: 3px solid var(--line); border-radius: 6px; padding: 6px 10px; margin: 6px 0; }
 .mxtime { display: grid; gap: 4px; margin: 6px 0 10px; } .mxtr, .mxtl { display: grid; grid-template-columns: 64px 1fr 1fr; gap: 8px; align-items: center; }
 .mxbar { display: flex; align-items: center; gap: 6px; } .mxbar i { display: block; height: 12px; border-radius: 0 4px 4px 0; } .mxbar b { font-size: 12px; }
@@ -804,11 +825,16 @@ button[disabled] { opacity: .6; cursor: progress; }
     <span class="navlab">Your club</span><button data-mode="home" aria-pressed="false" data-tip="Your club on one page: how you're doing, who's playing well, what to fix">Home</button><button data-mode="hub" aria-pressed="false" data-tip="Your team against the league, section by section"><span class="my">Data </span>Hub</button><button data-mode="matches" aria-pressed="false" data-tip="Every result, your last game reviewed, your next opponent, and whether tactic changes worked">Matches</button><button data-mode="squad" aria-pressed="false" data-tip="Your players: depth, tactic, season review, planner"><span class="my">My </span><span class="cap">squad</span></button><button data-mode="staff" aria-pressed="false" data-tip="Your staff and the best available">Staff</button>
     <span class="navsep" aria-hidden="true"></span><span class="navlab">Players</span><button data-mode="scout" aria-pressed="false" data-tip="Wonderkids, transfer targets, contracts, shortlist">Scout<span class="my">ing</span></button><button data-mode="stats" aria-pressed="true" data-tip="Rank every player in a position by this season's stats">Stats</button><button data-mode="attr" aria-pressed="false" data-tip="Rank every player in a position by attributes">Attr<span class="my">ibutes</span></button><button data-mode="all" aria-pressed="false" data-tip="Every player and every number in one table, for advanced filtering">All<span class="my"> data</span></button>
   </div>
+  <select class="navsel" aria-label="Your club pages"><option value="">Your club</option><option value="home">Home</option><option value="hub">Data Hub</option><option value="matches">Matches</option><option value="squad">My squad</option><option value="staff">Staff</option></select>
+  <select class="navsel" aria-label="Player pages"><option value="">Players</option><option value="scout">Scouting</option><option value="stats">Stats</option><option value="attr">Attributes</option><option value="all">All data</option></select>
+  <div class="gsearch"><input type="search" id="gSearch" placeholder="Search players and clubs ( / )" aria-label="Search players and clubs" autocomplete="off" spellcheck="false"><div id="gResults" hidden></div></div>
   <nav class="ptabs" id="postabs" aria-label="Position"></nav>
   <button class="guidebtn databtn" id="dataBtn" data-act="datapage" aria-pressed="false">Data</button>
-  <button class="guidebtn learnbtn" data-mode="learn" aria-pressed="false">Learn</button>
-  <button class="guidebtn" id="guideBtn" data-act="guide" aria-pressed="false">Guide</button>
-  <label class="uiscale" title="Interface scale, like FM27's: smaller fits more on screen"><span class="small muted">Scale</span><select id="uiScale"><option value="80">80%</option><option value="90">90%</option><option value="100">100%</option><option value="110">110%</option><option value="125">125%</option></select></label>
+  <details class="helpmenu"><summary class="guidebtn">Help</summary><div class="helppop">
+    <button class="guidebtn learnbtn" data-mode="learn" aria-pressed="false">Learn the basics</button>
+    <button class="guidebtn" id="guideBtn" data-act="guide" aria-pressed="false">Guide to Scout Lab</button>
+    <label class="uiscale" title="Interface scale, like FM27's: smaller fits more on screen"><span class="small muted">Scale</span><select id="uiScale"><option value="80">80%</option><option value="90">90%</option><option value="100">100%</option><option value="110">110%</option><option value="125">125%</option></select></label>
+  </div></details>
   <span id="savenote"></span>
 </div></header>
 <main class="wrap" id="main"><p class="muted">Loading…</p></main>
@@ -7056,6 +7082,7 @@ function render() {
 }
 
 function renderTabs() {
+  if (typeof gsSyncNav === "function") gsSyncNav();
   document.querySelectorAll("[data-mode]").forEach(b => b.setAttribute("aria-pressed", !S.guide && !S.dataPage && b.dataset.mode === S.mode));
   const gb = $("#guideBtn"); if (gb) gb.setAttribute("aria-pressed", !!S.guide);
   const db = $("#dataBtn"); if (db) db.setAttribute("aria-pressed", !!S.dataPage && !S.guide);
@@ -12937,7 +12964,7 @@ function renderHome(main) {
 // ---------- Matches: every result from the save, a review of the last game, the next opponent, and whether tactic changes worked ----------
 // Scores and goals (minute, who, how) come from the save's match records. Team and player numbers for one game come from the
 // difference between two saves: load your save after every game and the last one is reviewed on its own.
-const MX_TABS = [["diag", "Diagnose"], ["last", "Last game"], ["results", "Results"], ["opp", "Next opponent"], ["changes", "Tactic changes"]];
+const MX_TABS = [["brief", "Brief"], ["diag", "Diagnose"], ["last", "Last game"], ["results", "Results"], ["opp", "Next opponent"], ["changes", "Tactic changes"]];
 const MX_BUCKETS = [[1, 15, "1–15'"], [16, 30, "16–30'"], [31, 45, "31–45'+"], [46, 60, "46–60'"], [61, 75, "61–75'"], [76, 130, "76–90'+"]];
 const MX_TYPE = { 0: "", 1: "set piece", 2: "penalty", 3: "own goal" };
 const mxFriendly = name => /friendl|testimonial/i.test(name || "");
@@ -13115,33 +13142,47 @@ function mxOppOptions(B, lt, next) { // your league, then every other competitio
   const up = (SAVE.upcoming || []).filter(x => !seen.has(x.team) && B.byTeam.has(x.team)).map(x => x.team); if (up.length) groups.push(["Upcoming", [...new Set(up)]]);
   return groups;
 }
-function mxOpp(B) {
+// a team's last five competitive games in the save, oldest first
+function mxLast5(B, t) {
+  const M = B.M; return B.order.filter(r => (M.home[r] === t || M.away[r] === t) && M.hg[r] !== 255 && !mxFriendly(M.comps[M.comp[r]])).slice(-5).map(r => { const h = M.home[r] === t, a = h ? M.hg[r] : M.ag[r], b = h ? M.ag[r] : M.hg[r]; return { res: a > b ? "W" : a < b ? "L" : "D", s: `${a}–${b}`, o: mxName(B, h ? M.away[r] : M.home[r]), h }; });
+}
+// danger men: a club's players with the most goals + assists this league season
+function mxDanger(club) {
+  const st = SAVE.stats.league, danger = [];
+  if (st) for (let p = 0; p < SAVE.n; p++) { if (SAVE.clubIdx[p] !== club || !(st.row[p] >= 0)) continue; const c = fl => { const a = st.cols[fl]; const v = a ? a[st.row[p]] : NaN; return v === v ? v : 0; };
+    if (c("minutes") < 270) continue; danger.push({ p, ga: c("goals") + c("assists"), g: c("goals"), a: c("assists"), xg: c("expected_goals"), r: st.cols.average_rating ? st.cols.average_rating[st.row[p]] : NaN, min: c("minutes") }); }
+  return danger.sort((a, b) => b.ga - a.ga || b.xg - a.xg);
+}
+// which team Next opponent and the Brief are about: your pick, else your next game, else a league team you've met least
+function mxOppPick(B) {
   const D0 = B.D, f = hubF(), lt = D0.comp ? mxTable(B, D0.comp.c) : [];
   const met = new Map(); B.comp.forEach(x => met.set(x.opp, (met.get(x.opp) || 0) + 1));
   const pos = t => lt.findIndex(x => x.t === t), next = mxNextGame(), nextKey = next ? next.date + "|" + next.team : "none";
   if (f.mxOppNext !== nextKey) { f.mxOppNext = nextKey; f.mxOpp = ""; }   // a new next game: show it, not an old pick
-  if (next && !B.byTeam.has(next.team)) {   // next game is against a team the save has no numbers for
-    if (!f.mxOpp) return `<section class="panel"><div class="ph"><h3>Next opponent</h3></div><p>Your next game: <b>${esc(mxClubName(B, next.team, next.club))}</b>, ${esc(mxDay(next.date))}.</p>
-      <p class="small muted">Little data: your save has no stats for ${esc(mxClubName(B, next.team, next.club))} (FM only records full stats for leagues that are loaded in your game), so there's no report on them. Pick a team to scout instead:</p>
-      <select class="hubin" data-f="mxOpp"><option value="">Choose a team</option>${mxOppOptions(B, lt, next).map(([g, ts]) => `<optgroup label="${esc(g)}">${ts.map(t => `<option value="${t}">${esc(mxName(B, t))}</option>`).join("")}</optgroup>`).join("")}</select></section>`;
-  }
-  const groups = mxOppOptions(B, lt, next), all = groups.flatMap(g => g[1]);
-  if (!all.length) return `<section class="panel"><p class="muted">No opponents found in this save.</p></section>`;
+  const groups = mxOppOptions(B, lt, next); let all = groups.flatMap(g => g[1]);
+  if (f.mxOpp && !all.includes(+f.mxOpp) && +f.mxOpp !== B.me && B.byTeam.has(+f.mxOpp)) { groups.push(["Searched", [+f.mxOpp]]); all.push(+f.mxOpp); }   // a club opened from the search box
+  const noData = !!(next && !B.byTeam.has(next.team) && !f.mxOpp);   // next game is against a team the save has no numbers for
   const guess = D0.teams.filter(x => x.t !== B.me).sort((a, b) => (met.get(a.t) || 0) - (met.get(b.t) || 0) || pos(a.t) - pos(b.t))[0];
-  const pick = all.includes(+f.mxOpp) ? +f.mxOpp : next && all.includes(next.team) ? next.team : guess ? guess.t : all[0];
+  const pick = noData || !all.length ? null : all.includes(+f.mxOpp) ? +f.mxOpp : next && all.includes(next.team) ? next.team : guess ? guess.t : all[0];
+  return { lt, met, pos, next, groups, all, pick, noData };
+}
+function mxOpp(B) {
+  const D0 = B.D, P = mxOppPick(B), { lt, met, pos, next, groups, all, pick } = P;
+  if (P.noData) {
+    return `<section class="panel"><div class="ph"><h3>Next opponent</h3></div><p>Your next game: <b>${esc(mxClubName(B, next.team, next.club))}</b>, ${esc(mxDay(next.date))}.</p>
+      <p class="small muted">Little data: your save has no stats for ${esc(mxClubName(B, next.team, next.club))} (FM only records full stats for leagues that are loaded in your game), so there's no report on them. Pick a team to scout instead:</p>
+      <select class="hubin" data-f="mxOpp"><option value="">Choose a team</option>${groups.map(([g, ts]) => `<optgroup label="${esc(g)}">${ts.map(t => `<option value="${t}">${esc(mxName(B, t))}</option>`).join("")}</optgroup>`).join("")}</select></section>`;
+  }
+  if (!all.length) return `<section class="panel"><p class="muted">No opponents found in this save.</p></section>`;
   const od = mxOppData(B, pick); if (!od) return `<section class="panel"><p class="muted">No numbers for ${esc(mxName(B, pick))} in this save.</p></section>`;
   const D = od.D, i = od.i, T = D.teams[i], cur = { t: pick, i }, name = mxName(B, cur.t), isNext = next && next.team === cur.t;
   const thin = T.g < 3;
   const row = lt[pos(cur.t)], tm = mxTiming(B, cur.t, true), tw = mxTimingWords(tm, "They");
-  const M = B.M, last = B.order.filter(r => (M.home[r] === cur.t || M.away[r] === cur.t) && M.hg[r] !== 255 && !mxFriendly(M.comps[M.comp[r]])).slice(-5).map(r => { const h = M.home[r] === cur.t, a = h ? M.hg[r] : M.ag[r], b = h ? M.ag[r] : M.hg[r]; return { res: a > b ? "W" : a < b ? "L" : "D", s: `${a}–${b}`, o: mxName(B, h ? M.away[r] : M.home[r]), h }; });
+  const last = mxLast5(B, cur.t);
   const ms = MX_OPP_M.filter(m => HUB_M[m] && D.pct[m][i] != null), STY = ["crs", "pas", "spr", "fouls", "drb"];
   const q = ms.filter(m => !STY.includes(m)).sort((a, b) => D.pct[b][i] - D.pct[a][i]), strong = q.slice(0, 3).filter(m => D.pct[m][i] >= 60), weak = q.slice(-3).reverse().filter(m => D.pct[m][i] < 40);
   const met_ = m => `<li><b>${esc(HUB_M[m][0])}</b>${itip(m)} <span class="${hubCls(D.pct[m][i])}">${D.rank[m][i]}${["st", "nd", "rd"][((D.rank[m][i] + 90) % 100 - 10) % 10 - 1] || "th"} of ${D.n}</span> <span class="muted small">(${hubFmt(m, D.val[m][i])}, league ${hubFmt(m, D.avg[m])})</span></li>`;
-  // danger men: their players with the most goals + assists this league season
-  const st = SAVE.stats.league, danger = [];
-  if (st) for (let p = 0; p < SAVE.n; p++) { if (SAVE.clubIdx[p] !== T.club || !(st.row[p] >= 0)) continue; const c = fl => { const a = st.cols[fl]; const v = a ? a[st.row[p]] : NaN; return v === v ? v : 0; };
-    if (c("minutes") < 270) continue; danger.push({ p, ga: c("goals") + c("assists"), g: c("goals"), a: c("assists"), xg: c("expected_goals"), r: st.cols.average_rating ? st.cols.average_rating[st.row[p]] : NaN, min: c("minutes") }); }
-  danger.sort((a, b) => b.ga - a.ga || b.xg - a.xg);
+  const danger = mxDanger(T.club);
   const tips = mxOppTips(D, i, tm);
   const lg = D0.comp ? D0.comp.name : "your league";
   const intro = isNext ? `Your next game, from your inbox: <b>${esc(name)}</b>, ${esc(mxDay(next.date))}. Pick another team to scout anyone else.`
@@ -13205,14 +13246,14 @@ function renderMatches(main) {
   if (!SAVE) { main.innerHTML = `<section class="panel"><h3>Matches</h3><p class="muted">Load your save to see every result, a review of your last game and a report on your next opponent.</p><button class="primary" data-act="datapage">Load your save</button></section>`; return; }
   const B = mxBase();
   if (!B) { main.innerHTML = `<section class="panel addpanel"><h3>Load your save once more</h3><p class="muted">Matches reads every score and goal in your save, which this stored copy of your save was read without.</p><button class="primary" data-act="datapage">Load your save</button></section>`; return; }
-  const tab = MX_TABS.some(x => x[0] === S.mxTab) ? S.mxTab : "diag";
+  const tab = MX_TABS.some(x => x[0] === S.mxTab) ? S.mxTab : "brief";
   if (!TSNAPS && DB.db) tsnapList().then(() => { if (S.mode === "matches") render(); });
   main.innerHTML = `<section class="homehead"><div><h2>Matches</h2><p class="muted">${esc(B.D.comp ? B.D.comp.name : "")} · ${B.comp.length} competitive games</p></div>${learnToggle()}</section>` +
-    (tab === "diag" ? mxDiagnose(B) : tab === "last" ? mxLast(B) : tab === "results" ? mxResults(B) : tab === "opp" ? mxOpp(B) : mxChanges(B));
+    (tab === "brief" ? mxBrief(B) : tab === "diag" ? mxDiagnose(B) : tab === "last" ? mxLast(B) : tab === "results" ? mxResults(B) : tab === "opp" ? mxOpp(B) : mxChanges(B));
   renderSaveNote();
   if (S.sel != null && S.adCtx) inAdCtx(() => openPlayer(panelScore(), S.sel, true));
 }
-const mxTabsHtml = () => { const t = MX_TABS.some(x => x[0] === S.mxTab) ? S.mxTab : "diag"; return MX_TABS.map(([k, l]) => `<button class="ptab" data-mxtab="${k}" aria-selected="${!S.guide && !S.dataPage && k === t}">${l}</button>`).join(""); };
+const mxTabsHtml = () => { const t = MX_TABS.some(x => x[0] === S.mxTab) ? S.mxTab : "brief"; return MX_TABS.map(([k, l]) => `<button class="ptab" data-mxtab="${k}" aria-selected="${!S.guide && !S.dataPage && k === t}">${l}</button>`).join(""); };
 document.addEventListener("click", e => {
   const t = e.target.closest("[data-mxtab], [data-mxact], [data-tlogrm]"); if (!t) return;
   if (t.dataset.mxtab) { S.guide = false; S.dataPage = false; S.mode = "matches"; S.mxTab = t.dataset.mxtab; S.sel = null; S.adCtx = null; render(); window.scrollTo(0, 0); return; }
@@ -13835,5 +13876,95 @@ function mxOIHtml(B, T, danger, D, i) {
     <ol class="dgsteps">${L.map(x => `<li>${x.w}<div class="small">${x.why}</div><div class="small muted">Effect on your shape: ${x.cost}</div></li>`).join("")}</ol>
     <p class="small muted">Set them in FM: Tactics › Opposition Instructions, before the match. Each one pulls a player of yours toward a man; more than two and your shape stops being yours.</p></section>`;
 }
+// ---------- Matches > Brief: your next game on one narrow page (for a phone or a window beside FM) ----------
+// Everything here comes from the Next opponent calculations (mxOppPick, mxOppData, mxOppTips, mxOI), so the two pages always agree.
+const MX_BRIEF_M = ["goals", "xg", "sotf", "paspct", "hdrpct", "pwon"];
+function mxBrief(B) {
+  const P = mxOppPick(B), next = P.next;
+  if (P.noData) return `<section class="panel mxbrief"><div class="ph"><h3>Matchday brief</h3></div><p>Your next game: <b>${esc(mxClubName(B, next.team, next.club))}</b>, ${esc(mxDay(next.date))}.</p>
+    <p class="small muted">Little data: your save has no stats for them, so there's no brief. <button class="linkbtn" data-mxtab="opp">Pick another team in Next opponent</button>.</p></section>`;
+  const od = P.pick != null ? mxOppData(B, P.pick) : null;
+  if (!od) return `<section class="panel mxbrief"><div class="ph"><h3>Matchday brief</h3></div><p class="muted">No opponent found in this save yet. <button class="linkbtn" data-mxtab="opp">Open Next opponent</button> to pick one.</p></section>`;
+  const D = od.D, i = od.i, T = D.teams[i], me = D.teams.findIndex(x => x.mine), name = mxName(B, P.pick), isNext = next && next.team === P.pick;
+  const mine5 = B.comp.slice(-5), their5 = mxLast5(B, P.pick), tm = mxTiming(B, P.pick, true), tw = mxTimingWords(tm, "They");
+  const tips = mxOppTips(D, i, tm).slice(0, 3), danger = mxDanger(T.club), ois = typeof mxOI === "function" ? mxOI(B, T, danger, D, i) : [];
+  const lg = B.D.comp ? B.D.comp.name : "your league";
+  const rows = me < 0 ? "" : MX_BRIEF_M.filter(m => HUB_M[m]).map(m => {
+    const a = D.val[m][me], b = D.val[m][i], hi = HUB_M[m][2]; if (!(a === a) || !(b === b)) return "";
+    const gap = Math.abs(a - b) / (Math.abs(a) + Math.abs(b) || 1), edge = gap < 0.03 ? 0 : (hi ? a > b : a < b) ? 1 : -1;
+    return `<tr><td>${esc(HUB_M[m][0])}</td><td class="num"><b class="${edge > 0 ? "okc" : ""}">${hubFmt(m, a)}</b></td><td class="num"><b class="${edge < 0 ? "bad" : ""}">${hubFmt(m, b)}</b></td><td class="small ${edge > 0 ? "okc" : edge < 0 ? "bad" : "muted"}">${edge > 0 ? "You" : edge < 0 ? "Them" : "Even"}</td></tr>`;
+  }).join("");
+  return `<section class="panel mxbrief">
+    <div class="ph"><h3>Matchday brief</h3><span class="mxbbtns"><button class="ghost small" data-mxtab="opp">Full report</button><button class="ghost small" data-mxact="print">Print</button></span></div>
+    <div class="mxbhead"><b class="mxsc">${esc(name)}</b><span class="small muted">${isNext ? `Your next game · ${esc(mxDay(next.date))}` : next ? `Not your next game (that's ${esc(mxClubName(B, next.team, next.club))}, ${esc(mxDay(next.date))})` : "Picked in Next opponent"}</span></div>
+    ${od.outside ? `<p class="small mxnote">Not in ${esc(lg)}: their numbers come from their own league, so they flatter them against a stronger side.</p>` : ""}
+    ${T.g < 3 ? `<p class="small mxnote bad">Little data: only ${T.g} game${T.g === 1 ? "" : "s"} of stats for ${esc(name)} in your save. A rough guide only.</p>` : ""}
+    <div class="mxbform"><div><span class="small muted">You</span>${mine5.map(mxBadge).join("") || "–"}</div><div><span class="small muted">${esc(name)}</span>${their5.map(mxBadge).join("") || "–"}</div></div>
+    ${rows ? `<h4>You against them</h4><table class="gtable narrow mxbtab"><thead><tr><th></th><th class="num">You</th><th class="num">Them</th><th>Edge</th></tr></thead><tbody>${rows}</tbody></table>` : ""}
+    <h4>What to try</h4>${tips.length ? `<ol class="mxblist">${tips.map(([w, y]) => `<li>${w}<div class="small muted">${y}.</div></li>`).join("")}</ol>` : `<p class="small muted">They're average almost everywhere: play your usual game.</p>`}
+    ${ois.length ? `<h4>Opposition instructions</h4><ol class="mxblist">${ois.map(x => `<li>${x.w}<div class="small muted">${x.why}</div></li>`).join("")}</ol>` : ""}
+    ${danger.length ? `<h4>Danger men</h4><ul class="mxblist">${danger.slice(0, 3).map(d => `<li><button class="linkbtn" data-sci="${d.p}">${esc(SAVE.name[d.p])}</button> <span class="small muted">${esc(savePos().str[d.p] || "")} · ${d.g} goal${d.g === 1 ? "" : "s"}, ${d.a} assist${d.a === 1 ? "" : "s"}</span></li>`).join("")}</ul>` : ""}
+    <h4>When they score and concede</h4>${tw.length ? `<ul class="mxblist">${tw.slice(0, 2).map(x => `<li>${x}</li>`).join("")}</ul>` : `<p class="small muted">No strong pattern in their last ${tm.games} games.</p>`}
+  </section>`;
+}
+document.addEventListener("click", e => { if (e.target.closest('[data-mxact="print"]')) window.print(); });
+// ---------- Search box in the top bar: any player or club in the loaded save, from any tab ----------
+// A player opens his side panel; a club opens the Next opponent report on that team. "/" jumps to the box.
+const GS = { list: [], at: 0 };
+const gsNorm = s => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+function gsIndex() { // lower-case, accent-free names, built once per save
+  if (SAVE._gs) return SAVE._gs;
+  const names = new Array(SAVE.n); for (let i = 0; i < SAVE.n; i++) names[i] = gsNorm(SAVE.name[i]);
+  const clubs = [], TM = SAVE.teams, seen = new Set();   // clubs the save has team numbers for (so a report exists)
+  if (TM) for (let k = 0; k < TM.n; k++) { const c = TM.club[k]; if (c < 0 || seen.has(c)) continue; seen.add(c); clubs.push({ t: TM.team[k], c, full: gsNorm(SAVE.clubs[c]), short: gsNorm(SAVE.clubShort && SAVE.clubShort[c]), rep: 0 }); }
+  const byClub = new Map(clubs.map(x => [x.c, x]));   // a club's weight in the results = its best-known player
+  if (SAVE.rep) for (let i = 0; i < SAVE.n; i++) { const x = byClub.get(SAVE.clubIdx[i]); if (x && SAVE.rep[i * 3 + 2] > x.rep) x.rep = SAVE.rep[i * 3 + 2]; }
+  return (SAVE._gs = { names, clubs });
+}
+const gsRank = (name, q) => name.startsWith(q) ? 0 : name.includes(" " + q) ? 1 : name.includes(q) ? 2 : -1;
+function gsFind(raw) {
+  const q = gsNorm(raw).trim(); if (q.length < 2 || !SAVE) return [];
+  const ix = gsIndex(), pl = [], cl = [];
+  for (let i = 0; i < SAVE.n; i++) { const r = gsRank(ix.names[i], q); if (r >= 0) pl.push([r, -(SAVE.rep ? SAVE.rep[i * 3 + 2] : 0), i]); }
+  pl.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  ix.clubs.forEach(x => { const r = Math.min(...[gsRank(x.full, q), gsRank(x.short, q)].filter(v => v >= 0), 9); if (r < 9) cl.push([r, x]); });
+  cl.sort((a, b) => (a[0] > 1) - (b[0] > 1) || b[1].rep - a[1].rep || a[1].full.localeCompare(b[1].full));
+  const pc = savePos();
+  return cl.slice(0, 3).map(([, x]) => ({ kind: "club", t: x.t, name: SAVE.clubs[x.c], sub: "Club · opponent report" }))
+    .concat(pl.slice(0, 8).map(([, , i]) => ({ kind: "player", i, name: SAVE.name[i], sub: [pc.str[i], SAVE.age[i] >= 0 ? SAVE.age[i] + " yrs" : "", SAVE.clubIdx[i] >= 0 ? (SAVE.clubShort && SAVE.clubShort[SAVE.clubIdx[i]]) || SAVE.clubs[SAVE.clubIdx[i]] : "No club"].filter(Boolean).join(" · ") })));
+}
+function gsDraw() {
+  const box = document.getElementById("gResults"), inp = document.getElementById("gSearch"); if (!box || !inp) return;
+  const q = inp.value;
+  if (!SAVE) { box.hidden = !q; box.innerHTML = `<p class="small muted gsnone">Load your save to search its players and clubs.</p>`; return; }
+  if (gsNorm(q).trim().length < 2) { box.hidden = true; GS.list = []; return; }
+  GS.list = gsFind(q); GS.at = Math.min(GS.at, Math.max(0, GS.list.length - 1));
+  box.hidden = false;
+  box.innerHTML = GS.list.length ? GS.list.map((x, k) => `<button class="gsrow" data-gs="${k}" aria-selected="${k === GS.at}"><b>${esc(x.name)}</b><span class="small muted">${esc(x.sub)}</span></button>`).join("") : `<p class="small muted gsnone">Nobody found for "${esc(q)}".</p>`;
+}
+function gsClose(clear) { const box = document.getElementById("gResults"), inp = document.getElementById("gSearch"); if (box) box.hidden = true; if (clear && inp) { inp.value = ""; inp.blur(); } GS.list = []; GS.at = 0; }
+function gsGo(k) {
+  const x = GS.list[k]; if (!x) return; gsClose(true);
+  if (x.kind === "player") { adOpen(x.i); return; }
+  hubF().mxOpp = String(x.t); S.guide = false; S.dataPage = false; S.mode = "matches"; S.mxTab = "opp"; S.sel = null; S.adCtx = null; render(); window.scrollTo(0, 0);
+}
+document.addEventListener("input", e => { if (e.target.id === "gSearch") { GS.at = 0; gsDraw(); } });
+document.addEventListener("focusin", e => { if (e.target.id === "gSearch" && e.target.value) gsDraw(); });
+document.addEventListener("click", e => {
+  const r = e.target.closest("[data-gs]"); if (r) { gsGo(+r.dataset.gs); return; }
+  if (!e.target.closest(".gsearch")) gsClose(false);
+  const h = document.querySelector(".helpmenu[open]"); if (h && (!e.target.closest(".helpmenu") || e.target.closest(".helppop button"))) h.open = false;   // the Help menu closes after a choice or a click elsewhere
+});
+document.addEventListener("keydown", e => {
+  const inp = document.getElementById("gSearch"); if (!inp) return;
+  if (e.key === "/" && !e.ctrlKey && !e.metaKey && !e.altKey && !/^(INPUT|TEXTAREA|SELECT)$/.test((document.activeElement || {}).tagName || "") && !(document.activeElement || {}).isContentEditable) { e.preventDefault(); inp.focus(); inp.select(); return; }
+  if (document.activeElement !== inp) return;
+  if (e.key === "Escape") { gsClose(true); }
+  else if (e.key === "ArrowDown" || e.key === "ArrowUp") { e.preventDefault(); if (!GS.list.length) return; GS.at = (GS.at + (e.key === "ArrowDown" ? 1 : -1) + GS.list.length) % GS.list.length; gsDraw(); }
+  else if (e.key === "Enter") { e.preventDefault(); gsGo(GS.at); }
+});
+// narrow screens: the two groups of pages become two menus
+document.addEventListener("change", e => { const t = e.target; if (!t.classList || !t.classList.contains("navsel") || !t.value) return; const b = document.querySelector(`.modes button[data-mode="${t.value}"]`); if (b) b.click(); });
+function gsSyncNav() { document.querySelectorAll(".navsel").forEach(s => { const on = !S.guide && !S.dataPage && [...s.options].some(o => o.value === S.mode); s.value = on ? S.mode : ""; s.classList.toggle("on", on); }); }
 
 </script>

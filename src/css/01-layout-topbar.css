@@ -39,6 +39,23 @@ code { font-size: 12.5px; background: var(--panel2); padding: 1px 5px; border-ra
 #savenote { font-size: 12px; color: var(--muted); white-space: nowrap; }
 .uiscale { display: inline-flex; align-items: center; gap: 4px; } .uiscale select { font-size: 12px; padding: 1px 4px; }
 @media (max-width: 700px) { .uiscale { display: none; } }
+/* search box, Help menu, and the two page menus that replace the buttons on narrow screens */
+.gsearch { position: relative; flex: 0 1 230px; min-width: 130px; }
+.gsearch input { width: 100%; border-radius: 999px; padding: 4px 12px; }
+#gResults, .helppop { position: absolute; top: calc(100% + 6px); background: var(--panel); border: 1px solid var(--line2); border-radius: var(--r); box-shadow: 0 10px 30px rgba(0, 0, 0, .5); padding: 4px; z-index: 40; }
+#gResults { left: 0; width: max(100%, 320px); max-width: 92vw; max-height: 70vh; overflow: auto; }
+.gsrow { display: flex; flex-direction: column; width: 100%; text-align: left; border: 0; background: none; padding: 5px 8px; border-radius: 6px; }
+.gsrow[aria-selected="true"], .gsrow:hover { background: var(--panel2); }
+.gsnone { margin: 6px 8px; }
+.helpmenu { position: relative; } .helpmenu > summary { list-style: none; display: inline-block; cursor: pointer; user-select: none; } .helpmenu > summary::-webkit-details-marker { display: none; }
+.helpmenu[open] > summary, .helpmenu:has([aria-pressed="true"]) > summary { border-color: var(--accent); color: var(--ink); }
+.helppop { right: 0; display: grid; gap: 2px; min-width: 190px; padding: 6px; }
+.helppop .guidebtn { text-align: left; border-color: transparent; border-radius: 6px; white-space: nowrap; }
+.helppop .guidebtn:hover { background: var(--panel2); }
+.helppop .uiscale { padding: 4px 12px; justify-content: space-between; }
+.navsel { display: none; border-radius: 999px; padding: 4px 8px; font-weight: 600; } .navsel.on { border-color: var(--accent); color: var(--accent); }
+@media (max-width: 700px) { .top .modes { display: none; } .top .navsel { display: inline-block; order: 1; } .top .gsearch { order: 2; flex: 1 1 110px; } .top .databtn, .top .helpmenu { order: 2; } }
+@media print { :root { color-scheme: light; --bg: #fff; --panel: #fff; --panel2: #f2f2f2; --line: #ccc; --line2: #bbb; --ink: #111; --ink2: #333; --muted: #555; } html, body { background: #fff; } .top, #drawer, #scrim, #tip, .homehead, .mxbbtns { display: none !important; } }
 
 main { display: grid; gap: 8px; padding-block: 8px 32px; }
 main > * { min-width: 0; }
