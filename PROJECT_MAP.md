@@ -2,7 +2,38 @@
 
 FM27 Scout Lab is edited as small files under `src/` and joined into one HTML file by `python build.py`.
 
-To find something, look in this table first, then open only that file.
+To find something, look in these tables first, then open only that file.
+
+## Where each tab lives
+
+Start here when a request names a tab or a part of the screen. All paths are under `src/`.
+
+| Tab or part of the screen | Code | Styling |
+| --- | --- | --- |
+| Top bar, navigation buttons, Scale selector | `index.html`, clicks in `app/31-import-events-boot.js` | `css/01-layout-topbar.css` |
+| Home (incl. weekly action plan, ask a question) | `app/40-home.js` | `css/06-home-player-card.css` |
+| My squad: Overview and position tabs | `app/19-my-squad.js` | `css/04-my-squad.css` |
+| My squad: My tactic | `app/32-my-tactic-reading.js`, `app/33-my-tactic-analysis.js` | `css/08-planner-my-tactic.css` |
+| My squad: Suggested tactic | `app/21-suggested-tactic.js`, `app/22-defensive-shape.js` | `css/04-my-squad.css` |
+| My squad: Roles and best XI | `app/20-best-xi.js` | `css/04-my-squad.css` |
+| My squad: Planner | `app/35-development-planner.js` | `css/08-planner-my-tactic.css` |
+| My squad: Season review | `app/36-effectiveness-season-review.js` | `css/05-scouting-review-learn.css` |
+| Data Hub | `app/38-data-hub.js` | `css/07-data-hub.css` |
+| Matches (results, last game, next opponent, tactic changes) | `app/41-matches.js` | `css/03-sections-tiles.css` |
+| Matches: Diagnose and opposition instructions | `app/44-diagnose.js` | `css/03-sections-tiles.css` |
+| Scouting (wonderkids, targets, contracts, shortlist) | `app/34-scouting.js` | `css/05-scouting-review-learn.css` |
+| Staff | `app/30-staff.js`, staff review in `app/37-staff-review-similar.js` | `css/03-sections-tiles.css` |
+| All data | `app/26-all-data.js`, `app/27-stat-type-scores.js` | `css/09-all-data.css` |
+| Stats and Attr views: position tabs, main table, top 5, scatter | `app/18-render.js`, `app/17-charts.js` | `css/01-layout-topbar.css`, `css/02-table-scatter-drawer.css` |
+| Player side panel (opens when a player is clicked) | `app/24-player-drawer.js` | `css/02-table-scatter-drawer.css` |
+| Player card, traits, similar players (inside the panel) | `app/39-learn-player-card.js`, `app/43-player-traits.js`, `app/37-staff-review-similar.js` | `css/06-home-player-card.css` |
+| Learn | `app/39-learn-player-card.js` | `css/05-scouting-review-learn.css` |
+| Guide | `app/23-guide.js` | `css/03-sections-tiles.css` |
+| Data page (loading saves, cloud copy, linked save folder) | `app/25-save-loading.js`, `app/29-cloud-copy.js`, `app/42-save-folder-export-tactic.js` | `css/10-save-data-position-map.css` |
+
+The styling column is the most likely file, not a guarantee: shared pieces (panels, tiles, tags) are in `css/03-sections-tiles.css`.
+
+**Fastest way to find anything:** search `src/` for the exact words shown on screen (a heading, a button label, a tooltip) or for a CSS class name. Open only the file the search points to.
 
 ## Styling (src/css)
 
