@@ -45,6 +45,7 @@
 .mxscore { display: flex; align-items: center; gap: 10px; margin: 6px 0 10px; } .mxscore .mxres { width: 30px; height: 30px; font-size: 15px; } .mxsc { font-size: 20px; }
 .mxgoals { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 8px; } .mxgoals p { margin: 2px 0; }
 .mxtip { background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; font-size: 13.5px; margin-top: 8px; }
+.mxnote { background: var(--panel2); border-left: 3px solid var(--line); border-radius: 6px; padding: 6px 10px; margin: 6px 0; }
 .mxtime { display: grid; gap: 4px; margin: 6px 0 10px; } .mxtr, .mxtl { display: grid; grid-template-columns: 64px 1fr 1fr; gap: 8px; align-items: center; }
 .mxbar { display: flex; align-items: center; gap: 6px; } .mxbar i { display: block; height: 12px; border-radius: 0 4px 4px 0; } .mxbar b { font-size: 12px; }
 .mxbar i.f, .mxkey.f { background: var(--s1); } .mxbar i.a, .mxkey.a { background: var(--s2); } .mxkey { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }

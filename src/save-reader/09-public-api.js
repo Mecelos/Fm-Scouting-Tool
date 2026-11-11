@@ -87,6 +87,7 @@
     } catch (e) { statsError = e.message; }
     progress("Reading matches", 0.9);
     try { T.matches = await readMatches(src, idx, clubs, managed[0] ? managed[0].uid : null); } catch (e) { T.matches = null; }
+    try { T.upcoming = await readUpcoming(src, idx, clubs, managed[0] ? managed[0].uid : null, clock.date.iso); } catch (e) { T.upcoming = null; }
     let historyError = null;
     progress("Reading past seasons", 0.92);
     try { T.hist = await readHistory(src, idx, T, clubs, fm27); } catch (e) { T.hist = null; historyError = e.message; }

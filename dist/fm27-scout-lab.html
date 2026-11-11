@@ -580,6 +580,7 @@ button.fit { background: none; font: inherit; font-size: 12.5px; cursor: pointer
 .mxscore { display: flex; align-items: center; gap: 10px; margin: 6px 0 10px; } .mxscore .mxres { width: 30px; height: 30px; font-size: 15px; } .mxsc { font-size: 20px; }
 .mxgoals { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 8px; } .mxgoals p { margin: 2px 0; }
 .mxtip { background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; font-size: 13.5px; margin-top: 8px; }
+.mxnote { background: var(--panel2); border-left: 3px solid var(--line); border-radius: 6px; padding: 6px 10px; margin: 6px 0; }
 .mxtime { display: grid; gap: 4px; margin: 6px 0 10px; } .mxtr, .mxtl { display: grid; grid-template-columns: 64px 1fr 1fr; gap: 8px; align-items: center; }
 .mxbar { display: flex; align-items: center; gap: 6px; } .mxbar i { display: block; height: 12px; border-radius: 0 4px 4px 0; } .mxbar b { font-size: 12px; }
 .mxbar i.f, .mxkey.f { background: var(--s1); } .mxbar i.a, .mxkey.a { background: var(--s2); } .mxkey { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
@@ -1530,6 +1531,34 @@ button[disabled] { opacity: .6; cursor: progress; }
     return { n: mid.length, comps, id: Uint32Array.from(mid), comp: Uint16Array.from(comp), home: Uint32Array.from(home), away: Uint32Array.from(away), full: Uint8Array.from(full),
       hg: Uint8Array.from(hg), ag: Uint8Array.from(ag), ev: E, mine, v: 2 };
   }
+  // your upcoming games, from the inbox (news). The save keeps no readable fixture list, but match previews and opposition
+  // reports name the game: "<u16 date: day of year in the low 9 bits, counted from 1> <u16 year> ... <your team u32> 00 <opponent u32>".
+  // Returns every such game on or after the save date, earliest first: [{ date: "YYYY-MM-DD", team, club }].
+  async function readUpcoming(src, idx, clubs, myUid, today) {
+    if (!idx.sections.news || myUid == null || !today) return null;
+    const d = await readSection(src, idx, "news");
+    const Y = +today.slice(0, 4), clubIx = new Map(clubs.clubs.map((c, k) => [c.uid, k]));
+    const mine = []; clubs.teamToClub.forEach((tc, t) => { if (tc.uid === myUid && tc.slot === 0) mine.push(t); });
+    const isTeam = t => clubs.teamToClub.has(t) || clubs.fielded.has(t), found = new Map();
+    for (const me of mine) {
+      const pat = new Uint8Array([me & 255, (me >> 8) & 255, (me >> 16) & 255, me >>> 24]);
+      for (let o = find(d, pat, 45, d.length); o >= 0; o = find(d, pat, o + 1, d.length)) {
+        for (const at of [o + 5, o - 5]) {
+          if (at + 4 > d.length || d[at > o ? o + 4 : o - 1] !== 0) continue;
+          const t = u32(d, at); if (t === me || mine.includes(t) || !isTeam(t)) continue;
+          let iso = null;
+          for (let k = Math.min(o, at) - 4; k >= o - 40 && !iso; k--) {
+            const y = u16(d, k + 2), day = u16(d, k) & 0x1ff;
+            if ((y === Y || y === Y + 1) && day >= 1 && day <= 366) iso = new Date(Date.UTC(y, 0, day)).toISOString().slice(0, 10);
+          }
+          if (!iso || iso < today) continue;
+          const tc = clubs.teamToClub.get(t), key = iso + "|" + t;
+          if (!found.has(key)) found.set(key, { date: iso, team: t, club: tc && clubIx.has(tc.uid) ? clubIx.get(tc.uid) : -1 });
+        }
+      }
+    }
+    return [...found.values()].sort((a, b) => a.date.localeCompare(b.date));
+  }
   // first team of a club (not its U23/U21/U19/U18 side, not a B/II team it fields); teams we can't place count as first teams
   function seniorTeam(clubs, t) {
     if (t == null || t === MISSING) return true;
@@ -2096,6 +2125,7 @@ button[disabled] { opacity: .6; cursor: progress; }
     } catch (e) { statsError = e.message; }
     progress("Reading matches", 0.9);
     try { T.matches = await readMatches(src, idx, clubs, managed[0] ? managed[0].uid : null); } catch (e) { T.matches = null; }
+    try { T.upcoming = await readUpcoming(src, idx, clubs, managed[0] ? managed[0].uid : null, clock.date.iso); } catch (e) { T.upcoming = null; }
     let historyError = null;
     progress("Reading past seasons", 0.92);
     try { T.hist = await readHistory(src, idx, T, clubs, fm27); } catch (e) { T.hist = null; historyError = e.message; }
@@ -5054,6 +5084,34 @@ Yth;John Taylor;4;1;6;8;1;9;4;2;8;4;11;1;5;8;2;13;5;5;8;2;6;6;9;11;2;5;4;5;14;10
     return { n: mid.length, comps, id: Uint32Array.from(mid), comp: Uint16Array.from(comp), home: Uint32Array.from(home), away: Uint32Array.from(away), full: Uint8Array.from(full),
       hg: Uint8Array.from(hg), ag: Uint8Array.from(ag), ev: E, mine, v: 2 };
   }
+  // your upcoming games, from the inbox (news). The save keeps no readable fixture list, but match previews and opposition
+  // reports name the game: "<u16 date: day of year in the low 9 bits, counted from 1> <u16 year> ... <your team u32> 00 <opponent u32>".
+  // Returns every such game on or after the save date, earliest first: [{ date: "YYYY-MM-DD", team, club }].
+  async function readUpcoming(src, idx, clubs, myUid, today) {
+    if (!idx.sections.news || myUid == null || !today) return null;
+    const d = await readSection(src, idx, "news");
+    const Y = +today.slice(0, 4), clubIx = new Map(clubs.clubs.map((c, k) => [c.uid, k]));
+    const mine = []; clubs.teamToClub.forEach((tc, t) => { if (tc.uid === myUid && tc.slot === 0) mine.push(t); });
+    const isTeam = t => clubs.teamToClub.has(t) || clubs.fielded.has(t), found = new Map();
+    for (const me of mine) {
+      const pat = new Uint8Array([me & 255, (me >> 8) & 255, (me >> 16) & 255, me >>> 24]);
+      for (let o = find(d, pat, 45, d.length); o >= 0; o = find(d, pat, o + 1, d.length)) {
+        for (const at of [o + 5, o - 5]) {
+          if (at + 4 > d.length || d[at > o ? o + 4 : o - 1] !== 0) continue;
+          const t = u32(d, at); if (t === me || mine.includes(t) || !isTeam(t)) continue;
+          let iso = null;
+          for (let k = Math.min(o, at) - 4; k >= o - 40 && !iso; k--) {
+            const y = u16(d, k + 2), day = u16(d, k) & 0x1ff;
+            if ((y === Y || y === Y + 1) && day >= 1 && day <= 366) iso = new Date(Date.UTC(y, 0, day)).toISOString().slice(0, 10);
+          }
+          if (!iso || iso < today) continue;
+          const tc = clubs.teamToClub.get(t), key = iso + "|" + t;
+          if (!found.has(key)) found.set(key, { date: iso, team: t, club: tc && clubIx.has(tc.uid) ? clubIx.get(tc.uid) : -1 });
+        }
+      }
+    }
+    return [...found.values()].sort((a, b) => a.date.localeCompare(b.date));
+  }
   // first team of a club (not its U23/U21/U19/U18 side, not a B/II team it fields); teams we can't place count as first teams
   function seniorTeam(clubs, t) {
     if (t == null || t === MISSING) return true;
@@ -5620,6 +5678,7 @@ Yth;John Taylor;4;1;6;8;1;9;4;2;8;4;11;1;5;8;2;13;5;5;8;2;6;6;9;11;2;5;4;5;14;10
     } catch (e) { statsError = e.message; }
     progress("Reading matches", 0.9);
     try { T.matches = await readMatches(src, idx, clubs, managed[0] ? managed[0].uid : null); } catch (e) { T.matches = null; }
+    try { T.upcoming = await readUpcoming(src, idx, clubs, managed[0] ? managed[0].uid : null, clock.date.iso); } catch (e) { T.upcoming = null; }
     let historyError = null;
     progress("Reading past seasons", 0.92);
     try { T.hist = await readHistory(src, idx, T, clubs, fm27); } catch (e) { T.hist = null; historyError = e.message; }
@@ -13032,14 +13091,47 @@ function mxOppTips(D, i, t) { // what to try against them, from where they rank
   add(t && t.f.reduce((s, x) => s + x, 0) >= 6 && t.f[5] / t.f.reduce((s, x) => s + x, 0) >= 0.3, "Don't sit back late: fresh legs and keep your shape after 75'", `${Math.round(100 * t.f[5] / t.f.reduce((s, x) => s + x, 0))}% of their goals come after 75'`);
   return out;
 }
+// your next game: the earliest upcoming game the save's inbox names (match previews, opposition reports), any competition
+function mxNextGame() { return (SAVE.upcoming || []).find(x => x.date >= SAVE.meta.gameDate) || null; }
+const mxDay = iso => new Date(iso + "T12:00:00Z").toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
+const mxClubName = (B, t, club) => B.byTeam.has(t) ? mxName(B, t) : club >= 0 ? (SAVE.clubShort && SAVE.clubShort[club]) || SAVE.clubs[club] : "Team " + t;
+function mxOppData(B, t) { // league data, plus this team if it isn't in your league: its own numbers ranked against your league's teams
+  const D = B.D; let i = D.teams.findIndex(x => x.t === t); if (i >= 0) return { D, i, outside: false };
+  const TM = SAVE.teams, k = B.byTeam.get(t), arr = TM && TM[D.kind], gar = TM && TM[D.kind + "Gk"]; if (k == null || !arr) return null;
+  const F = TM.fields, G = TM.gkFields, v = f => { const q = F.indexOf(f); return q < 0 ? NaN : arr[k * F.length + q]; }, kk = f => { const q = G.indexOf(f); return q < 0 ? NaN : gar[k * G.length + q]; };
+  const c = TM.club[k], T = { t, ix: k, club: c, name: SAVE.clubs[c], short: (SAVE.clubShort && SAVE.clubShort[c]) || SAVE.clubs[c], g: Math.round(v("starts") / 11), v, k: kk, r: NaN, mine: false };
+  const val = {}, rank = {}, pct = {};
+  Object.entries(HUB_M).forEach(([m, [, fn, hi]]) => { const x = T.g ? fn(T) : NaN, L = D.val[m].filter(y => y === y), ok = x === x && L.length >= 2;
+    val[m] = D.val[m].concat([x]); rank[m] = D.rank[m].concat([ok ? L.filter(y => hi ? y > x : y < x).length + 1 : null]);
+    pct[m] = D.pct[m].concat([ok ? 100 * L.filter(y => hi ? y < x : y > x).length / L.length : null]); });
+  return { D: Object.assign({}, D, { teams: D.teams.concat([T]), val, rank, pct, n: D.n + 1 }), i: D.teams.length, outside: true };
+}
+function mxOppOptions(B, lt, next) { // your league, then every other competition you've played in this season, then upcoming teams
+  const D = B.D, M = B.M, pos = t => lt.findIndex(x => x.t === t), seen = new Set([B.me]), groups = [];
+  const lg = D.teams.map(x => x.t).filter(t => t !== B.me).sort((a, b) => pos(a) - pos(b)); lg.forEach(t => seen.add(t)); groups.push([D.comp ? D.comp.name : "Your league", lg]);
+  [...new Set(B.comp.map(x => x.comp))].filter(c => !D.comp || c !== D.comp.name).forEach(c => {
+    const ci = M.comps.indexOf(c), ts = new Set(); for (let r = 0; r < M.n; r++) if (M.comp[r] === ci) [M.home[r], M.away[r]].forEach(t => { if (!seen.has(t) && B.byTeam.has(t)) ts.add(t); });
+    const list = [...ts].sort((a, b) => mxName(B, a).localeCompare(mxName(B, b))); list.forEach(t => seen.add(t)); if (list.length) groups.push([c, list]); });
+  const up = (SAVE.upcoming || []).filter(x => !seen.has(x.team) && B.byTeam.has(x.team)).map(x => x.team); if (up.length) groups.push(["Upcoming", [...new Set(up)]]);
+  return groups;
+}
 function mxOpp(B) {
-  const D = B.D, f = hubF(), lt = D.comp ? mxTable(B, D.comp.c) : [];
-  const peers = D.teams.map((t, i) => ({ t: t.t, i })).filter(x => x.t !== B.me);
-  if (!peers.length) return `<section class="panel"><p class="muted">No league opponents found in this save.</p></section>`;
+  const D0 = B.D, f = hubF(), lt = D0.comp ? mxTable(B, D0.comp.c) : [];
   const met = new Map(); B.comp.forEach(x => met.set(x.opp, (met.get(x.opp) || 0) + 1));
-  const pos = t => lt.findIndex(x => x.t === t);
-  const guess = peers.slice().sort((a, b) => (met.get(a.t) || 0) - (met.get(b.t) || 0) || pos(a.t) - pos(b.t))[0];
-  const cur = peers.find(x => x.t === +f.mxOpp) || guess, i = cur.i, T = D.teams[i], name = mxName(B, cur.t);
+  const pos = t => lt.findIndex(x => x.t === t), next = mxNextGame(), nextKey = next ? next.date + "|" + next.team : "none";
+  if (f.mxOppNext !== nextKey) { f.mxOppNext = nextKey; f.mxOpp = ""; }   // a new next game: show it, not an old pick
+  if (next && !B.byTeam.has(next.team)) {   // next game is against a team the save has no numbers for
+    if (!f.mxOpp) return `<section class="panel"><div class="ph"><h3>Next opponent</h3></div><p>Your next game: <b>${esc(mxClubName(B, next.team, next.club))}</b>, ${esc(mxDay(next.date))}.</p>
+      <p class="small muted">Little data: your save has no stats for ${esc(mxClubName(B, next.team, next.club))} (FM only records full stats for leagues that are loaded in your game), so there's no report on them. Pick a team to scout instead:</p>
+      <select class="hubin" data-f="mxOpp"><option value="">Choose a team</option>${mxOppOptions(B, lt, next).map(([g, ts]) => `<optgroup label="${esc(g)}">${ts.map(t => `<option value="${t}">${esc(mxName(B, t))}</option>`).join("")}</optgroup>`).join("")}</select></section>`;
+  }
+  const groups = mxOppOptions(B, lt, next), all = groups.flatMap(g => g[1]);
+  if (!all.length) return `<section class="panel"><p class="muted">No opponents found in this save.</p></section>`;
+  const guess = D0.teams.filter(x => x.t !== B.me).sort((a, b) => (met.get(a.t) || 0) - (met.get(b.t) || 0) || pos(a.t) - pos(b.t))[0];
+  const pick = all.includes(+f.mxOpp) ? +f.mxOpp : next && all.includes(next.team) ? next.team : guess ? guess.t : all[0];
+  const od = mxOppData(B, pick); if (!od) return `<section class="panel"><p class="muted">No numbers for ${esc(mxName(B, pick))} in this save.</p></section>`;
+  const D = od.D, i = od.i, T = D.teams[i], cur = { t: pick, i }, name = mxName(B, cur.t), isNext = next && next.team === cur.t;
+  const thin = T.g < 3;
   const row = lt[pos(cur.t)], tm = mxTiming(B, cur.t, true), tw = mxTimingWords(tm, "They");
   const M = B.M, last = B.order.filter(r => (M.home[r] === cur.t || M.away[r] === cur.t) && M.hg[r] !== 255 && !mxFriendly(M.comps[M.comp[r]])).slice(-5).map(r => { const h = M.home[r] === cur.t, a = h ? M.hg[r] : M.ag[r], b = h ? M.ag[r] : M.hg[r]; return { res: a > b ? "W" : a < b ? "L" : "D", s: `${a}–${b}`, o: mxName(B, h ? M.away[r] : M.home[r]), h }; });
   const ms = MX_OPP_M.filter(m => HUB_M[m] && D.pct[m][i] != null), STY = ["crs", "pas", "spr", "fouls", "drb"];
@@ -13051,9 +13143,15 @@ function mxOpp(B) {
     if (c("minutes") < 270) continue; danger.push({ p, ga: c("goals") + c("assists"), g: c("goals"), a: c("assists"), xg: c("expected_goals"), r: st.cols.average_rating ? st.cols.average_rating[st.row[p]] : NaN, min: c("minutes") }); }
   danger.sort((a, b) => b.ga - a.ga || b.xg - a.xg);
   const tips = mxOppTips(D, i, tm);
-  return `<section class="panel"><div class="ph"><h3>Next opponent</h3><select class="hubin" data-f="mxOpp">${peers.slice().sort((a, b) => pos(a.t) - pos(b.t)).map(x => `<option value="${x.t}" ${x.t === cur.t ? "selected" : ""}>${esc(mxName(B, x.t))}</option>`).join("")}</select></div>
-    <p class="small muted">Pick who you play next (Scout Lab can't read your fixture list yet).</p>
-    <section class="tiles">${[["Form rank", row ? `${pos(cur.t) + 1}<small> of ${lt.length}</small>` : "–"], [`Points, last ${lt.n || "–"}`, row ? `${row.pts}<small> of ${row.p * 3}</small>` : "–"], ["League goals (season)", `${Math.round(T.v("goals"))} – ${Math.round(T.k("goals_allowed"))}<small> in ${T.g}</small>`], ["Last 5", last.map(mxBadge).join("") || "–"], ["Played them", `${met.get(cur.t) || 0}×`]].map(([l, v]) => `<div class="tile"><span class="tv">${v}</span><span class="tl">${esc(l)}</span></div>`).join("")}</section>
+  const lg = D0.comp ? D0.comp.name : "your league";
+  const intro = isNext ? `Your next game, from your inbox: <b>${esc(name)}</b>, ${esc(mxDay(next.date))}. Pick another team to scout anyone else.`
+    : next ? `Your next game is <b>${esc(mxClubName(B, next.team, next.club))}</b> (${esc(mxDay(next.date))}). <button class="linkbtn" data-mxact="next">Show it</button>`
+    : SAVE.upcoming ? "Your next game wasn't found in this save's inbox: pick who you play next." : "Load your save again and Scout Lab finds your next game by itself. Until then, pick who you play next.";
+  return `<section class="panel"><div class="ph"><h3>Next opponent</h3><select class="hubin" data-f="mxOpp">${groups.map(([g, ts]) => `<optgroup label="${esc(g)}">${ts.map(t => `<option value="${t}" ${t === cur.t ? "selected" : ""}>${esc(mxName(B, t))}${next && next.team === t ? ` · next game, ${esc(mxDay(next.date))}` : ""}</option>`).join("")}</optgroup>`).join("")}</select></div>
+    <p class="small muted">${intro}</p>
+    ${od.outside ? `<p class="small mxnote">${esc(name)} aren't in ${esc(lg)}. Their numbers come from their own league and are ranked here against ${esc(lg)}'s teams. Against weaker opposition a team's numbers look better than they are, so treat "strong" as a warning and "weak" as a real weakness.</p>` : ""}
+    ${thin ? `<p class="small mxnote bad">Little data: your save has only ${T.g} game${T.g === 1 ? "" : "s"} of stats for ${esc(name)}${T.g ? "" : " (FM only records full stats for leagues that are loaded in your game)"}. Read the numbers below as a rough guide, not a verdict.</p>` : ""}
+    <section class="tiles">${[["Form rank", od.outside ? "<small>not in your league</small>" : row ? `${pos(cur.t) + 1}<small> of ${lt.length}</small>` : "–"], [`Points, last ${lt.n || "–"}`, row ? `${row.pts}<small> of ${row.p * 3}</small>` : "–"], [od.outside ? "Goals in their league" : "League goals (season)", `${Math.round(T.v("goals"))} – ${Math.round(T.k("goals_allowed"))}<small> in ${T.g}</small>`], ["Last 5", last.map(mxBadge).join("") || "–"], ["Played them", `${met.get(cur.t) || 0}×`]].map(([l, v]) => `<div class="tile"><span class="tv">${v}</span><span class="tl">${esc(l)}</span></div>`).join("")}</section>
     ${last.length ? `<p class="small muted">${last.map(x => `${x.res} ${x.s} ${x.h ? "v" : "at"} ${esc(x.o)}`).join(" · ")}</p>` : ""}
     <div class="homesw"><div><h4 class="okc">Where they're strong</h4>${strong.length ? `<ul>${strong.map(met_).join("")}</ul>` : `<p class="small muted">Nothing stands out.</p>`}</div><div><h4 class="bad">Where they're weak</h4>${weak.length ? `<ul>${weak.map(met_).join("")}</ul>` : `<p class="small muted">No clear weakness.</p>`}</div></div></section>
     <section class="panel"><div class="ph"><h3>What to try against ${esc(name)}</h3><span class="small muted">from their numbers, not a guarantee</span></div>
@@ -13118,6 +13216,7 @@ const mxTabsHtml = () => { const t = MX_TABS.some(x => x[0] === S.mxTab) ? S.mxT
 document.addEventListener("click", e => {
   const t = e.target.closest("[data-mxtab], [data-mxact], [data-tlogrm]"); if (!t) return;
   if (t.dataset.mxtab) { S.guide = false; S.dataPage = false; S.mode = "matches"; S.mxTab = t.dataset.mxtab; S.sel = null; S.adCtx = null; render(); window.scrollTo(0, 0); return; }
+  if (t.dataset.mxact === "next") { hubF().mxOpp = ""; render(); return; }
   if (t.dataset.mxact === "tlog") { const B = mxBase(); if (!B) return; const inp = document.getElementById("tlogNote"), m = SAVE.meta.managed && SAVE.meta.managed[0];
     const l = tlogAll().filter(x => !(x.club === (m ? m.club : "") && x.n === B.comp.length)); l.push({ id: "t" + Date.now(), club: m ? m.club : "", gameDate: SAVE.meta.gameDate, n: B.comp.length, note: (inp && inp.value.trim()) || "Tactic change" }); tlogSave(l);
     tsnapTake().catch(() => { }).then(() => render()); return; }

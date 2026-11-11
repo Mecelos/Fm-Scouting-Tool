@@ -155,14 +155,47 @@ function mxOppTips(D, i, t) { // what to try against them, from where they rank
   add(t && t.f.reduce((s, x) => s + x, 0) >= 6 && t.f[5] / t.f.reduce((s, x) => s + x, 0) >= 0.3, "Don't sit back late: fresh legs and keep your shape after 75'", `${Math.round(100 * t.f[5] / t.f.reduce((s, x) => s + x, 0))}% of their goals come after 75'`);
   return out;
 }
+// your next game: the earliest upcoming game the save's inbox names (match previews, opposition reports), any competition
+function mxNextGame() { return (SAVE.upcoming || []).find(x => x.date >= SAVE.meta.gameDate) || null; }
+const mxDay = iso => new Date(iso + "T12:00:00Z").toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
+const mxClubName = (B, t, club) => B.byTeam.has(t) ? mxName(B, t) : club >= 0 ? (SAVE.clubShort && SAVE.clubShort[club]) || SAVE.clubs[club] : "Team " + t;
+function mxOppData(B, t) { // league data, plus this team if it isn't in your league: its own numbers ranked against your league's teams
+  const D = B.D; let i = D.teams.findIndex(x => x.t === t); if (i >= 0) return { D, i, outside: false };
+  const TM = SAVE.teams, k = B.byTeam.get(t), arr = TM && TM[D.kind], gar = TM && TM[D.kind + "Gk"]; if (k == null || !arr) return null;
+  const F = TM.fields, G = TM.gkFields, v = f => { const q = F.indexOf(f); return q < 0 ? NaN : arr[k * F.length + q]; }, kk = f => { const q = G.indexOf(f); return q < 0 ? NaN : gar[k * G.length + q]; };
+  const c = TM.club[k], T = { t, ix: k, club: c, name: SAVE.clubs[c], short: (SAVE.clubShort && SAVE.clubShort[c]) || SAVE.clubs[c], g: Math.round(v("starts") / 11), v, k: kk, r: NaN, mine: false };
+  const val = {}, rank = {}, pct = {};
+  Object.entries(HUB_M).forEach(([m, [, fn, hi]]) => { const x = T.g ? fn(T) : NaN, L = D.val[m].filter(y => y === y), ok = x === x && L.length >= 2;
+    val[m] = D.val[m].concat([x]); rank[m] = D.rank[m].concat([ok ? L.filter(y => hi ? y > x : y < x).length + 1 : null]);
+    pct[m] = D.pct[m].concat([ok ? 100 * L.filter(y => hi ? y < x : y > x).length / L.length : null]); });
+  return { D: Object.assign({}, D, { teams: D.teams.concat([T]), val, rank, pct, n: D.n + 1 }), i: D.teams.length, outside: true };
+}
+function mxOppOptions(B, lt, next) { // your league, then every other competition you've played in this season, then upcoming teams
+  const D = B.D, M = B.M, pos = t => lt.findIndex(x => x.t === t), seen = new Set([B.me]), groups = [];
+  const lg = D.teams.map(x => x.t).filter(t => t !== B.me).sort((a, b) => pos(a) - pos(b)); lg.forEach(t => seen.add(t)); groups.push([D.comp ? D.comp.name : "Your league", lg]);
+  [...new Set(B.comp.map(x => x.comp))].filter(c => !D.comp || c !== D.comp.name).forEach(c => {
+    const ci = M.comps.indexOf(c), ts = new Set(); for (let r = 0; r < M.n; r++) if (M.comp[r] === ci) [M.home[r], M.away[r]].forEach(t => { if (!seen.has(t) && B.byTeam.has(t)) ts.add(t); });
+    const list = [...ts].sort((a, b) => mxName(B, a).localeCompare(mxName(B, b))); list.forEach(t => seen.add(t)); if (list.length) groups.push([c, list]); });
+  const up = (SAVE.upcoming || []).filter(x => !seen.has(x.team) && B.byTeam.has(x.team)).map(x => x.team); if (up.length) groups.push(["Upcoming", [...new Set(up)]]);
+  return groups;
+}
 function mxOpp(B) {
-  const D = B.D, f = hubF(), lt = D.comp ? mxTable(B, D.comp.c) : [];
-  const peers = D.teams.map((t, i) => ({ t: t.t, i })).filter(x => x.t !== B.me);
-  if (!peers.length) return `<section class="panel"><p class="muted">No league opponents found in this save.</p></section>`;
+  const D0 = B.D, f = hubF(), lt = D0.comp ? mxTable(B, D0.comp.c) : [];
   const met = new Map(); B.comp.forEach(x => met.set(x.opp, (met.get(x.opp) || 0) + 1));
-  const pos = t => lt.findIndex(x => x.t === t);
-  const guess = peers.slice().sort((a, b) => (met.get(a.t) || 0) - (met.get(b.t) || 0) || pos(a.t) - pos(b.t))[0];
-  const cur = peers.find(x => x.t === +f.mxOpp) || guess, i = cur.i, T = D.teams[i], name = mxName(B, cur.t);
+  const pos = t => lt.findIndex(x => x.t === t), next = mxNextGame(), nextKey = next ? next.date + "|" + next.team : "none";
+  if (f.mxOppNext !== nextKey) { f.mxOppNext = nextKey; f.mxOpp = ""; }   // a new next game: show it, not an old pick
+  if (next && !B.byTeam.has(next.team)) {   // next game is against a team the save has no numbers for
+    if (!f.mxOpp) return `<section class="panel"><div class="ph"><h3>Next opponent</h3></div><p>Your next game: <b>${esc(mxClubName(B, next.team, next.club))}</b>, ${esc(mxDay(next.date))}.</p>
+      <p class="small muted">Little data: your save has no stats for ${esc(mxClubName(B, next.team, next.club))} (FM only records full stats for leagues that are loaded in your game), so there's no report on them. Pick a team to scout instead:</p>
+      <select class="hubin" data-f="mxOpp"><option value="">Choose a team</option>${mxOppOptions(B, lt, next).map(([g, ts]) => `<optgroup label="${esc(g)}">${ts.map(t => `<option value="${t}">${esc(mxName(B, t))}</option>`).join("")}</optgroup>`).join("")}</select></section>`;
+  }
+  const groups = mxOppOptions(B, lt, next), all = groups.flatMap(g => g[1]);
+  if (!all.length) return `<section class="panel"><p class="muted">No opponents found in this save.</p></section>`;
+  const guess = D0.teams.filter(x => x.t !== B.me).sort((a, b) => (met.get(a.t) || 0) - (met.get(b.t) || 0) || pos(a.t) - pos(b.t))[0];
+  const pick = all.includes(+f.mxOpp) ? +f.mxOpp : next && all.includes(next.team) ? next.team : guess ? guess.t : all[0];
+  const od = mxOppData(B, pick); if (!od) return `<section class="panel"><p class="muted">No numbers for ${esc(mxName(B, pick))} in this save.</p></section>`;
+  const D = od.D, i = od.i, T = D.teams[i], cur = { t: pick, i }, name = mxName(B, cur.t), isNext = next && next.team === cur.t;
+  const thin = T.g < 3;
   const row = lt[pos(cur.t)], tm = mxTiming(B, cur.t, true), tw = mxTimingWords(tm, "They");
   const M = B.M, last = B.order.filter(r => (M.home[r] === cur.t || M.away[r] === cur.t) && M.hg[r] !== 255 && !mxFriendly(M.comps[M.comp[r]])).slice(-5).map(r => { const h = M.home[r] === cur.t, a = h ? M.hg[r] : M.ag[r], b = h ? M.ag[r] : M.hg[r]; return { res: a > b ? "W" : a < b ? "L" : "D", s: `${a}–${b}`, o: mxName(B, h ? M.away[r] : M.home[r]), h }; });
   const ms = MX_OPP_M.filter(m => HUB_M[m] && D.pct[m][i] != null), STY = ["crs", "pas", "spr", "fouls", "drb"];
@@ -174,9 +207,15 @@ function mxOpp(B) {
     if (c("minutes") < 270) continue; danger.push({ p, ga: c("goals") + c("assists"), g: c("goals"), a: c("assists"), xg: c("expected_goals"), r: st.cols.average_rating ? st.cols.average_rating[st.row[p]] : NaN, min: c("minutes") }); }
   danger.sort((a, b) => b.ga - a.ga || b.xg - a.xg);
   const tips = mxOppTips(D, i, tm);
-  return `<section class="panel"><div class="ph"><h3>Next opponent</h3><select class="hubin" data-f="mxOpp">${peers.slice().sort((a, b) => pos(a.t) - pos(b.t)).map(x => `<option value="${x.t}" ${x.t === cur.t ? "selected" : ""}>${esc(mxName(B, x.t))}</option>`).join("")}</select></div>
-    <p class="small muted">Pick who you play next (Scout Lab can't read your fixture list yet).</p>
-    <section class="tiles">${[["Form rank", row ? `${pos(cur.t) + 1}<small> of ${lt.length}</small>` : "–"], [`Points, last ${lt.n || "–"}`, row ? `${row.pts}<small> of ${row.p * 3}</small>` : "–"], ["League goals (season)", `${Math.round(T.v("goals"))} – ${Math.round(T.k("goals_allowed"))}<small> in ${T.g}</small>`], ["Last 5", last.map(mxBadge).join("") || "–"], ["Played them", `${met.get(cur.t) || 0}×`]].map(([l, v]) => `<div class="tile"><span class="tv">${v}</span><span class="tl">${esc(l)}</span></div>`).join("")}</section>
+  const lg = D0.comp ? D0.comp.name : "your league";
+  const intro = isNext ? `Your next game, from your inbox: <b>${esc(name)}</b>, ${esc(mxDay(next.date))}. Pick another team to scout anyone else.`
+    : next ? `Your next game is <b>${esc(mxClubName(B, next.team, next.club))}</b> (${esc(mxDay(next.date))}). <button class="linkbtn" data-mxact="next">Show it</button>`
+    : SAVE.upcoming ? "Your next game wasn't found in this save's inbox: pick who you play next." : "Load your save again and Scout Lab finds your next game by itself. Until then, pick who you play next.";
+  return `<section class="panel"><div class="ph"><h3>Next opponent</h3><select class="hubin" data-f="mxOpp">${groups.map(([g, ts]) => `<optgroup label="${esc(g)}">${ts.map(t => `<option value="${t}" ${t === cur.t ? "selected" : ""}>${esc(mxName(B, t))}${next && next.team === t ? ` · next game, ${esc(mxDay(next.date))}` : ""}</option>`).join("")}</optgroup>`).join("")}</select></div>
+    <p class="small muted">${intro}</p>
+    ${od.outside ? `<p class="small mxnote">${esc(name)} aren't in ${esc(lg)}. Their numbers come from their own league and are ranked here against ${esc(lg)}'s teams. Against weaker opposition a team's numbers look better than they are, so treat "strong" as a warning and "weak" as a real weakness.</p>` : ""}
+    ${thin ? `<p class="small mxnote bad">Little data: your save has only ${T.g} game${T.g === 1 ? "" : "s"} of stats for ${esc(name)}${T.g ? "" : " (FM only records full stats for leagues that are loaded in your game)"}. Read the numbers below as a rough guide, not a verdict.</p>` : ""}
+    <section class="tiles">${[["Form rank", od.outside ? "<small>not in your league</small>" : row ? `${pos(cur.t) + 1}<small> of ${lt.length}</small>` : "–"], [`Points, last ${lt.n || "–"}`, row ? `${row.pts}<small> of ${row.p * 3}</small>` : "–"], [od.outside ? "Goals in their league" : "League goals (season)", `${Math.round(T.v("goals"))} – ${Math.round(T.k("goals_allowed"))}<small> in ${T.g}</small>`], ["Last 5", last.map(mxBadge).join("") || "–"], ["Played them", `${met.get(cur.t) || 0}×`]].map(([l, v]) => `<div class="tile"><span class="tv">${v}</span><span class="tl">${esc(l)}</span></div>`).join("")}</section>
     ${last.length ? `<p class="small muted">${last.map(x => `${x.res} ${x.s} ${x.h ? "v" : "at"} ${esc(x.o)}`).join(" · ")}</p>` : ""}
     <div class="homesw"><div><h4 class="okc">Where they're strong</h4>${strong.length ? `<ul>${strong.map(met_).join("")}</ul>` : `<p class="small muted">Nothing stands out.</p>`}</div><div><h4 class="bad">Where they're weak</h4>${weak.length ? `<ul>${weak.map(met_).join("")}</ul>` : `<p class="small muted">No clear weakness.</p>`}</div></div></section>
     <section class="panel"><div class="ph"><h3>What to try against ${esc(name)}</h3><span class="small muted">from their numbers, not a guarantee</span></div>
@@ -241,6 +280,7 @@ const mxTabsHtml = () => { const t = MX_TABS.some(x => x[0] === S.mxTab) ? S.mxT
 document.addEventListener("click", e => {
   const t = e.target.closest("[data-mxtab], [data-mxact], [data-tlogrm]"); if (!t) return;
   if (t.dataset.mxtab) { S.guide = false; S.dataPage = false; S.mode = "matches"; S.mxTab = t.dataset.mxtab; S.sel = null; S.adCtx = null; render(); window.scrollTo(0, 0); return; }
+  if (t.dataset.mxact === "next") { hubF().mxOpp = ""; render(); return; }
   if (t.dataset.mxact === "tlog") { const B = mxBase(); if (!B) return; const inp = document.getElementById("tlogNote"), m = SAVE.meta.managed && SAVE.meta.managed[0];
     const l = tlogAll().filter(x => !(x.club === (m ? m.club : "") && x.n === B.comp.length)); l.push({ id: "t" + Date.now(), club: m ? m.club : "", gameDate: SAVE.meta.gameDate, n: B.comp.length, note: (inp && inp.value.trim()) || "Tactic change" }); tlogSave(l);
     tsnapTake().catch(() => { }).then(() => render()); return; }

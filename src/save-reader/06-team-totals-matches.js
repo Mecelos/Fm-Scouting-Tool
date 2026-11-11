@@ -96,6 +96,34 @@
     return { n: mid.length, comps, id: Uint32Array.from(mid), comp: Uint16Array.from(comp), home: Uint32Array.from(home), away: Uint32Array.from(away), full: Uint8Array.from(full),
       hg: Uint8Array.from(hg), ag: Uint8Array.from(ag), ev: E, mine, v: 2 };
   }
+  // your upcoming games, from the inbox (news). The save keeps no readable fixture list, but match previews and opposition
+  // reports name the game: "<u16 date: day of year in the low 9 bits, counted from 1> <u16 year> ... <your team u32> 00 <opponent u32>".
+  // Returns every such game on or after the save date, earliest first: [{ date: "YYYY-MM-DD", team, club }].
+  async function readUpcoming(src, idx, clubs, myUid, today) {
+    if (!idx.sections.news || myUid == null || !today) return null;
+    const d = await readSection(src, idx, "news");
+    const Y = +today.slice(0, 4), clubIx = new Map(clubs.clubs.map((c, k) => [c.uid, k]));
+    const mine = []; clubs.teamToClub.forEach((tc, t) => { if (tc.uid === myUid && tc.slot === 0) mine.push(t); });
+    const isTeam = t => clubs.teamToClub.has(t) || clubs.fielded.has(t), found = new Map();
+    for (const me of mine) {
+      const pat = new Uint8Array([me & 255, (me >> 8) & 255, (me >> 16) & 255, me >>> 24]);
+      for (let o = find(d, pat, 45, d.length); o >= 0; o = find(d, pat, o + 1, d.length)) {
+        for (const at of [o + 5, o - 5]) {
+          if (at + 4 > d.length || d[at > o ? o + 4 : o - 1] !== 0) continue;
+          const t = u32(d, at); if (t === me || mine.includes(t) || !isTeam(t)) continue;
+          let iso = null;
+          for (let k = Math.min(o, at) - 4; k >= o - 40 && !iso; k--) {
+            const y = u16(d, k + 2), day = u16(d, k) & 0x1ff;
+            if ((y === Y || y === Y + 1) && day >= 1 && day <= 366) iso = new Date(Date.UTC(y, 0, day)).toISOString().slice(0, 10);
+          }
+          if (!iso || iso < today) continue;
+          const tc = clubs.teamToClub.get(t), key = iso + "|" + t;
+          if (!found.has(key)) found.set(key, { date: iso, team: t, club: tc && clubIx.has(tc.uid) ? clubIx.get(tc.uid) : -1 });
+        }
+      }
+    }
+    return [...found.values()].sort((a, b) => a.date.localeCompare(b.date));
+  }
   // first team of a club (not its U23/U21/U19/U18 side, not a B/II team it fields); teams we can't place count as first teams
   function seniorTeam(clubs, t) {
     if (t == null || t === MISSING) return true;
