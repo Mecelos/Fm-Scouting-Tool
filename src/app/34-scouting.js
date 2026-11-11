@@ -1,5 +1,5 @@
 // ---------- Scouting: wonderkids, transfer targets for your weak spots, contract watch, shortlist ----------
-const SC_TABS = [["kids", "Wonderkids"], ["targets", "Transfer targets"], ["contracts", "Contract watch"], ["dev", "Development"], ["short", "Shortlist"]];
+const SC_TABS = [["kids", "Wonderkids"], ["targets", "Transfer targets"], ["contracts", "Contract watch"], ["dev", "Development"], ["short", "Shortlist"], ["cmp", "Compare"]];
 const SC_NEED = { GK: 1, FB: 2, CB: 2, DM: 1, CM: 2, AM: 1, Wingers: 2, ST: 1 };
 const scF = () => (S.scF = S.scF || {});
 const scGameDate = () => new Date(((SAVE && SAVE.meta.gameDate) || "2026-08-01") + "T12:00:00Z");
@@ -222,11 +222,11 @@ function renderScout(main) {
   closeDrawer(true);
   if (!SAVE) { main.innerHTML = `<section class="panel addpanel"><h3>Scouting needs your save</h3><p class="muted">Wonderkids, transfer targets and contracts are read from your FM27 save (ability, potential, values and contracts are all in it).</p><button class="primary" data-act="datapage">Load your save</button></section>`; return; }
   const t = SC_TABS.some(x => x[0] === S.scTab) ? S.scTab : "kids";
-  main.innerHTML = t === "kids" ? scKids() : t === "targets" ? scTargets() : t === "contracts" ? scContracts() : t === "dev" ? scDev() : scShort();
+  main.innerHTML = t === "kids" ? scKids() : t === "targets" ? scTargets() : t === "contracts" ? scContracts() : t === "dev" ? scDev() : t === "cmp" ? scCompare() : scShort();
   renderSaveNote();
   if (S.sel != null && S.adCtx) inAdCtx(() => openPlayer(panelScore(), S.sel, true));
 }
-function scoutTabsHtml() { const t = SC_TABS.some(x => x[0] === S.scTab) ? S.scTab : "kids"; return SC_TABS.map(([k, l]) => `<button class="ptab" data-sctab="${k}" aria-selected="${!S.guide && !S.dataPage && k === t}">${l}${k === "short" && SL.length ? `<span class="pcount">${SL.length}</span>` : ""}</button>`).join(""); }
+function scoutTabsHtml() { const t = SC_TABS.some(x => x[0] === S.scTab) ? S.scTab : "kids"; return SC_TABS.map(([k, l]) => `<button class="ptab" data-sctab="${k}" aria-selected="${!S.guide && !S.dataPage && k === t}">${l}${k === "short" && SL.length ? `<span class="pcount">${SL.length}</span>` : ""}${k === "cmp" && SAVE && cmpList().length ? `<span class="pcount">${cmpList().length}</span>` : ""}</button>`).join(""); }
 // ---- events ----
 document.addEventListener("click", e => {
   const t = e.target.closest("[data-sctab], [data-sci], [data-star], [data-slbtn], [data-scsort], [data-act=slclear]"); if (!t) return;

@@ -44,3 +44,14 @@
 .lesson .lbody li { margin: 4px 0; }
 .glossgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
 .gloss { background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; } .gloss h5 { margin: 0 0 4px; font-size: 13px; } .gloss p { margin: 4px 0; }
+/* Scouting > Compare */
+.cmpadd { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 6px; } .cmpadd .cmpsearch { flex: 1 1 240px; max-width: 360px; } .cmpadd select { max-width: 260px; }
+.cmpscroll { overflow-x: auto; } .cmpbig { width: 100%; } .cmpbig th.num { white-space: nowrap; min-width: 120px; padding: 0 6px; text-transform: none; letter-spacing: 0; font-size: 13px; }
+.cmpbig th button { width: auto; padding: 6px 2px; } .cmpbig th .cmpx { color: var(--muted); text-decoration: none; }
+.cmpbig .cmpsub td { font-family: var(--f-display); font-weight: 600; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink2); background: var(--panel2); }
+.cmpgrid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 440px); gap: 14px; align-items: start; } .cmpradar { position: sticky; top: 96px; }
+@media (max-width: 900px) { .cmpgrid { grid-template-columns: minmax(0, 1fr); } .cmpradar { position: static; order: -1; } }
+.rpoly.k0 { fill: var(--accent); fill-opacity: .14; stroke: var(--accent); } .rpoly.k1 { fill: var(--cmp); fill-opacity: .12; stroke: var(--cmp); } .rpoly.k2 { fill: var(--mark); fill-opacity: .12; stroke: var(--mark); } .rpoly.k3 { fill: var(--a-hi); fill-opacity: .1; stroke: var(--a-hi); }
+.rdot.k0 { fill: var(--accent); } .rdot.k1 { fill: var(--cmp); } .rdot.k2 { fill: var(--mark); } .rdot.k3 { fill: var(--a-hi); }
+.lg.k0 { background: var(--accent); } .lg.k1 { background: var(--cmp); } .lg.k2 { background: var(--mark); } .lg.k3 { background: var(--a-hi); }
+.cmpbig th .lg { margin-right: 2px; vertical-align: middle; } .cmppanel { white-space: nowrap; }

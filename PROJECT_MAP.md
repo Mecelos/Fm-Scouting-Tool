@@ -24,6 +24,7 @@ Start here when a request names a tab or a part of the screen. All paths are und
 | Matches: Brief (matchday one-pager) | `app/45-matchday-brief.js` | `css/07-data-hub.css` |
 | Matches: Diagnose and opposition instructions | `app/44-diagnose.js` | `css/03-sections-tiles.css` |
 | Scouting (wonderkids, targets, contracts, shortlist) | `app/34-scouting.js` | `css/05-scouting-review-learn.css` |
+| Scouting: Compare (any players side by side) | `app/47-compare.js` | `css/05-scouting-review-learn.css` |
 | Staff | `app/30-staff.js`, staff review in `app/37-staff-review-similar.js` | `css/03-sections-tiles.css` |
 | All data | `app/26-all-data.js`, `app/27-stat-type-scores.js` | `css/09-all-data.css` |
 | Stats and Attr views: position tabs, main table, top 5, scatter | `app/18-render.js`, `app/17-charts.js` | `css/01-layout-topbar.css`, `css/02-table-scatter-drawer.css` |
@@ -47,7 +48,7 @@ How the tool looks. One file per area of the screen.
 | `src/css/02-table-scatter-drawer.css` | Main player table, scatter chart, player side panel | 89 | 7 KB |
 | `src/css/03-sections-tiles.css` | Shared building blocks: sections, tiles, tags, tiers, stacked bars, comparisons | 138 | 12 KB |
 | `src/css/04-my-squad.css` | My squad pages and suggested tactic | 97 | 9 KB |
-| `src/css/05-scouting-review-learn.css` | Scouting, wide data pages, season review, navigation groups, Learn | 46 | 5 KB |
+| `src/css/05-scouting-review-learn.css` | Scouting (incl. Compare), wide data pages, season review, navigation groups, Learn | 57 | 7 KB |
 | `src/css/06-home-player-card.css` | Home page and player card | 34 | 4 KB |
 | `src/css/07-data-hub.css` | Data Hub, and the Matches pages incl. the Brief (`mx…` classes) | 84 | 9 KB |
 | `src/css/08-planner-my-tactic.css` | Planner and My tactic | 69 | 7 KB |
@@ -84,7 +85,7 @@ Everything the tool does, one feature per file. All files share one scope, so a 
 | `src/app/31-import-events-boot.js` | File import, click/keyboard events, app start-up | 244 | 21 KB |
 | `src/app/32-my-tactic-reading.js` | My tactic: reading an FM tactic file, shape helpers, player fit | 275 | 36 KB |
 | `src/app/33-my-tactic-analysis.js` | My tactic: analysis, scores, page and events | 328 | 50 KB |
-| `src/app/34-scouting.js` | Scouting: wonderkids, transfer targets, contract watch, shortlist | 245 | 25 KB |
+| `src/app/34-scouting.js` | Scouting: wonderkids, transfer targets, contract watch, shortlist | 245 | 26 KB |
 | `src/app/35-development-planner.js` | Development snapshots and squad Planner | 129 | 17 KB |
 | `src/app/36-effectiveness-season-review.js` | Tactical effectiveness and Season review | 185 | 17 KB |
 | `src/app/37-staff-review-similar.js` | Staff review and Similar players | 194 | 77 KB |
@@ -97,6 +98,7 @@ Everything the tool does, one feature per file. All files share one scope, so a 
 | `src/app/44-diagnose.js` | Diagnose (player, role or system?) and opposition instructions | 179 | 22 KB |
 | `src/app/45-matchday-brief.js` | Matches > Brief: your next game on one narrow, printable page | 32 | 4 KB |
 | `src/app/46-search.js` | Search box (players and clubs), Help menu closing, narrow-screen page menus | 58 | 5 KB |
+| `src/app/47-compare.js` | Scouting > Compare: any players side by side (profile, attributes, radar, stats per 90), and the Compare buttons in the player panel | 105 | 14 KB |
 
 ## FM save reader (src/save-reader)
 
