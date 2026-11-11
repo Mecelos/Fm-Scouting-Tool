@@ -90,7 +90,7 @@ Everything the tool does, one feature per file. All files share one scope, so a 
 | `src/app/39-learn-player-card.js` | Learn pages, info tips, player card | 138 | 22 KB |
 | `src/app/40-home.js` | Home page, weekly action plan, ask-a-question | 180 | 22 KB |
 | `src/app/41-matches.js` | Matches: results, last-game review, next opponent (opens on your next game, any competition), tactic-change log | 289 | 40 KB |
-| `src/app/42-save-folder-export-tactic.js` | Linked save folder and exporting a tactic to FM (.fmf) | 229 | 21 KB |
+| `src/app/42-save-folder-export-tactic.js` | Linked save folder (auto-loads the newest save, backups included) and exporting a tactic to FM (.fmf) | 234 | 22 KB |
 | `src/app/43-player-traits.js` | Player traits and their effect on roles | 199 | 25 KB |
 | `src/app/44-diagnose.js` | Diagnose (player, role or system?) and opposition instructions | 179 | 22 KB |
 

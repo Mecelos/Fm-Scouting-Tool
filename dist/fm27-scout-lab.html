@@ -13223,15 +13223,20 @@ document.addEventListener("click", e => {
   if (t.dataset.tlogrm) { tlogSave(tlogAll().filter(x => x.id !== t.dataset.tlogrm)); render(); }
 });
 
-// ---------- Link your save folder: pick FM's "games" folder once; every minute Scout Lab looks for a newer save and loads it ----------
+// ---------- Link your save folder: pick FM's "games" folder once; every 20 seconds Scout Lab looks for a newer save and loads it ----------
+// "Newest" = the most recently written .fm file in the folder or its subfolders (two levels), whatever it is called: your own
+// save, FM's autosave or a backup copy FM made.
 // File System Access API: Chrome and Edge on a computer, in the downloaded copy (pages inside claude.ai can't open folder pickers).
 const SD = { h: null, state: "off", msg: "", timer: null, seen: null, busy: false };
 const sdSupported = () => typeof window.showDirectoryPicker === "function";
-async function sdNewest(h) {
+async function sdNewest(h, depth = 0) {
   let best = null;
   for await (const e of h.values()) {
-    if (e.kind !== "file" || !/\.fm$/i.test(e.name)) continue;
-    try { const f = await e.getFile(); if (!best || f.lastModified > best.lastModified) best = f; } catch (x) { }
+    try {
+      if (e.kind === "directory") { if (depth < 2) { const f = await sdNewest(e, depth + 1); if (f && (!best || f.lastModified > best.lastModified)) best = f; } continue; }
+      if (!/\.fm$/i.test(e.name)) continue;
+      const f = await e.getFile(); if (f.size > 0 && (!best || f.lastModified > best.lastModified)) best = f;
+    } catch (x) { }
   }
   return best;
 }
@@ -13258,7 +13263,7 @@ async function sdPoll() {
     else sdSay("error", "The save folder couldn't be read: " + ((e && e.message) || e));
   } finally { SD.busy = false; }
 }
-function sdStart() { clearInterval(SD.timer); SD.timer = setInterval(sdPoll, 60000); sdPoll(); }
+function sdStart() { clearInterval(SD.timer); SD.timer = setInterval(sdPoll, 20000); sdPoll(); }
 function sdStop() { clearInterval(SD.timer); SD.timer = null; }
 async function sdLink() {
   if (!sdSupported()) { sdSay("error", "This browser can't watch a folder. Use Chrome or Edge on your computer, with the downloaded copy of Scout Lab."); return; }
@@ -13291,7 +13296,7 @@ function sdLineHtml() {
 function sdPanelHtml() {
   const sup = sdSupported();
   return `<section class="panel"><div class="ph"><h3>Load new saves by itself</h3><span class="small muted">Chrome or Edge on your PC</span></div>
-    <p class="muted">Link your FM save folder once (<code>Documents › Sports Interactive › Football Manager 27 › games</code>). While Scout Lab is open, it looks every minute for a newer save and loads it, so after each game just save in FM and come back here.</p>
+    <p class="muted">Link your FM save folder once (<code>Documents › Sports Interactive › Football Manager 27 › games</code>). While Scout Lab is open, it looks every 20 seconds and loads the most recently written save, whatever it's called: your own save, FM's autosave or a backup copy. After each game just save in FM (or let it autosave) and come back here.</p>
     <div class="addrow">${SD.h ? `${SD.state === "ask" ? `<button class="primary" data-sdact="reconnect">Reconnect ${esc(SD.h.name)}</button>` : `<button class="ghost" data-sdact="now">Check now</button>`}<button class="ghost" data-sdact="unlink">Unlink</button>` : `<button class="primary" data-sdact="link" ${sup ? "" : "disabled"}>Link my save folder</button>`}</div>
     <p id="sdline">${sdLineHtml()}</p>
     ${sup ? `<p class="small muted">Read-only: Scout Lab never changes your saves. Works in the downloaded copy opened in Chrome or Edge; inside claude.ai the browser blocks folder access.</p>` : `<p class="small muted">This browser can't watch a folder (it needs Chrome or Edge on a computer). On a tablet or phone, load the save by hand above.</p>`}</section>`;
