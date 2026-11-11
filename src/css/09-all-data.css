@@ -1,0 +1,64 @@
+/* all data */
+.adpanel { padding-bottom: 8px; }
+.adbar { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; margin-bottom: 10px; }
+.adbar input[type=search] { flex: 1 1 240px; max-width: 360px; }
+.adwrap { position: relative; overflow: auto; height: calc(100dvh - 230px); min-height: 380px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); overscroll-behavior: contain; }
+.adtable { border-collapse: separate; border-spacing: 0; table-layout: fixed; width: max-content; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.adtable th, .adtable td { border-bottom: 1px solid var(--line); border-right: 1px solid rgba(255,255,255,.04); padding: 0 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.adtable td { height: 29px; line-height: 29px; }
+.adtable td.num, .adtable th.num { text-align: right; }
+.adtable thead th { position: sticky; top: 0; z-index: 2; background: var(--panel2); vertical-align: top; padding: 5px 5px 6px; text-align: left; }
+.adtable .stk { position: sticky; left: 0; z-index: 1; background: var(--panel); box-shadow: 1px 0 0 var(--line2); }
+.adtable thead th.stk { z-index: 3; background: var(--panel2); }
+.adtable tbody tr:not(.adspace) { cursor: pointer; }
+.adtable tbody tr:not(.adspace):hover td { filter: brightness(1.25); }
+.adtable tr.adspace td { padding: 0; border: 0; height: auto; line-height: 0; }
+.adsort { display: block; width: 100%; border: 0; background: none; padding: 0; color: var(--ink); font-weight: 600; font-size: 12px; text-align: inherit; white-space: normal; line-height: 1.2; min-height: 29px; cursor: pointer; }
+.adrange { display: block; color: var(--muted); font-size: 11px; margin: 2px 0 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.adf { display: grid; gap: 3px; }
+.adf input { width: 100%; min-width: 0; height: 22px; padding: 2px 4px; font-size: 11.5px; border-radius: 4px; border: 1px solid var(--line2); background: var(--bg); color: var(--ink); }
+.adf input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+.adlayout { display: grid; grid-template-columns: 186px minmax(0, 1fr); gap: 12px; align-items: start; }
+.admain { min-width: 0; }
+.adside details { border: 1px solid var(--line); border-radius: 8px; padding: 8px 8px 4px; background: var(--bg); }
+.adside summary { cursor: pointer; padding: 2px 4px 8px; font-size: 13px; }
+.adside summary .muted { display: block; font-weight: 400; margin-top: 2px; }
+.adsgroup { margin-bottom: 10px; }
+.adhint { margin: 0 4px 8px; line-height: 1.35; }
+.adsgroup h4 { margin: 0 0 4px; padding: 0 4px; font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); display: flex; justify-content: space-between; align-items: baseline; }
+.adall { text-transform: none; letter-spacing: 0; font-weight: 400; font-size: 11.5px; }
+.adall .linkbtn { font-size: 11.5px; }
+.adchk { display: flex; align-items: center; gap: 8px; width: 100%; border: 0; background: none; color: var(--ink); padding: 5px 6px; border-radius: 6px; font-size: 13px; text-align: left; cursor: pointer; }
+.adchk:hover { background: var(--panel2); }
+.adchk::before { content: ""; flex: none; width: 15px; height: 15px; border-radius: 4px; border: 1.5px solid var(--line2); box-sizing: border-box; font-size: 11px; line-height: 12px; text-align: center; font-weight: 800; color: var(--accent-ink); }
+.adchk[aria-pressed="true"]::before { content: "✓"; background: var(--accent); border-color: var(--accent); }
+.adchk[aria-pressed="false"] .lb { color: var(--ink2); }
+.adchk .n { margin-left: auto; color: var(--muted); font-size: 11.5px; font-variant-numeric: tabular-nums; }
+.adtable thead tr.adband th { top: 0; z-index: 2; height: 24px; padding: 0 8px; background: var(--panel); border-bottom: 1px solid var(--line2); font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); vertical-align: middle; line-height: 24px; text-align: left; }
+.adtable thead tr.adband th.stk { z-index: 3; left: 0; }
+.adtable thead tr.adhead th { top: var(--bandh, 25px); }
+.adtable thead tr.adhead th.stk { z-index: 3; }
+.adtable .bs { border-left: 2px solid var(--line2); }
+.adsort .p90 { font-weight: 400; color: var(--muted); margin-left: 2px; }
+/* All data: every heading, filter box and value centred in its cell (the player's name stays left so names line up) */
+.adtable td, .adtable td.num, .adtable thead tr.adhead th, .adtable th.num { text-align: center; }
+.adtable .adf input { text-align: center; }
+.adtable td.stk, .adtable thead tr.adhead th.stk { text-align: left; }
+.adtable thead tr.adband th { text-align: center; }
+#adtip { position: fixed; z-index: 80; max-width: 300px; padding: 9px 11px 10px; border-radius: 8px; background: var(--panel2); border: 1px solid var(--line2); box-shadow: 0 10px 28px rgba(0,0,0,.45); font-size: 12.5px; line-height: 1.45; color: var(--ink); pointer-events: none; }
+#adtip b { display: block; font-size: 13.5px; }
+#adtip .adtipmeta { display: flex; align-items: center; gap: 5px; color: var(--muted); font-size: 11px; margin: 1px 0 5px; }
+@media (max-width: 899px) {
+  .adlayout { grid-template-columns: minmax(0, 1fr); }
+  .adside details[open] { padding-bottom: 8px; }
+  .adside summary .muted { display: inline; margin-left: 4px; }
+  .adsgroup { display: flex; flex-wrap: wrap; gap: 4px 6px; margin-bottom: 8px; }
+  .adsgroup h4 { width: 100%; justify-content: flex-start; gap: 10px; }
+  .adchk { width: auto; border: 1px solid var(--line2); border-radius: 999px; padding: 4px 10px 4px 7px; font-size: 12.5px; }
+  .adchk .n { margin-left: 2px; }
+}
+.adkey { display: inline-block; padding: 1px 8px; border-radius: 4px; }
+.adlegend summary { cursor: pointer; padding: 2px 0; }
+.adlegtable td.num { min-width: 64px; }
+.seasons td, .seasons th { white-space: nowrap; }
+@media (max-width: 640px) { .adwrap { height: calc(100dvh - 250px); } .adbar input[type=search] { flex-basis: 100%; max-width: none; } }

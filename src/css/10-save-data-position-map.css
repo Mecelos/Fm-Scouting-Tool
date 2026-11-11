@@ -1,0 +1,50 @@
+/* save & data */
+.datapage .panel { margin-top: 8px; }
+.addgrid.one { grid-template-columns: minmax(0, 1fr); }
+.progress { height: 8px; background: var(--panel2); border-radius: 4px; overflow: hidden; margin-top: 12px; }
+.progress i { display: block; height: 100%; background: var(--accent); transition: width .2s; }
+.savemark { background: var(--good) !important; color: #06120a !important; }
+.danger-zone { border-color: rgba(230,103,103,.4); }
+.dangerbtn { color: var(--bad); border-color: rgba(230,103,103,.5); }
+.savehint { margin-top: 10px; }
+button[disabled] { opacity: .6; cursor: progress; }
+.afilters { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.afilters > .small:first-child { margin-right: 4px; }
+.afilters select, .afilters input { padding: 4px 8px; font-size: 13px; }
+.afilters input { width: 92px; } .afilters input.bad { border-color: var(--bad); }
+.afchip { border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink); border-radius: 999px; padding: 4px 11px; font-size: 13px; font-weight: 600; }
+.afchip.off { background: none; color: var(--muted); border-color: var(--line2); text-decoration: line-through; }
+.rolehow { margin: 8px 0 12px; max-width: 980px; }
+.stafft td.small { white-space: nowrap; }
+.stafft th.cat button { min-width: 2.6em; }
+.aword { margin-left: 6px; font-size: 11px; }
+.agrid .arow { align-items: baseline; } .agrid .arow span:first-child { margin-right: auto; }
+.bandsp { margin-top: 10px; } .bandsp summary { cursor: pointer; }
+.bands { display: grid; gap: 6px; margin: 10px 0; max-width: 520px; }
+.bandrow { display: grid; grid-template-columns: auto 64px minmax(0, 1fr) 18px auto; gap: 8px; align-items: center; }
+.bandrow input { padding: 4px 8px; font-size: 13px; min-width: 0; }
+.bandsw { width: 18px; height: 18px; border-radius: 4px; border: 1px solid var(--line2); }
+.setsbar .setctl { flex-wrap: wrap; }
+.nrow.wv { grid-template-columns: minmax(0, 1fr) 40px 80px; } .nrow.wv .nv { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.inf.fa { color: var(--good); border-color: rgba(79,194,122,.45); }
+/* position map (FM-style pitch) */
+.pitchwrap { max-width: 360px; }
+.pitchmini { position: relative; aspect-ratio: 1.55; background: #1f5a33; border: 2px solid rgba(255,255,255,.35); border-radius: 6px; margin: 6px 0; overflow: hidden; }
+.pitchmini i { position: absolute; border: 1.5px solid rgba(255,255,255,.28); }
+.pitchmini .pl-half { left: 50%; top: 0; bottom: 0; border-width: 0 0 0 1.5px; }
+.pitchmini .pl-circle { left: 50%; top: 50%; width: 22%; aspect-ratio: 1; border-radius: 50%; transform: translate(-50%, -50%); }
+.pitchmini .pl-box { top: 25%; height: 50%; width: 14%; } .pitchmini .pl-box.l { left: -1.5px; border-left: 0; } .pitchmini .pl-box.r { right: -1.5px; border-right: 0; }
+.pdot { position: absolute; width: 13px; height: 13px; border-radius: 50%; transform: translate(-50%, -50%); border: 1.5px solid rgba(0,0,0,.35); cursor: default; }
+.pdot.static { position: static; display: inline-block; transform: none; width: 10px; height: 10px; margin-right: 5px; vertical-align: -1px; }
+.pdot.nat { background: #3ad06a; width: 17px; height: 17px; border: 2px solid #eafff0; } .pdot.static.nat { width: 12px; height: 12px; }
+.pdot.acc { background: #a6dd5e; } .pdot.com { background: #e8cf45; } .pdot.unc { background: #ec9a3a; } .pdot.awk { background: #d8603c; } .pdot.ine { background: #2a2f37; border-color: rgba(255,255,255,.15); }
+.pfleg { font-size: 11.5px; gap: 3px 12px; }
+.wfhatch { display: inline-block; width: 18px; height: 8px; vertical-align: 0; background: repeating-linear-gradient(135deg, var(--muted) 0 3px, transparent 3px 6px); }
+.ponly { display: none; } .pc .good { color: var(--good); } .pc .warn { color: var(--accent); } .pc .bad { color: var(--bad); }
+@media (max-width: 640px) { .ponly { display: block; } }
+.stafft th:not([data-ssort]) { padding: 9px 8px; }
+.tscroll.full { max-height: none; }
+.mylist { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 4px 10px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 8px; }
+.sagrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.whyst .mrow { grid-template-columns: minmax(0, 1.6fr) 96px minmax(0, 1fr) 34px; }
+@media (prefers-reduced-motion: no-preference) { .card, .chip, .setchip { transition: background-color .15s, border-color .15s; } }
