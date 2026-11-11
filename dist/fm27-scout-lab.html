@@ -9324,7 +9324,9 @@ function runSaveReader(file, onProgress) {
 let saveFile = null;
 async function loadSaveFile(opts) {
   opts = opts || {};
-  if (!saveFile) { S.saveErr = "Choose your save file first (a .fm file from Football Manager 27 › games)."; render(); return; }
+  if (S.saveBusy) return;   // already reading one
+  if (!saveFile) { const fi = $("#saveIn"); if (fi && fi.files && fi.files[0]) saveFile = fi.files[0]; }   // the picker's change event can be missed on phones: read the box itself
+  if (!saveFile) { S.saveErr = "No save file has reached Scout Lab yet. Tap the box, pick your .fm file, and wait until its name and size show in the box (from Google Drive or OneDrive your phone downloads it first, which can take a minute for a big save). It then loads by itself."; render(); return; }
   S.saveErr = ""; S.saveBusy = { m: "Starting", f: 0 }; render();
   const t0 = Date.now();
   try {
@@ -9409,7 +9411,7 @@ function bindSaveInput() {
   const fi = $("#saveIn"), drop = fi && fi.closest(".drop");
   if (!fi) return;
   const take = f => { if (!f) return; saveFile = f; S.saveErr = ""; drop.querySelector("span").textContent = `${f.name} · ${(f.size / 1048576).toFixed(0)} MB`; };
-  fi.onchange = () => take(fi.files[0]);
+  fi.onchange = fi.oninput = () => { const f = fi.files && fi.files[0]; if (!f || f === saveFile) return; take(f); if (!S.saveBusy) loadSaveFile(); };   // start as soon as the file arrives: no race with the Load button
   drop.ondragover = e => { e.preventDefault(); drop.classList.add("over"); };
   drop.ondragleave = () => drop.classList.remove("over");
   drop.ondrop = e => { e.preventDefault(); drop.classList.remove("over"); take(e.dataTransfer.files[0]); };

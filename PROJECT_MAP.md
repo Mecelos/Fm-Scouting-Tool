@@ -76,7 +76,7 @@ Everything the tool does, one feature per file. All files share one scope, so a 
 | `src/app/22-defensive-shape.js` | Out-of-possession shape: every formation scored as a defensive shape | 343 | 42 KB |
 | `src/app/23-guide.js` | Guide page | 212 | 35 KB |
 | `src/app/24-player-drawer.js` | Player side panel, its back button, position map | 189 | 19 KB |
-| `src/app/25-save-loading.js` | Loading an FM save (.fm) into every tab | 265 | 21 KB |
+| `src/app/25-save-loading.js` | Loading an FM save (.fm) into every tab | 267 | 22 KB |
 | `src/app/26-all-data.js` | All data: every player in one filterable table | 407 | 38 KB |
 | `src/app/27-stat-type-scores.js` | Stat-type scores (percentile ranks, 0-100) | 277 | 24 KB |
 | `src/app/28-past-seasons.js` | Past seasons | 138 | 12 KB |
