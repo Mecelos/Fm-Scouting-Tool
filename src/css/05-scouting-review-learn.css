@@ -55,3 +55,12 @@
 .rdot.k0 { fill: var(--accent); } .rdot.k1 { fill: var(--cmp); } .rdot.k2 { fill: var(--mark); } .rdot.k3 { fill: var(--a-hi); }
 .lg.k0 { background: var(--accent); } .lg.k1 { background: var(--cmp); } .lg.k2 { background: var(--mark); } .lg.k3 { background: var(--a-hi); }
 .cmpbig th .lg { margin-right: 2px; vertical-align: middle; } .cmppanel { white-space: nowrap; }
+/* Scouting > Upgrades */
+.upfilters { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; } .upf { display: inline-flex; align-items: center; gap: 6px; color: var(--ink2); } .upf input:not([type=checkbox]) { padding: 3px 6px; }
+.upslot > summary { display: grid; grid-template-columns: 52px minmax(0, 1fr) minmax(0, 1.2fr) auto; gap: 10px; align-items: center; cursor: pointer; list-style: none; } .upslot > summary::-webkit-details-marker { display: none; }
+.upslot > summary::after { content: "▸"; color: var(--muted); grid-column: 5; } .upslot[open] > summary::after { content: "▾"; }
+.upcode { font-family: var(--f-display); font-weight: 700; font-size: 15px; color: var(--accent); text-align: center; border: 1px solid var(--line2); border-radius: 6px; padding: 3px 0; }
+.upwho, .upstat { display: flex; flex-direction: column; min-width: 0; } .upwho b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .upn { text-align: right; white-space: nowrap; }
+.upbody { margin-top: 10px; } .upbody select { max-width: 260px; } .uptab { width: 100%; } .uptab th button { width: auto; }
+@media (max-width: 700px) { .upslot > summary { grid-template-columns: 44px minmax(0, 1fr) auto; } .upstat { grid-column: 2 / 4; grid-row: 2; } .upslot > summary::after { grid-column: 4; } }
+.upwait { padding: 10px 12px; border-radius: 8px; background: var(--panel2); animation: pulse 1.4s ease-in-out infinite alternate; } @keyframes pulse { from { opacity: 1; } to { opacity: .55; } }

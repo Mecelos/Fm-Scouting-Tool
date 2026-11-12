@@ -250,7 +250,7 @@ function renderMyTactic(sq) {
   const F = tacFit(W, sq), A = tacAnalyse(W, F), SC = tacScores(W, A, F), CL = tacClosest(W), best = CL[0];
   const ipS = tacShape(W.slots.map(s => s.ip)), opS = tacShape(W.slots.map(s => s.oop));
   let h = `${load}<section class="panel tachead"><div class="ph"><h3>${esc(W.name)}</h3><span class="muted small">${esc(W.style)} · read ${esc(S.myTac.file.read || "")}${W.edited ? " · <b>edited here</b>" : ""}</span>
-    <span class="setctl"><label for="tacFile" class="ghost small btnlike">Load another</label>${W.edited ? `<button class="ghost small" data-act="tacreset">Undo my edits</button>` : ""}<button class="ghost small" data-act="tacremove">Remove</button></span></div>
+    <span class="setctl"><label for="tacFile" class="ghost small btnlike">Load another</label>${W.edited ? `<button class="ghost small" data-act="tacreset">Undo my edits</button>` : ""}<button class="ghost small" data-act="tacremove">Remove</button>${SAVE ? `<button class="primary small" data-sctab="up" title="Everyone in your save who performs better in each slot's role">Find upgrades →</button>` : ""}</span></div>
     <div class="tsum"><span class="tag big">With the ball <b>${esc(ipS)}</b></span><span class="tag big">Without <b>${esc(opS)}</b></span>
     <label class="tag big tment">Mentality <select class="tacment">${MENTALITIES.map(m => `<option ${m === W.mentality ? "selected" : ""}>${m}</option>`).join("")}</select></label>
     ${F && F.avg != null ? `<span class="tag big good">Squad fit <b>${F.avg.toFixed(1)}</b>/20</span>` : ""}<span class="tag big" title="Of the ${TI_DEF.length} team instructions, how many match the game's own style">Closest style <b>${esc(best.k)}</b> · ${best.same}/${TI_DEF.length} match</span></div>

@@ -125,6 +125,7 @@ function scoreStats(model, pos, role, opts) {
   });
   const primCat = {}; Object.keys(mw).forEach(k => primCat[k] = cats.find(c => k in CATS[c].m) || "other");
   const sc = { kind: "stats", pos, role, rows, cats, catLabel: c => CATS[c].l, roleDef, mw, primCat, pool: pool.length, total: model.players.length, model };
+  if (opts.lean) { const o = pctRanks(rows.map(r => r.overall)); rows.forEach((r, i) => r.orank = o[i]); return sc; }   // just the score and its rank (Upgrades): skips types, fair value and best roles
   return finishScore(sc);
 }
 
