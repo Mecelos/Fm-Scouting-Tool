@@ -83,7 +83,7 @@ Everything the tool does, one feature per file. All files share one scope, so a 
 | `src/app/28-past-seasons.js` | Past seasons | 138 | 12 KB |
 | `src/app/29-cloud-copy.js` | Cloud copy of the loaded save on claude.ai | 170 | 12 KB |
 | `src/app/30-staff.js` | Staff pages | 398 | 50 KB |
-| `src/app/31-import-events-boot.js` | File import, click/keyboard events, app start-up | 244 | 21 KB |
+| `src/app/31-import-events-boot.js` | File import, click/keyboard events, app start-up | 245 | 21 KB |
 | `src/app/32-my-tactic-reading.js` | My tactic: reading an FM tactic file, shape helpers, player fit | 275 | 36 KB |
 | `src/app/33-my-tactic-analysis.js` | My tactic: analysis, scores, page and events | 328 | 50 KB |
 | `src/app/34-scouting.js` | Scouting: wonderkids, transfer targets, contract watch, shortlist | 245 | 26 KB |
@@ -98,7 +98,7 @@ Everything the tool does, one feature per file. All files share one scope, so a 
 | `src/app/43-player-traits.js` | Player traits and their effect on roles | 199 | 25 KB |
 | `src/app/44-diagnose.js` | Diagnose (player, role or system?) and opposition instructions | 179 | 22 KB |
 | `src/app/45-matchday-brief.js` | Matches > Brief: your next game on one narrow, printable page | 32 | 4 KB |
-| `src/app/46-search.js` | Search box (players and clubs), Help menu closing, narrow-screen page menus | 58 | 5 KB |
+| `src/app/46-search.js` | Search box (players and clubs), Help menu closing, narrow-screen page menus, opening a player from the link (#player=ID&name=…, used by the FM profile button) | 80 | 7 KB |
 | `src/app/47-compare.js` | Scouting > Compare: any players side by side (profile, attributes, radar, stats per 90), and the Compare buttons in the player panel | 105 | 14 KB |
 | `src/app/48-upgrades.js` | Scouting > Upgrades: for each slot of your uploaded tactic, everyone in the save who performs better in that role, with filters | 133 | 16 KB |
 

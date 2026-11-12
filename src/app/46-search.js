@@ -56,3 +56,25 @@ document.addEventListener("keydown", e => {
 // narrow screens: the two groups of pages become two menus
 document.addEventListener("change", e => { const t = e.target; if (!t.classList || !t.classList.contains("navsel") || !t.value) return; const b = document.querySelector(`.modes button[data-mode="${t.value}"]`); if (b) b.click(); });
 function gsSyncNav() { document.querySelectorAll(".navsel").forEach(s => { const on = !S.guide && !S.dataPage && [...s.options].some(o => o.value === S.mode); s.value = on ? S.mode : ""; s.classList.toggle("on", on); }); }
+// ---------- open a player from the link: fm27-scout-lab.html#player=<FM unique ID>&name=<name>&club=<club>, or #player=<name> ----------
+// Used by the "Scout Lab" button on FM's player profile. An ID opens that exact player; a name opens him if only one player
+// matches (the club decides between namesakes), otherwise the search box shows the candidates.
+function linkOpen() {
+  const h = new URLSearchParams(String(location.hash || "").replace(/^#/, "")), who = (h.get("player") || "").trim(); if (!who) return;
+  const club = gsNorm(h.get("club") || "").trim(), inp = document.getElementById("gSearch");
+  const ask = q => { if (!inp) return; inp.value = q; inp.focus(); GS.at = 0; gsDraw(); };
+  if (!SAVE) { ask(who); return; }
+  // by FM's ID; with a name in the link too, the ID must agree with it (an ID one off is accepted when the name matches)
+  const nm = gsNorm(h.get("name") || "").trim(), ok = k => k != null && (!nm || gsNorm(SAVE.name[k]) === nm);
+  let i = null;
+  if (/^\d+$/.test(who)) { const ui = saveUidIndex(); for (const d of [0, -1, 1]) { const k = ui.get("s" + (+who + d)); if (ok(k) && (d === 0 || nm)) { i = k; break; } } }
+  if (i == null) {
+    const q = nm || gsNorm(who), ix = gsIndex(), hits = [];
+    for (let k = 0; k < SAVE.n; k++) if (ix.names[k] === q) hits.push(k);
+    const byClub = club ? hits.filter(k => SAVE.clubIdx[k] >= 0 && [SAVE.clubs[SAVE.clubIdx[k]], SAVE.clubShort && SAVE.clubShort[SAVE.clubIdx[k]]].some(c => gsNorm(c).includes(club) || club.includes(gsNorm(c)))) : hits;
+    if (byClub.length === 1) i = byClub[0]; else if (hits.length === 1) i = hits[0];
+    else { ask(h.get("name") || (/^\d+$/.test(who) ? "" : who)); return; }
+  }
+  S.guide = false; S.dataPage = false; render(); adOpen(i);
+}
+window.addEventListener("hashchange", linkOpen);

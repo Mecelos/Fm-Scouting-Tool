@@ -238,6 +238,7 @@ document.addEventListener("pointerleave", () => { tip.hidden = true; });
   }
   if (S.saveRoles) Object.keys(S.saveRoles).forEach(id => { const d = S.ds.find(x => x.id === id); if (d && ROLES[d.pos] && ROLES[d.pos][S.saveRoles[id]]) d.role = S.saveRoles[id]; });
   render();
+  if (typeof linkOpen === "function") linkOpen();   // a link like #player=<FM ID> (from the button on FM's player profile)
   cloudInit();
   if (typeof sdInit === "function") sdInit();
 })();
