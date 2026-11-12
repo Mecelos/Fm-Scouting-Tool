@@ -33,7 +33,10 @@
   }
   // the season's matches from the match statistics store: competition, home and away team
   // goals list in a match record: after "ff ff" + 16 zero bytes, u32 count, then 16-byte entries:
-  // scorer key, assist key (ffffffff = none), match tick, side (0 home / 1 away: the scorer's team), type (0 open play, 1 set piece?, 2 penalty, 3 own goal, 4/5 shoot-out scored/missed), minute, extra
+  // scorer key, assist key (ffffffff = none), match tick, side (0 home / 1 away), type (0 open play, 1 own goal, 2 penalty, 3 red card, 4/5 shoot-out scored/missed), minute, extra.
+  // For goals the side is the team credited (an own goal already counts for the other team); for a red card it's the player's team.
+  // The reader drops red cards and passes own goals on as type 3, which is what the app expects.
+  const goalType = t => t === 1 ? 3 : t === 3 ? -1 : t;   // -1: not a goal (red card)
   function matchGoals(h) {
     let best = -1;
     for (let o = 0; o + 18 <= Math.min(h.length, 1500); o++) {
@@ -114,19 +117,19 @@
         if (!name || ts.length < 2) continue;
         let c = compIx.get(name); if (c == null) { c = comps.length; comps.push(name); compIx.set(name, c); }
         const g = matchGoals(h); let a = 255, b = 255;
-        if (g) { a = 0; b = 0; g.forEach(([, , side, type, minute]) => { if (type >= 4) return; if ((type === 3) === (side === 1)) a++; else b++; ev.push(mid.length, minute, side, type); }); }
+        if (g) { a = 0; b = 0; g.forEach(([, , side, raw, minute]) => { const type = goalType(raw); if (type < 0 || type >= 4) return; if (side === 0) a++; else b++; ev.push(mid.length, minute, side, type); }); }
         if (g && (isMine(ts[0]) || isMine(ts[1]))) {   // your matches: who scored and assisted, and the team sheets
           let names = new Map(), lineup = null, full = null;
           try { full = zstd(d.subarray(at, at + sz)); } catch (e) { }
           if (full) { try { names = matchNames(full, g.flatMap(x => [x[0], x[1]])); } catch (e) { } try { lineup = matchLineup(full); } catch (e) { } }
-          mine.push({ r: mid.length, goals: g.filter(x => x[3] < 4).map(([s, as, side, type, minute]) => ({ m: minute, side: type === 3 ? 1 - side : side, type, by: names.get(s) || "", as: names.get(as) || "" })),
+          mine.push({ r: mid.length, goals: g.filter(x => goalType(x[3]) >= 0 && x[3] < 4).map(([s, as, side, raw, minute]) => ({ m: minute, side, type: goalType(raw), by: names.get(s) || "", as: names.get(as) || "" })),
             shoot: g.filter(x => x[3] >= 4).map(([s, , side, type]) => ({ side, scored: type === 4, by: names.get(s) || "" })), lineup });
         }
         mid.push(id); comp.push(c); home.push(ts[0]); away.push(ts[1]); full.push(sz > 120000 ? 1 : 0); hg.push(a); ag.push(b);
       }
     }
-    // events: [match row, minute, side of the scorer's team, type] per goal; own goals count for the other side (side here = team credited)
-    const E = Uint16Array.from(ev); for (let k = 0; k < E.length; k += 4) if (E[k + 3] === 3) E[k + 2] = 1 - E[k + 2];
+    // events: [match row, minute, side of the team credited, type] per goal (own goals already count for the other side)
+    const E = Uint16Array.from(ev);
     return { n: mid.length, comps, id: Uint32Array.from(mid), comp: Uint16Array.from(comp), home: Uint32Array.from(home), away: Uint32Array.from(away), full: Uint8Array.from(full),
       hg: Uint8Array.from(hg), ag: Uint8Array.from(ag), ev: E, mine, v: 2 };
   }

@@ -3,7 +3,7 @@
 // difference between two saves: load your save after every game and the last one is reviewed on its own.
 const MX_TABS = [["brief", "Brief"], ["diag", "Diagnose"], ["last", "Last game"], ["results", "Results"], ["opp", "Next opponent"], ["changes", "Tactic changes"]];
 const MX_BUCKETS = [[1, 15, "1–15'"], [16, 30, "16–30'"], [31, 45, "31–45'+"], [46, 60, "46–60'"], [61, 75, "61–75'"], [76, 130, "76–90'+"]];
-const MX_TYPE = { 0: "", 1: "set piece", 2: "penalty", 3: "own goal" };
+const MX_TYPE = { 0: "", 2: "penalty", 3: "own goal" };
 const mxFriendly = name => /friendl|testimonial/i.test(name || "");
 function mxBase() {
   if (!SAVE || !SAVE.matches || !SAVE.teams || !SAVE.matches.hg) return null;
