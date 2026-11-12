@@ -2,7 +2,7 @@
 // No guessing: it needs your exported tactic (My squad > My tactic) and your save. For each slot it takes the squad player with the most
 // minutes who plays that position (you can switch him), scores him on this season's stats in the slot's role (the same stats role score as
 // the position tabs), and lists every other player in the save with a higher score. You filter; the tool doesn't pick.
-const UP_SHOW = 50;
+const UP_SHOW = 50, UP_COV = 0.6;   // players need real stats for most of the role (FM keeps only basic stats for some leagues: they would all score 50)
 function upF() { return (S.upF = S.upF || { age: "", val: "", wage: "", mins: "900", cend: "", league: true, pick: {}, open: {}, sort: {}, more: {} }); }
 const upCache = new Map();
 // your squad + the position's whole pool from the save (no sampling), on one scale
@@ -68,7 +68,7 @@ function scUpgrades() {
   const LV = [["No stats", "muted"], ["Underperforming", "bad"], ["Fine", ""], ["Strong", "okc"]];
   slots.sort((a, b) => (a.me && a.me.overall != null ? a.me.orank : -1) - (b.me && b.me.overall != null ? b.me.orank : -1));
   const inp = (k, lab, ph, w) => `<label class="upf small">${lab}<input data-upf="${k}" value="${esc(f[k])}" placeholder="${ph}" inputmode="decimal" style="width:${w}px"></label>`;
-  let h = head + `<p class="small muted">Tactic: <b>${esc(W.name)}</b> · performance = this season's stats in that role, ranked against every player in the save at that position${f.league ? ", adjusted for league strength" : ""}. Role fit = his attributes for the role, out of 20 (greyed when lower than your player's).</p>
+  let h = head + `<p class="small muted">Tactic: <b>${esc(W.name)}</b> · performance = this season's stats in that role, ranked against every player in the save at that position${f.league ? ", adjusted for league strength" : ""}. Role fit = his attributes for the role, out of 20 (greyed when lower than your player's). Players whose league FM keeps only basic stats for are left out.</p>
     <div class="upfilters">${inp("age", "Max age", "any", 52)}${inp("val", "Max value £M", "any", 60)}${inp("wage", "Max wage £K p/w", "any", 60)}${inp("mins", "Min minutes", "0", 64)}
     <label class="upf small">Contract ends<select data-upf="cend"><option value="">any time</option><option value="1" ${f.cend === "1" ? "selected" : ""}>within 1 year</option><option value="2" ${f.cend === "2" ? "selected" : ""}>within 2 years</option></select></label>
     <label class="upf small"><input type="checkbox" data-upf="league" ${f.league ? "checked" : ""}> Adjust for league strength</label></div></section>`;
@@ -81,7 +81,7 @@ function scUpgrades() {
     if (x.st) {
       const myFit = x.myFit, bar = r && r.overall != null ? r.overall : -1, fits = new Map(), fit = o => { if (!fits.has(o.si)) fits.set(o.si, upFit(o.si, x.g, x.role)); return fits.get(o.si); };
       const mxA = upNum(f.age), mxV = upNum(f.val), mxW = upNum(f.wage), mnM = upNum(f.mins) || 0, cy = upNum(f.cend);
-      list = x.st.rows.filter(q => q.p.ref && q.overall != null && q.overall > bar).map(q => {
+      list = x.st.rows.filter(q => q.p.ref && q.overall != null && q.overall > bar && q.cov >= UP_COV).map(q => {
         const si = upSi(x.st.M, q.p), v = si >= 0 ? scVal(si) : q.p.val, w = si >= 0 && scHasC() ? scWage(si) : null, ce = si >= 0 && SAVE.cEnd ? sDate(SAVE.cEnd[si]) : null;
         return { q, si, v, w, ce, age: si >= 0 && SAVE.age[si] >= 0 ? SAVE.age[si] : q.p.age, mins: q.p.mins || 0 };
       }).filter(o => (mxA == null || (o.age != null && o.age <= mxA)) && (mxV == null || (o.v != null && o.v <= mxV * 1e6)) && (mxW == null || (o.w != null && o.w <= mxW * 1e3)) && o.mins >= mnM

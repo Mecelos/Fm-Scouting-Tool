@@ -121,7 +121,7 @@ function scoreStats(model, pos, role, opts) {
     const cov = wAll ? wHave / wAll : 1;
     const rel = (model.hasMins ? Math.min(1, 0.4 + 0.6 * (p.mins || 0) / 1350) : 1) * cov;
     const overall = raw == null || (model.hasMins && !(p.mins > 0)) ? null : 50 + (raw - 50) * rel; // no minutes = no stats score
-    return { p, mp, cs, overall, raw, rel };
+    return { p, mp, cs, overall, raw, rel, cov };
   });
   const primCat = {}; Object.keys(mw).forEach(k => primCat[k] = cats.find(c => k in CATS[c].m) || "other");
   const sc = { kind: "stats", pos, role, rows, cats, catLabel: c => CATS[c].l, roleDef, mw, primCat, pool: pool.length, total: model.players.length, model };
