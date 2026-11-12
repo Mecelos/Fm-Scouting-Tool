@@ -36,6 +36,44 @@ function upScore(kind, pos, role, league) {
 }
 const upSi = (M, p) => p.mine ? (M.sqIdx ? M.sqIdx[p.ix] : -1) : (M.refIdx ? M.refIdx[p.ix - 100000] : -1);   // model player -> save index
 // who plays each slot: squad players of that position group, most minutes first (one player per slot), unless you picked someone
+// who started where this season, from the team sheets in your save: save index -> { starts, subs, at: Map("DC|R" and "DC" -> starts),
+// role: Map("DC|Ball-Playing CB" -> starts) }. Positions and roles use the tactic-file bits (POS_BITS, IP_BITS in My tactic). null = not in this save.
+function upUsage() {
+  if (SAVE._upUse !== undefined) return SAVE._upUse;
+  const M = SAVE.matches; if (!M || !M.mine || !M.mine.some(x => x.lineup)) return (SAVE._upUse = null);
+  const B = typeof mxBase === "function" ? mxBase() : null, me = B ? B.me : null;   // first-team games only (B and youth teams play under your club too)
+  if (me == null) return (SAVE._upUse = null);
+  const byName = new Map(); saveManagedIdx().forEach(i => byName.set(gsNorm(SAVE.name[i]), i));
+  const use = new Map(), add = (m, k) => m.set(k, (m.get(k) || 0) + 1);
+  M.mine.filter(x => M.home[x.r] === me || M.away[x.r] === me).forEach(x => (x.lineup || []).forEach(l => {
+    const i = byName.get(gsNorm(l.n)); if (i == null) return;
+    let u = use.get(i); if (!u) use.set(i, u = { starts: 0, subs: 0, at: new Map(), role: new Map() });
+    if (!l.s) { u.subs++; return; }
+    const c = upCode(l.s); if (!c) return;
+    u.starts++; add(u.at, c.code); add(u.at, c.code + "|" + c.side);
+    const r = upRole(l.ip); if (r) add(u.role, c.code + "|" + r);
+  }));
+  return (SAVE._upUse = use);
+}
+// the player panel: where one of your players started this season and in which roles (first-team games, from the team sheets)
+const UP_POS_NAME = { GK: "Goalkeeper", DC: "Centre-back", DR: "Right back", DL: "Left back", WBR: "Right wing-back", WBL: "Left wing-back", DM: "Defensive midfield", MC: "Central midfield", MR: "Right midfield", ML: "Left midfield", AMC: "Attacking midfield", AMR: "Right wing", AML: "Left wing", ST: "Striker" };
+function playedHtml(p) {
+  if (!SAVE || !p || !p.uid) return "";
+  const i = saveUidIndex().get(String(p.uid).startsWith("s") ? String(p.uid) : "s" + p.uid); if (i == null || !saveManagedIdx().includes(i)) return "";
+  const U = upUsage();
+  if (U === null) return SAVE.matches && SAVE.matches.mine && !SAVE.matches.mine.some(x => x.lineup) ? `<section class="trsec"><h4>Played this season</h4><p class="small muted">Load your save once more to see where he started and in which roles.</p></section>` : "";
+  const u = U.get(i);
+  if (!u || !(u.starts + u.subs)) return `<section class="trsec"><h4>Played this season</h4><p class="small muted">No first-team games yet.</p></section>`;
+  const rows = [...u.at].filter(([k]) => !k.includes("|")).sort((a, b) => b[1] - a[1]).map(([code, n]) => {
+    const roles = [...u.role].filter(([k]) => k.startsWith(code + "|")).sort((a, b) => b[1] - a[1]).map(([k, m]) => `${esc(k.slice(code.length + 1))} ${m}`).join(", ");
+    return `<tr><td class="left">${esc(UP_POS_NAME[code] || code)}</td><td class="num"><b>${n}</b></td><td class="left small">${roles || "–"}</td></tr>`;
+  }).join("");
+  return `<section class="trsec"><h4>Played this season</h4><p class="small muted">First-team starts by position and role (with the ball)${u.subs ? `, plus ${u.subs} time${u.subs === 1 ? "" : "s"} off the bench` : ""}.</p>
+    ${rows ? `<table class="gtable narrow"><thead><tr><th class="left">Position</th><th class="num">Starts</th><th class="left">Roles</th></tr></thead><tbody>${rows}</tbody></table>` : ""}</section>`;
+}
+function upCode(pos) { const b = pos & 0x1ffff, code = POS_BITS[b]; return code ? { code, side: pos & 0x100000 ? "L" : pos & 0x200000 ? "R" : "C" } : null; }
+function upRole(hex) { try { const v = BigInt("0x" + hex); const r = IP_BITS.get(v & ~DUTY_MASK); return r ? r.replace("?", "") : null; } catch (e) { return null; } }
+const upSlotCode = x => x.code === "WCB" ? "DC" : x.code;
 function upAssign(W) {
   const sq = squadDs(), players = squadModelPlayers(sq), f = upF();
   const slots = W.slots.map((s, i) => { const code = s.ip.code, g = CODE_GROUP[code]; return { i, s, code, g, role: ROLES[g] && ROLES[g][s.ip.role] ? s.ip.role : "Balanced", roleName: s.ip.role }; });
@@ -44,11 +82,16 @@ function upAssign(W) {
   const key = p => String(p.uid || p.ix), taken = new Set();
   slots.forEach(x => { const pk = f.pick[x.i]; x.p = pk != null ? players.find(p => key(p) === pk && elig(p, x) && !taken.has(key(p))) || null : null; if (x.p) { x.manual = true; taken.add(key(x.p)); } });
   const open = slots.filter(x => !x.p), free = players.filter(p => !taken.has(key(p)));
+  // automatic: who started most in that position (and side, and role) this season; minutes only break ties or fill in without team sheets
+  const U = upUsage(), si = p => sq.saveIdx ? sq.saveIdx[p.ix] : -1, uOf = p => U ? U.get(si(p)) : null;
+  slots.forEach(x => { x.side = x.s.ip.side || "C"; x.used = p => { const u = uOf(p), c = upSlotCode(x); return u ? { here: u.at.get(c) || 0, side: u.at.get(c + "|" + x.side) || 0, role: u.role.get(c + "|" + x.roleName) || 0 } : null; }; });
   const BIG = 1e9, m = Math.max(free.length, open.length);
-  const cost = open.map(x => Array.from({ length: m }, (_, j) => { const p = free[j]; if (!p || !elig(p, x)) return BIG; const c = posCodes(p.position || p.bestPos); if (c.has("DC")) c.add("WCB"); return -((p.mins || 0) + (canPlay(c, x.code) ? 500 : 0) + 1); }));
+  const cost = open.map(x => Array.from({ length: m }, (_, j) => { const p = free[j]; if (!p || !elig(p, x)) return BIG; const c = posCodes(p.position || p.bestPos); if (c.has("DC")) c.add("WCB");
+    const u = x.used(p); return -((u ? 1e5 * u.here + 2e4 * u.side + 1e4 * u.role : 0) + (p.mins || 0) + (canPlay(c, x.code) ? 500 : 0) + 1); }));
   const asg = free.length && open.length ? hungarian(cost) : [];
   open.forEach((x, k) => { const j = asg[k]; x.p = j >= 0 && j < free.length && cost[k][j] < BIG ? free[j] : null; });
-  slots.forEach(x => { x.options = players.filter(p => elig(p, x)).sort((a, b) => (b.mins || 0) - (a.mins || 0)); });
+  slots.forEach(x => { x.options = players.filter(p => elig(p, x)).sort((a, b) => { const A = x.used(a), B = x.used(b); return ((B ? B.here : 0) - (A ? A.here : 0)) || ((b.mins || 0) - (a.mins || 0)); }); });
+  slots.usage = !!U;
   return slots;
 }
 function upNum(v) { const n = parseFloat(String(v).replace(",", ".")); return n === n ? n : null; }
@@ -64,6 +107,7 @@ function scUpgrades() {
   const todo = A.some(x => { const M = upModel("stats", x.g); return M && !upCache.has(upKey(M, "stats", x.g, x.role, !!f.league)); });
   if (todo && !S._upNow) { setTimeout(() => { if (S.mode !== "scout" || S.scTab !== "up") return; S._upNow = true; try { upRedraw(); } finally { S._upNow = false; } }, 60);
     return head + `<p class="upwait">Scoring every player in your save for the ${A.length} roles in <b>${esc(W.name)}</b>… this takes a few seconds the first time (longer on a phone).</p></section>`; }
+  const reload = !A.usage && SAVE.matches ? `<p class="small mxnote">Load your save once more: Scout Lab can now read who started in each position and role from your team sheets, and use that to fill each slot.</p>` : "";
   const slots = A.map(x => {
     const st = upScore("stats", x.g, x.role, !!f.league);
     const me = x.p && st ? st.rows.find(r => r.p.mine && r.p.ix === x.p.ix) : null, mySi = x.p && st && st.M.sqIdx ? st.M.sqIdx[x.p.ix] : -1;
@@ -74,14 +118,16 @@ function scUpgrades() {
   slots.sort((a, b) => (a.me && a.me.overall != null ? a.me.orank : -1) - (b.me && b.me.overall != null ? b.me.orank : -1));
   const inp = (k, lab, ph, w) => `<label class="upf small">${lab}<input data-upf="${k}" value="${esc(f[k])}" placeholder="${ph}" inputmode="decimal" style="width:${w}px"></label>`;
   let h = head + `<p class="small muted">Tactic: <b>${esc(W.name)}</b> · performance = this season's stats in that role, ranked against every player in the save at that position${f.league ? ", adjusted for league strength" : ""}. Role fit = his attributes for the role, out of 20 (greyed when lower than your player's). Players whose league FM keeps only basic stats for are left out.</p>
-    <div class="upfilters">${inp("age", "Max age", "any", 52)}${inp("val", "Max value £M", "any", 60)}${inp("wage", "Max wage £K p/w", "any", 60)}${inp("mins", "Min minutes", "0", 64)}
+    ${reload}<div class="upfilters">${inp("age", "Max age", "any", 52)}${inp("val", "Max value £M", "any", 60)}${inp("wage", "Max wage £K p/w", "any", 60)}${inp("mins", "Min minutes", "0", 64)}
     <label class="upf small">Contract ends<select data-upf="cend"><option value="">any time</option><option value="1" ${f.cend === "1" ? "selected" : ""}>within 1 year</option><option value="2" ${f.cend === "2" ? "selected" : ""}>within 2 years</option></select></label>
     <label class="upf small"><input type="checkbox" data-upf="league" ${f.league ? "checked" : ""}> Adjust for league strength</label></div></section>`;
   const today = SAVE.meta.gameDate ? new Date(SAVE.meta.gameDate + "T00:00:00Z") : new Date();
   slots.forEach(x => {
     const r = x.me, L = LV[lvl(r)], open = f.open[x.i] != null ? f.open[x.i] : lvl(r) === 1;
     const pname = x.p ? x.p.name : "Nobody in your squad plays here";
-    const sel = `<select data-uppick="${x.i}" title="Who plays this slot">${x.p ? "" : `<option value="" selected>Nobody</option>`}${x.options.map(p => `<option value="${esc(String(p.uid || p.ix))}" ${x.p && p.ix === x.p.ix ? "selected" : ""}>${esc(p.name)} · ${Math.round(p.mins || 0)} min</option>`).join("")}</select>`;
+    const sel = `<select data-uppick="${x.i}" title="Who plays this slot">${x.p ? "" : `<option value="" selected>Nobody</option>`}${x.options.map(p => { const u = x.used(p); return `<option value="${esc(String(p.uid || p.ix))}" ${x.p && p.ix === x.p.ix ? "selected" : ""}>${esc(p.name)} · ${u ? `${u.here} start${u.here === 1 ? "" : "s"} here · ` : ""}${Math.round(p.mins || 0)} min</option>`; }).join("")}</select>`;
+    const pu = x.p ? x.used(x.p) : null;
+    const usedTxt = pu ? `${pu.here ? `${pu.here} start${pu.here === 1 ? "" : "s"} at ${esc(x.code === "WCB" ? "centre-back" : x.code)}${pu.role ? ` (${pu.role} as ${esc(x.roleName)})` : ""}` : "no starts in this position"} this season` : "";
     let list = [], body = "";
     if (x.st) {
       const myFit = x.myFit, bar = r && r.overall != null ? r.overall : -1, fits = new Map(), fit = o => { if (!fits.has(o.si)) fits.set(o.si, upFit(o.si, x.g, x.role)); return fits.get(o.si); };
@@ -110,7 +156,7 @@ function scUpgrades() {
     h += `<details class="panel upslot" data-upslot="${x.i}" ${open ? "open" : ""}><summary><span class="upcode">${esc(x.code)}</span><span class="upwho"><b>${esc(pname)}</b><span class="small muted">${esc(roleTxt)}</span></span>
       <span class="upstat"><span class="${L[1]}">${L[0]}</span>${r && r.overall != null ? `<span class="small muted">performance ${r.overall.toFixed(0)} · better than ${Math.round(r.orank)}% at ${esc(x.g === "Wingers" ? "wide" : x.g)}${x.myFit != null ? ` · role fit ${x.myFit.toFixed(1)}/20` : ""}</span>` : ""}</span>
       <span class="upn">${x.st ? `<b>${list.length.toLocaleString()}</b><span class="small muted"> better</span>` : ""}</span></summary>
-      <div class="upbody"><p class="small">Who plays here: ${sel}${x.manual ? ` <button class="linkbtn small" data-upauto="${x.i}">back to automatic</button>` : ` <span class="muted">(automatic: most minutes this season among players who can play here)</span>`} ${x.p && x.p.mins < 450 ? `<span class="small bad">few minutes (${Math.round(x.p.mins || 0)}), so his score is a rough guide</span>` : ""}</p>${body}</div></details>`;
+      <div class="upbody"><p class="small">Who plays here: ${sel}${x.manual ? ` <button class="linkbtn small" data-upauto="${x.i}">back to automatic</button>` : ` <span class="muted">(automatic: ${A.usage ? "who started most in this position and role this season" : "most minutes this season among players who can play here"})</span>`}${usedTxt ? ` <span class="small muted">· ${usedTxt}</span>` : ""} ${x.p && x.p.mins < 450 ? `<span class="small bad">few minutes (${Math.round(x.p.mins || 0)}), so his score is a rough guide</span>` : ""}</p>${body}</div></details>`;
   });
   h += `<section class="panel">${learnBox("Performance compares this season's numbers, so a player in a weaker league looks better than he is unless league strength is on. Role fit is attributes only and doesn't depend on minutes. Open a name for his full panel.", "sample")}</section>`;
   return h;

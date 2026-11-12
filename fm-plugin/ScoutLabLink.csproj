@@ -27,6 +27,8 @@
     <Reference Include="$(BIE)interop\UnityEngine.UIElementsModule.dll" Private="false" />
     <Reference Include="$(BIE)interop\UnityEngine.TextCoreTextEngineModule.dll" Private="false" />
     <Reference Include="$(BIE)interop\UnityEngine.IMGUIModule.dll" Private="false" />
+    <Reference Include="$(BIE)interop\UnityEngine.TextRenderingModule.dll" Private="false" />
+    <Reference Include="$(BIE)interop\UnityEngine.TextCoreFontEngineModule.dll" Private="false" />
     <Reference Include="$(BIE)interop\Unity.InputSystem.dll" Private="false" />
   </ItemGroup>
 </Project>

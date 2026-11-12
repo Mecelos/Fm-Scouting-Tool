@@ -76,7 +76,7 @@ Everything the tool does, one feature per file. All files share one scope, so a 
 | `src/app/21-suggested-tactic.js` | Suggested tactic (My squad > Tactic) | 487 | 52 KB |
 | `src/app/22-defensive-shape.js` | Out-of-possession shape: every formation scored as a defensive shape | 343 | 42 KB |
 | `src/app/23-guide.js` | Guide page | 212 | 35 KB |
-| `src/app/24-player-drawer.js` | Player side panel, its back button, position map | 189 | 19 KB |
+| `src/app/24-player-drawer.js` | Player side panel, its back button, position map | 190 | 19 KB |
 | `src/app/25-save-loading.js` | Loading an FM save (.fm) into every tab | 267 | 22 KB |
 | `src/app/26-all-data.js` | All data: every player in one filterable table | 407 | 38 KB |
 | `src/app/27-stat-type-scores.js` | Stat-type scores (percentile ranks, 0-100) | 277 | 24 KB |
@@ -100,7 +100,7 @@ Everything the tool does, one feature per file. All files share one scope, so a 
 | `src/app/45-matchday-brief.js` | Matches > Brief: your next game on one narrow, printable page | 32 | 4 KB |
 | `src/app/46-search.js` | Search box (players and clubs), Help menu closing, narrow-screen page menus, opening a player from the link (#player=ID&name=…, used by the FM profile button) | 81 | 7 KB |
 | `src/app/47-compare.js` | Scouting > Compare: any players side by side (profile, attributes, radar, stats per 90), and the Compare buttons in the player panel | 105 | 14 KB |
-| `src/app/48-upgrades.js` | Scouting > Upgrades: for each slot of your uploaded tactic, everyone in the save who performs better in that role, with filters | 133 | 16 KB |
+| `src/app/48-upgrades.js` | Scouting > Upgrades: for each slot of your uploaded tactic, everyone in the save who performs better in that role, with filters; who started where (team sheets) and the panel's "Played this season" box | 179 | 21 KB |
 
 ## FM save reader (src/save-reader)
 
@@ -113,7 +113,7 @@ Reads .fm save files. These files are one block of code split into pieces: 02 op
 | `src/save-reader/03-container-metadata.js` | Opening the .fm file: byte source, container frames, save metadata | 122 | 6 KB |
 | `src/save-reader/04-names-clubs.js` | Name pools and the club table | 232 | 11 KB |
 | `src/save-reader/05-players.js` | Player records | 162 | 10 KB |
-| `src/save-reader/06-team-totals-matches.js` | Team totals, the season's matches (for Data Hub), and your upcoming games from the inbox | 140 | 10 KB |
+| `src/save-reader/06-team-totals-matches.js` | Team totals, the season's matches (for Data Hub), team sheets of your matches (who played where, in which roles), and your upcoming games from the inbox | 174 | 13 KB |
 | `src/save-reader/07-season-stats.js` | Season statistics and archived past seasons | 191 | 10 KB |
 | `src/save-reader/08-staff.js` | Staff: coaches, medical, recruitment, directors | 272 | 22 KB |
 | `src/save-reader/09-public-api.js` | What the reader hands to the app, and the Scout Lab table format | 183 | 15 KB |

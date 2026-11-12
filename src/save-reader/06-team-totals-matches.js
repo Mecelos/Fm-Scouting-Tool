@@ -60,6 +60,38 @@
     }
     return out;
   }
+  // a match record's team sheets: who played, where and in which roles. Each player has a name record
+  // ("0b 02 <key> 02 <player> 02 ffffffff <first> <last> <common name>") and a line-up record
+  // "<key u32> <shirt u8> <0 home / 1 away> 02 <start position u32> 02 <position u32> ff …", followed within ~300 bytes by
+  // "02 <position> <role with the ball u64> 02 <position> <role without u64>". Positions and roles use the same bits as
+  // FM's tactic files (decoded in the app). Start position 0 = came off the bench. Returns [{ n: name, s: start pos, p: pos, ip, oop }]
+  // with the roles as 16-digit hex strings.
+  function matchLineup(d) {
+    const names = new Map(), dec = new TextDecoder();
+    for (let o = 0; o + 28 < d.length; o++) {
+      if (d[o] !== 0x0b || d[o + 1] !== 2 || d[o + 6] !== 2 || d[o + 11] !== 2 || d[o + 12] !== 0xff || d[o + 15] !== 0xff) continue;
+      const k = u32(d, o + 2); if (names.has(k)) continue;
+      const L1 = u32(d, o + 16); if (!(L1 > 0 && L1 < 40)) continue;
+      const f = dec.decode(d.subarray(o + 20, o + 20 + L1)), a = o + 20 + L1, L2 = u32(d, a);
+      if (!(L2 >= 0 && L2 < 40)) continue;
+      const l = dec.decode(d.subarray(a + 4, a + 4 + L2)), b = a + 4 + L2, L3 = b + 4 <= d.length ? u32(d, b) : 0;
+      const c = L3 > 0 && L3 < 40 ? dec.decode(d.subarray(b + 4, b + 4 + L3)) : "";
+      names.set(k, c || (f + " " + l).trim());
+    }
+    const hex = (o) => { let s = ""; for (let i = 7; i >= 0; i--) s += d[o + i].toString(16).padStart(2, "0"); return s; };
+    const out = [], seen = new Set();
+    for (let k = 0; k + 30 < d.length; k++) {
+      if (d[k + 6] !== 2 || d[k + 11] !== 2 || d[k + 16] !== 0xff || d[k + 5] > 1) continue;   // byte 5: 0 home, 1 away
+      const key = u32(d, k); if (!names.has(key) || seen.has(key)) continue;
+      const s = u32(d, k + 7), p = u32(d, k + 12); if (!p) continue;   // p 0 = an unused substitute
+      for (let q = k + 17; q < k + 400 && q + 30 < d.length; q++) {
+        if (d[q] !== 2 || d[q + 13] !== 2 || u32(d, q + 14) !== p) continue;
+        const q1 = u32(d, q + 1); if (q1 !== s && q1 !== p) continue;
+        out.push({ n: names.get(key), s, p, ip: hex(q + 5), oop: hex(q + 18) }); seen.add(key); break;
+      }
+    }
+    return out;
+  }
   async function readMatches(src, idx, clubs, myUid) {
     if (!idx.sections.match_stats_cfg) return null;
     const d = await readSection(src, idx, "match_stats_cfg");
@@ -83,10 +115,12 @@
         let c = compIx.get(name); if (c == null) { c = comps.length; comps.push(name); compIx.set(name, c); }
         const g = matchGoals(h); let a = 255, b = 255;
         if (g) { a = 0; b = 0; g.forEach(([, , side, type, minute]) => { if (type >= 4) return; if ((type === 3) === (side === 1)) a++; else b++; ev.push(mid.length, minute, side, type); }); }
-        if (g && g.length && (isMine(ts[0]) || isMine(ts[1]))) {   // your matches: who scored and assisted
-          let names = new Map(); try { names = matchNames(zstd(d.subarray(at, at + sz)), g.flatMap(x => [x[0], x[1]])); } catch (e) { }
+        if (g && (isMine(ts[0]) || isMine(ts[1]))) {   // your matches: who scored and assisted, and the team sheets
+          let names = new Map(), lineup = null, full = null;
+          try { full = zstd(d.subarray(at, at + sz)); } catch (e) { }
+          if (full) { try { names = matchNames(full, g.flatMap(x => [x[0], x[1]])); } catch (e) { } try { lineup = matchLineup(full); } catch (e) { } }
           mine.push({ r: mid.length, goals: g.filter(x => x[3] < 4).map(([s, as, side, type, minute]) => ({ m: minute, side: type === 3 ? 1 - side : side, type, by: names.get(s) || "", as: names.get(as) || "" })),
-            shoot: g.filter(x => x[3] >= 4).map(([s, , side, type]) => ({ side, scored: type === 4, by: names.get(s) || "" })) });
+            shoot: g.filter(x => x[3] >= 4).map(([s, , side, type]) => ({ side, scored: type === 4, by: names.get(s) || "" })), lineup });
         }
         mid.push(id); comp.push(c); home.push(ts[0]); away.push(ts[1]); full.push(sz > 120000 ? 1 : 0); hg.push(a); ag.push(b);
       }

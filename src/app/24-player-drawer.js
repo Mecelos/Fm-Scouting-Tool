@@ -31,6 +31,7 @@ function openPlayer(sc, pid, silent) {
       ${isS && p.basic ? `<span class="tag warn">Basic-stats league: only goals, xG, xA, shots counted</span>` : ""}</div>`;
   if (typeof playerCard === "function") h += playerCard(sc, r);
   if (typeof traitsHtml === "function") h += traitsHtml(p, sc);
+  if (typeof playedHtml === "function") h += playedHtml(p);
   h += capaHtml(p) + positionMapHtml(p) + (typeof posSwitchHtml === "function" ? posSwitchHtml(p, S.adCtx && S._adPanel ? S.adCtx.pos : sc.pos) : "");
   // how to read him: output (stats) against ability (attributes)
   const ln = linked(sc, p);
