@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Scout Lab Link: BepInEx 6 (IL2CPP) plugin for FM27. Build with build.bat; it installs into ..\plugins\ScoutLabLink -->
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <AssemblyName>ScoutLabLink</AssemblyName>
+    <RootNamespace>ScoutLabLink</RootNamespace>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <GenerateDependencyFile>false</GenerateDependencyFile>
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <CheckEolTargetFramework>false</CheckEolTargetFramework>
+    <BIE>$(MSBuildThisFileDirectory)..\</BIE>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="$(BIE)core\BepInEx.Core.dll" Private="false" />
+    <Reference Include="$(BIE)core\BepInEx.Unity.IL2CPP.dll" Private="false" />
+    <Reference Include="$(BIE)core\BepInEx.Unity.Common.dll" Private="false" />
+    <Reference Include="$(BIE)core\Il2CppInterop.Runtime.dll" Private="false" />
+    <Reference Include="$(BIE)core\Il2CppInterop.Common.dll" Private="false" />
+    <Reference Include="$(BIE)interop\Il2Cppmscorlib.dll" Private="false" />
+    <Reference Include="$(BIE)interop\Il2CppSystem.dll" Private="false" />
+    <Reference Include="$(BIE)interop\Il2CppSystem.Core.dll" Private="false" />
+    <Reference Include="$(BIE)interop\UnityEngine.dll" Private="false" />
+    <Reference Include="$(BIE)interop\UnityEngine.CoreModule.dll" Private="false" />
+    <Reference Include="$(BIE)interop\UnityEngine.UIElementsModule.dll" Private="false" />
+    <Reference Include="$(BIE)interop\UnityEngine.TextCoreTextEngineModule.dll" Private="false" />
+    <Reference Include="$(BIE)interop\UnityEngine.IMGUIModule.dll" Private="false" />
+    <Reference Include="$(BIE)interop\Unity.InputSystem.dll" Private="false" />
+  </ItemGroup>
+</Project>
