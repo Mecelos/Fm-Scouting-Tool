@@ -63,7 +63,7 @@ Everything the tool does, one feature per file. All files share one scope, so a 
 | File | What it does | Lines | Size |
 | --- | --- | ---: | ---: |
 | `src/app/10-model-metrics-attributes.js` | Scoring model: stat metrics, stat categories, attributes | 166 | 14 KB |
-| `src/app/11-model-roles-types-tiers.js` | Scoring model: roles, player types (auto tags), stat impact tiers per position | 157 | 21 KB |
+| `src/app/11-model-roles-types-tiers.js` | Scoring model: roles, player types (auto tags), stat impact tiers per position | 165 | 22 KB |
 | `src/app/12-league-strength.js` | League strength adjustments | 154 | 15 KB |
 | `src/app/13-app-parsing.js` | App start and parsing of FM export files | 119 | 6 KB |
 | `src/app/14-dataset-model.js` | Turning loaded data into the scored player model | 153 | 9 KB |
@@ -100,7 +100,7 @@ Everything the tool does, one feature per file. All files share one scope, so a 
 | `src/app/45-matchday-brief.js` | Matches > Brief: your next game on one narrow, printable page | 32 | 4 KB |
 | `src/app/46-search.js` | Search box (players and clubs), Help menu closing, narrow-screen page menus | 58 | 5 KB |
 | `src/app/47-compare.js` | Scouting > Compare: any players side by side (profile, attributes, radar, stats per 90), and the Compare buttons in the player panel | 105 | 14 KB |
-| `src/app/48-upgrades.js` | Scouting > Upgrades: for each slot of your uploaded tactic, everyone in the save who performs better in that role, with filters | 127 | 15 KB |
+| `src/app/48-upgrades.js` | Scouting > Upgrades: for each slot of your uploaded tactic, everyone in the save who performs better in that role, with filters | 133 | 16 KB |
 
 ## FM save reader (src/save-reader)
 

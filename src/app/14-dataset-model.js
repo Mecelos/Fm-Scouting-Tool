@@ -92,7 +92,7 @@ const wmean = pairs => { let s = 0, w = 0; for (const [v, wt] of pairs) if (v !=
 function scoreStats(model, pos, role, opts) {
   const minM = model.hasMins ? opts.minMins : 0;
   const pool = model.players.filter(p => p.mine || !model.hasMins || (p.mins || 0) >= minM); // your own squad players always stay in
-  const cats = POS_CATS[pos].filter(c => Object.keys(CATS[c].m).some(k => model.metrics.includes(k)));
+  const cats = roleCats(pos, role, POS_CATS[pos]).filter(c => Object.keys(CATS[c].m).some(k => model.metrics.includes(k)));
   const roleDef = (ROLES[pos] || {})[role] || ROLES[pos].Balanced;
   const pct = {};
   for (const k of model.metrics) {

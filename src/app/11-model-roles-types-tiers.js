@@ -140,9 +140,17 @@ const IMPACT = {
   GK: tiers(["xgp90"], ["svpct", "mlg90", "conc90"], ["pas", "cs90"], ["psc90", "prp90"]),
 };
 Object.values(IMPACT).forEach(t => { if (t.gls90) t.npg90 = t.gls90; });
+// FM27 puts the box-to-box roles in the DM line, but they attack and create: these roles also count stats (and categories)
+// that a DM's normal list leaves out. Box-to-Box Midfielder = all-round + goal threat; Box-to-Box Playmaker = carries and creates.
+const ROLE_STATS = {
+  "DM|Box-to-Box Midfielder": { cats: ["goal", "output", "create"], imp: { npxg90: T2, sht90: T3, npg90: T3, gls90: T3, xa90: T3, opkp90: T3, drb90: T3, dist90: T3, spr90: T3 } },
+  "DM|Box-to-Box Playmaker": { cats: ["create"], imp: { prp90: T1, xa90: T2, opkp90: T2, ccc90: T3, drb90: T3, kp90: T4, dist90: T4 } },
+};
+const roleCats = (pos, role, cats) => { const x = ROLE_STATS[pos + "|" + role]; return x ? [...new Set([...cats, ...x.cats])] : cats; };
 const TIER_NAME = { 3: "Tier 1", 2: "Tier 2", 1: "Tier 3", 0.5: "Tier 4" };
 function statWeights(pos, role, metrics, cats) {
-  const imp = IMPACT[pos] || {}, rd = (ROLES[pos] || {})[role];
+  const ex = ROLE_STATS[pos + "|" + role], imp = ex ? { ...(IMPACT[pos] || {}), ...ex.imp } : IMPACT[pos] || {}, rd = (ROLES[pos] || {})[role];
+  cats = roleCats(pos, role, cats);
   const bal = !rd || role === "Balanced", sw = bal ? null : rd.sw;
   const maxsw = bal ? 1 : Math.max(...Object.values(sw));
   const w = {};
