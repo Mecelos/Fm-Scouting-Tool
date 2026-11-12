@@ -95,11 +95,47 @@
     let staffError = null;
     progress("Reading staff", 0.96);
     try { T.staff = readStaff(db, clubs, located, T, pools, clock.date, fm27 ? PERSON_FM27 : PERSON_FM26, fm27 ? STAFF_FM27 : STAFF_FM26); } catch (e) { T.staff = null; staffError = e.message; }
+    // keep only players worth scouting: CA 100+, plus everyone at your own club (youth included). Done once, here, so every page,
+    // score and ranking works on the smaller pool, and storing / reopening the save is about 5 times lighter.
+    let cut = null;
+    try { const mine = managed[0] ? clubs.clubs.findIndex(c => c.uid === managed[0].uid) : -1; cut = compactPlayers(T, i => T.ca[i] >= MIN_CA || (mine >= 0 && T.clubIdx[i] === mine)); } catch (e) { cut = null; }
     progress("Done", 1);
     let named = 0, withClub = 0; for (let i = 0; i < T.n; i++) { if (T.name[i]) named++; if (T.clubIdx[i] >= 0) withClub++; }
-    T.meta = { game: "FM" + version.major, build: version.build, saveName: idx.saveName, gameDate: clock.date.iso, dbVersion: clock.dbVersion, managed, statsError, historyError, staffError,
+    T.meta = { cut, game: "FM" + version.major, build: version.build, saveName: idx.saveName, gameDate: clock.date.iso, dbVersion: clock.dbVersion, managed, statsError, historyError, staffError,
       check: { players: T.n, repeats: located.repeats, clubsTableBound: clubs.tableBound, clubs: clubs.clubs.length, named, withClub, withStats: T.stats.league ? T.stats.league.n : 0, withStatsOverall: T.stats.overall ? T.stats.overall.n : 0 } };
     return T;
+  }
+  const MIN_CA = 100;
+  // drop players in place: every per-player array (length n, or n × a fixed width) keeps the kept rows in order;
+  // season stats and past-season rows are re-pointed. Returns { minCA, before, after }.
+  function compactPlayers(T, keepFn) {
+    const n = T.n, keep = []; for (let i = 0; i < n; i++) if (keepFn(i)) keep.push(i);
+    if (keep.length === n) return { minCA: MIN_CA, before: n, after: n };
+    const m = keep.length, newIx = new Int32Array(n).fill(-1); keep.forEach((i, j) => { newIx[i] = j; });
+    const pick = (v) => {
+      if (!v || typeof v === "string" || v.length == null || v.length === 0 || v.length % n) return v;
+      const w = v.length / n, out = Array.isArray(v) ? new Array(m * w) : new v.constructor(m * w);
+      for (let j = 0; j < m; j++) { const i = keep[j]; for (let k = 0; k < w; k++) out[j * w + k] = v[i * w + k]; }
+      return out;
+    };
+    for (const k of Object.keys(T)) { const v = T[k]; if (k === "clubs" || k === "clubShort" || k === "clubUid") continue; if (Array.isArray(v) || ArrayBuffer.isView(v)) T[k] = pick(v); }
+    for (const kind of Object.keys(T.stats || {})) {   // season stats: keep the lines of kept players, renumbered
+      const st = T.stats[kind]; if (!st || !st.row) continue;
+      const lines = []; keep.forEach((i, j) => { if (st.row[i] >= 0) lines.push([j, st.row[i]]); });
+      const row = new Int32Array(m).fill(-1), cols = {};
+      for (const f in st.cols) { const a = st.cols[f], o = new a.constructor(lines.length); lines.forEach(([, r], q) => { o[q] = a[r]; }); cols[f] = o; }
+      lines.forEach(([j], q) => { row[j] = q; });
+      T.stats[kind] = { n: lines.length, row, cols };
+    }
+    if (T.hist && T.hist.player) {   // past seasons: only kept players' rows
+      const H = T.hist, rows = []; for (let r = 0; r < H.n; r++) if (newIx[H.player[r]] >= 0) rows.push(r);
+      const sub = a => { const o = new a.constructor(rows.length); rows.forEach((r, q) => { o[q] = a[r]; }); return o; };
+      const lines = new Uint8Array(rows.length * H.rowBytes); rows.forEach((r, q) => lines.set(H.lines.subarray(r * H.rowBytes, (r + 1) * H.rowBytes), q * H.rowBytes));
+      ["year", "kind", "team", "club", "comp", "youth"].forEach(k => { if (H[k]) H[k] = sub(H[k]); });
+      H.player = Int32Array.from(rows, r => newIx[H.player[r]]); H.lines = lines; H.n = rows.length;
+    }
+    T.n = m;
+    return { minCA: MIN_CA, before: n, after: m };
   }
   // transferable buffers of a table (for postMessage)
   function tableBuffers(T) {

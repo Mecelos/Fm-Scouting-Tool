@@ -77,7 +77,7 @@ Everything the tool does, one feature per file. All files share one scope, so a 
 | `src/app/22-defensive-shape.js` | Out-of-possession shape: every formation scored as a defensive shape | 343 | 42 KB |
 | `src/app/23-guide.js` | Guide page | 212 | 35 KB |
 | `src/app/24-player-drawer.js` | Player panel: full-window profile (FM-style banner, three columns), back button, attribute grid | 209 | 21 KB |
-| `src/app/25-save-loading.js` | Loading an FM save (.fm) into every tab | 267 | 22 KB |
+| `src/app/25-save-loading.js` | Loading an FM save (.fm) into every tab | 268 | 22 KB |
 | `src/app/26-all-data.js` | All data: every player in one filterable table | 407 | 38 KB |
 | `src/app/27-stat-type-scores.js` | Stat-type scores (percentile ranks, 0-100) | 278 | 24 KB |
 | `src/app/28-past-seasons.js` | Past seasons | 138 | 12 KB |
@@ -116,7 +116,7 @@ Reads .fm save files. These files are one block of code split into pieces: 02 op
 | `src/save-reader/06-team-totals-matches.js` | Team totals, the season's matches (for Data Hub), team sheets of your matches (who played where, in which roles), and your upcoming games from the inbox | 174 | 13 KB |
 | `src/save-reader/07-season-stats.js` | Season statistics and archived past seasons | 191 | 10 KB |
 | `src/save-reader/08-staff.js` | Staff: coaches, medical, recruitment, directors | 272 | 22 KB |
-| `src/save-reader/09-public-api.js` | What the reader hands to the app, and the Scout Lab table format | 183 | 15 KB |
+| `src/save-reader/09-public-api.js` | What the reader hands to the app (keeps only CA 100+ players and your whole club: `compactPlayers`, `MIN_CA`), and the Scout Lab table format | 219 | 19 KB |
 
 ## Built-in example data (src/data)
 
