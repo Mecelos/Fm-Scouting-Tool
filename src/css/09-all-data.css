@@ -36,7 +36,7 @@
 .adchk .n { margin-left: auto; color: var(--muted); font-size: 11.5px; font-variant-numeric: tabular-nums; }
 .adtable thead tr.adband th { top: 0; z-index: 2; height: 24px; padding: 0 8px; background: var(--panel); border-bottom: 1px solid var(--line2); font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); vertical-align: middle; line-height: 24px; text-align: left; }
 .adtable thead tr.adband th.stk { z-index: 3; left: 0; }
-.adtable thead tr.adhead th { top: var(--bandh, 25px); }
+.adtable thead tr.adhead th { top: calc(var(--bandh, 25px) - 1px); }   /* 1px overlap: no see-through hairline at any Scale */
 .adtable thead tr.adhead th.stk { z-index: 3; }
 .adtable .bs { border-left: 2px solid var(--line2); }
 .adsort .p90 { font-weight: 400; color: var(--muted); margin-left: 2px; }

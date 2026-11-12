@@ -79,7 +79,7 @@ Everything the tool does, one feature per file. All files share one scope, so a 
 | `src/app/24-player-drawer.js` | Player panel: full-window profile (FM-style banner, three columns), back button, attribute grid | 209 | 21 KB |
 | `src/app/25-save-loading.js` | Loading an FM save (.fm) into every tab | 267 | 22 KB |
 | `src/app/26-all-data.js` | All data: every player in one filterable table | 407 | 38 KB |
-| `src/app/27-stat-type-scores.js` | Stat-type scores (percentile ranks, 0-100) | 277 | 24 KB |
+| `src/app/27-stat-type-scores.js` | Stat-type scores (percentile ranks, 0-100) | 278 | 24 KB |
 | `src/app/28-past-seasons.js` | Past seasons | 138 | 12 KB |
 | `src/app/29-cloud-copy.js` | Cloud copy of the loaded save on claude.ai | 170 | 12 KB |
 | `src/app/30-staff.js` | Staff pages | 398 | 50 KB |

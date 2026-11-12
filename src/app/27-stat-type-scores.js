@@ -237,8 +237,9 @@ function bindAllData() {
   const legend = $(".adlegend"); if (legend) legend.ontoggle = () => { S.adLegendOpen = legend.open; };
   const side = $("#adside"); if (side) side.ontoggle = () => { S.adSideOpen = side.open; };
   // headings: full name and meaning on hover or keyboard focus (touch: shown after the tap)
-  const band = wrap.querySelector("tr.adband"); if (band) wrap.querySelector("table").style.setProperty("--bandh", band.getBoundingClientRect().height + "px");
-  const stkw = wrap.querySelector("thead tr.adhead th.stk"); if (stkw) wrap.querySelector("table").style.setProperty("--stkw", stkw.getBoundingClientRect().width + "px");
+  // offsetHeight/Width are layout sizes: with the Scale setting (page zoom) getBoundingClientRect returns zoomed sizes, which left a see-through gap under the band row
+  const band = wrap.querySelector("tr.adband"); if (band) wrap.querySelector("table").style.setProperty("--bandh", (band.offsetHeight || 25) + "px");
+  const stkw = wrap.querySelector("thead tr.adhead th.stk"); if (stkw) wrap.querySelector("table").style.setProperty("--stkw", stkw.offsetWidth + "px");
   const head = wrap.querySelector("thead");
   if (head) {
     head.onmousemove = e => { if (lastPointer !== "mouse") return; const th = e.target.closest("th[data-k]"); if (th && AD.tipK !== th.dataset.k) showAdTip(th); };
