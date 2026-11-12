@@ -2262,6 +2262,13 @@ button[disabled] { opacity: .6; cursor: progress; }
     return T;
   }
   const MIN_CA = 100;
+  // the same cut for a save stored by an older Scout Lab (read before the cut existed): used when the tool reopens it
+  function cutStored(T) {
+    if (!T || !T.n || !T.ca || (T.meta && T.meta.cut)) return null;
+    const m0 = T.meta && T.meta.managed && T.meta.managed[0], mine = m0 && T.clubUid ? T.clubUid.indexOf(m0.uid) : -1;
+    const cut = compactPlayers(T, i => T.ca[i] >= MIN_CA || (mine >= 0 && T.clubIdx[i] === mine));
+    if (T.meta) T.meta.cut = cut; return cut;
+  }
   // drop players in place: every per-player array (length n, or n × a fixed width) keeps the kept rows in order;
   // season stats and past-season rows are re-pointed. Returns { minCA, before, after }.
   function compactPlayers(T, keepFn) {
@@ -2371,7 +2378,7 @@ button[disabled] { opacity: .6; cursor: progress; }
     ["Sv %", (p, s) => s && s.saves_held != null && s.shots_on_target_faced ? pct(s.saves_held + s.saves_parried + s.saves_tipped, s.shots_on_target_faced) : null],
     ["Conc", (p, s) => s && s.goals_allowed], ["Clean Sheets", (p, s) => s && s.clean_sheets],
   ];
-  G.FMSaveReader = { readSave, readIndex, tableBuffers, playerObject, positionString, bestPosition, historyLine, STAT_COLS, ATTR_NAME, POSITION_CODES, ATTRIBUTE_ORDER, PERSONALITY_ORDER, STAT_FIELDS, HISTORY_KINDS: HISTORY.kindNames, STAFF_RATINGS: STAFF_RATINGS.map(r => r[0]), STAFF_PREFS: STAFF_PREFS.map(p => p[0]) };
+  G.FMSaveReader = { readSave, cutStored, readIndex, tableBuffers, playerObject, positionString, bestPosition, historyLine, STAT_COLS, ATTR_NAME, POSITION_CODES, ATTRIBUTE_ORDER, PERSONALITY_ORDER, STAT_FIELDS, HISTORY_KINDS: HISTORY.kindNames, STAFF_RATINGS: STAFF_RATINGS.map(r => r[0]), STAFF_PREFS: STAFF_PREFS.map(p => p[0]) };
 })(typeof self !== "undefined" ? self : globalThis);
 </script>
 <script type="text/plain" id="ex-stats">Inf;Player;Age;Club;Transfer Value;Division;Based In;Best Pos;Minutes;xA/90;Poss Lost/90;KP/90;Pr passes/90;Ch C/90;Asts/90;OP-KP/90;Hdrs L/90;OP-Crs C/90;OP-Crs A/90;Crs A/90;Cr C/90;Hdr %;Tck/90;Aer A/90;Hdrs;Hdrs A;OP-Crs A;Cr A;NP-xG;Red;Ps A/90;Sprints/90;Yel;xG-OP;xG;Cr C;xA;Conv %;Shot %;OP-Crs C;CCC;Shts Blckd/90;Blk/90;Clr/90;K Tck/90;Poss Won/90;Pres A/90;Pres C/90;ShT/90;Shots From Outside The Box Per 90 minutes;Shot/90;Drb;OP-Cr %;K Hdrs/90;Hdrs W/90;NP-xG/90;Goals per 90 minutes;xG/90;Ps C/90;Cr C/A;Drb/90;Tck R;Int/90;Dist/90;Pas %;MLG;Rating
@@ -5888,6 +5895,13 @@ Yth;John Taylor;4;1;6;8;1;9;4;2;8;4;11;1;5;8;2;13;5;5;8;2;6;6;9;11;2;5;4;5;14;10
     return T;
   }
   const MIN_CA = 100;
+  // the same cut for a save stored by an older Scout Lab (read before the cut existed): used when the tool reopens it
+  function cutStored(T) {
+    if (!T || !T.n || !T.ca || (T.meta && T.meta.cut)) return null;
+    const m0 = T.meta && T.meta.managed && T.meta.managed[0], mine = m0 && T.clubUid ? T.clubUid.indexOf(m0.uid) : -1;
+    const cut = compactPlayers(T, i => T.ca[i] >= MIN_CA || (mine >= 0 && T.clubIdx[i] === mine));
+    if (T.meta) T.meta.cut = cut; return cut;
+  }
   // drop players in place: every per-player array (length n, or n × a fixed width) keeps the kept rows in order;
   // season stats and past-season rows are re-pointed. Returns { minCA, before, after }.
   function compactPlayers(T, keepFn) {
@@ -5997,7 +6011,7 @@ Yth;John Taylor;4;1;6;8;1;9;4;2;8;4;11;1;5;8;2;13;5;5;8;2;6;6;9;11;2;5;4;5;14;10
     ["Sv %", (p, s) => s && s.saves_held != null && s.shots_on_target_faced ? pct(s.saves_held + s.saves_parried + s.saves_tipped, s.shots_on_target_faced) : null],
     ["Conc", (p, s) => s && s.goals_allowed], ["Clean Sheets", (p, s) => s && s.clean_sheets],
   ];
-  G.FMSaveReader = { readSave, readIndex, tableBuffers, playerObject, positionString, bestPosition, historyLine, STAT_COLS, ATTR_NAME, POSITION_CODES, ATTRIBUTE_ORDER, PERSONALITY_ORDER, STAT_FIELDS, HISTORY_KINDS: HISTORY.kindNames, STAFF_RATINGS: STAFF_RATINGS.map(r => r[0]), STAFF_PREFS: STAFF_PREFS.map(p => p[0]) };
+  G.FMSaveReader = { readSave, cutStored, readIndex, tableBuffers, playerObject, positionString, bestPosition, historyLine, STAT_COLS, ATTR_NAME, POSITION_CODES, ATTRIBUTE_ORDER, PERSONALITY_ORDER, STAT_FIELDS, HISTORY_KINDS: HISTORY.kindNames, STAFF_RATINGS: STAFF_RATINGS.map(r => r[0]), STAFF_PREFS: STAFF_PREFS.map(p => p[0]) };
 })(typeof self !== "undefined" ? self : globalThis);
 
 /* ===== Scoring model (hidden from the UI) =====
@@ -11263,7 +11277,8 @@ document.addEventListener("pointerleave", () => { tip.hidden = true; });
     let learned = 0; S.ds.forEach(d => { learned += learnLeagues(d); }); if (learned) saveClubLeagues();
     let sv = await DB.get("save");
     if (sv && sv.packed && sv.blob) { try { sv = (await unpackSave(await sv.blob.arrayBuffer())).save; } catch (e) { sv = null; S.saveErr = "Your stored save couldn't be opened: load it once more."; } }
-    if (sv && sv.v === 2 && sv.n) { SAVE = sv; if (!sv.statsV) S.saveErr = "Load your save once more: Scout Lab now keeps youth and B team games (U23/U21/U19/U18, II) out of league stats, and this stored copy was read before that."; installSave(false); snapList().then(l => { if (!l.some(x => x.gameDate === SAVE.meta.gameDate)) snapTake().catch(() => { }); }); tsnapList().then(l => { if (!l.some(x => x.gameDate === SAVE.meta.gameDate)) tsnapTake().catch(() => { }); }); }
+    let recut = null; if (sv && sv.v === 2 && sv.n && sv.meta && !sv.meta.cut && self.FMSaveReader && FMSaveReader.cutStored) { try { recut = FMSaveReader.cutStored(sv); } catch (e) { recut = null; } }   // stored before the CA 100 cut: cut it now
+    if (sv && sv.v === 2 && sv.n) { SAVE = sv; if (!sv.statsV) S.saveErr = "Load your save once more: Scout Lab now keeps youth and B team games (U23/U21/U19/U18, II) out of league stats, and this stored copy was read before that."; installSave(false); if (recut) keepSave(); snapList().then(l => { if (!l.some(x => x.gameDate === SAVE.meta.gameDate)) snapTake().catch(() => { }); }); tsnapList().then(l => { if (!l.some(x => x.gameDate === SAVE.meta.gameDate)) tsnapTake().catch(() => { }); }); }
     else if (sv) { await DB.set("save", null); S.saveErr = "Scout Lab's save format changed: load your save once more."; }
   }
   if (S.saveRoles) Object.keys(S.saveRoles).forEach(id => { const d = S.ds.find(x => x.id === id); if (d && ROLES[d.pos] && ROLES[d.pos][S.saveRoles[id]]) d.role = S.saveRoles[id]; });

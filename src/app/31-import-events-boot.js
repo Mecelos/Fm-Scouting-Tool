@@ -233,7 +233,8 @@ document.addEventListener("pointerleave", () => { tip.hidden = true; });
     let learned = 0; S.ds.forEach(d => { learned += learnLeagues(d); }); if (learned) saveClubLeagues();
     let sv = await DB.get("save");
     if (sv && sv.packed && sv.blob) { try { sv = (await unpackSave(await sv.blob.arrayBuffer())).save; } catch (e) { sv = null; S.saveErr = "Your stored save couldn't be opened: load it once more."; } }
-    if (sv && sv.v === 2 && sv.n) { SAVE = sv; if (!sv.statsV) S.saveErr = "Load your save once more: Scout Lab now keeps youth and B team games (U23/U21/U19/U18, II) out of league stats, and this stored copy was read before that."; installSave(false); snapList().then(l => { if (!l.some(x => x.gameDate === SAVE.meta.gameDate)) snapTake().catch(() => { }); }); tsnapList().then(l => { if (!l.some(x => x.gameDate === SAVE.meta.gameDate)) tsnapTake().catch(() => { }); }); }
+    let recut = null; if (sv && sv.v === 2 && sv.n && sv.meta && !sv.meta.cut && self.FMSaveReader && FMSaveReader.cutStored) { try { recut = FMSaveReader.cutStored(sv); } catch (e) { recut = null; } }   // stored before the CA 100 cut: cut it now
+    if (sv && sv.v === 2 && sv.n) { SAVE = sv; if (!sv.statsV) S.saveErr = "Load your save once more: Scout Lab now keeps youth and B team games (U23/U21/U19/U18, II) out of league stats, and this stored copy was read before that."; installSave(false); if (recut) keepSave(); snapList().then(l => { if (!l.some(x => x.gameDate === SAVE.meta.gameDate)) snapTake().catch(() => { }); }); tsnapList().then(l => { if (!l.some(x => x.gameDate === SAVE.meta.gameDate)) tsnapTake().catch(() => { }); }); }
     else if (sv) { await DB.set("save", null); S.saveErr = "Scout Lab's save format changed: load your save once more."; }
   }
   if (S.saveRoles) Object.keys(S.saveRoles).forEach(id => { const d = S.ds.find(x => x.id === id); if (d && ROLES[d.pos] && ROLES[d.pos][S.saveRoles[id]]) d.role = S.saveRoles[id]; });

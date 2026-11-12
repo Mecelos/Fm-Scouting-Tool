@@ -106,6 +106,13 @@
     return T;
   }
   const MIN_CA = 100;
+  // the same cut for a save stored by an older Scout Lab (read before the cut existed): used when the tool reopens it
+  function cutStored(T) {
+    if (!T || !T.n || !T.ca || (T.meta && T.meta.cut)) return null;
+    const m0 = T.meta && T.meta.managed && T.meta.managed[0], mine = m0 && T.clubUid ? T.clubUid.indexOf(m0.uid) : -1;
+    const cut = compactPlayers(T, i => T.ca[i] >= MIN_CA || (mine >= 0 && T.clubIdx[i] === mine));
+    if (T.meta) T.meta.cut = cut; return cut;
+  }
   // drop players in place: every per-player array (length n, or n × a fixed width) keeps the kept rows in order;
   // season stats and past-season rows are re-pointed. Returns { minCA, before, after }.
   function compactPlayers(T, keepFn) {
@@ -215,5 +222,5 @@
     ["Sv %", (p, s) => s && s.saves_held != null && s.shots_on_target_faced ? pct(s.saves_held + s.saves_parried + s.saves_tipped, s.shots_on_target_faced) : null],
     ["Conc", (p, s) => s && s.goals_allowed], ["Clean Sheets", (p, s) => s && s.clean_sheets],
   ];
-  G.FMSaveReader = { readSave, readIndex, tableBuffers, playerObject, positionString, bestPosition, historyLine, STAT_COLS, ATTR_NAME, POSITION_CODES, ATTRIBUTE_ORDER, PERSONALITY_ORDER, STAT_FIELDS, HISTORY_KINDS: HISTORY.kindNames, STAFF_RATINGS: STAFF_RATINGS.map(r => r[0]), STAFF_PREFS: STAFF_PREFS.map(p => p[0]) };
+  G.FMSaveReader = { readSave, cutStored, readIndex, tableBuffers, playerObject, positionString, bestPosition, historyLine, STAT_COLS, ATTR_NAME, POSITION_CODES, ATTRIBUTE_ORDER, PERSONALITY_ORDER, STAT_FIELDS, HISTORY_KINDS: HISTORY.kindNames, STAFF_RATINGS: STAFF_RATINGS.map(r => r[0]), STAFF_PREFS: STAFF_PREFS.map(p => p[0]) };
 })(typeof self !== "undefined" ? self : globalThis);
