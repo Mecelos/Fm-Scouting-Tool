@@ -12,27 +12,43 @@ function openPlayer(sc, pid, silent) {
   if (r.below) gap.push(`${g(r.overall - r.below.overall)} ahead of #${r.rank + 1}`);
   if (r.above) gap.push(`${g(r.above.overall - r.overall)} behind #${r.rank - 1}`);
   const info = [p.position && p.position !== p.bestPos ? "Positions " + p.position : "", p.pers ? "Personality " + p.pers : "", p.foot ? "Foot " + p.foot : "", p.height ? p.height : "", p.wage ? "Wage " + p.wage : "", p.apps ? p.apps + " apps" : ""].filter(Boolean);
-  let h = `${pBackHtml()}<div class="dhead"><div><h2>${starForP(p)}${esc(p.name)}</h2><p class="muted">${esc(p.club || "No club")}${p.bestPos ? " · " + esc(p.bestPos) : ""} · ${p.age ?? "?"} yrs · ${esc(p.valTxt || "–")}</p>${SAVE && p.uid && saveUidIndex().has(p.uid) ? `<button class="linkbtn small" data-simfor="${esc(p.uid)}">Find similar players ↓</button>` : ""}${typeof cmpPanelHtml === "function" ? " " + cmpPanelHtml(p) : ""}${youthNote(p)}${typeof slPanelHtml === "function" ? slPanelHtml(p) : ""}
-    ${isS && p.div ? `<p class="muted small">${esc(p.country)} · ${esc(p.div)} · league strength ${p.lg.k.toFixed(2)}${S.league ? "" : " (adjustment off)"}</p>` : ""}
-    ${info.length ? `<p class="muted small">${info.map(esc).join(" · ")}</p>` : ""}</div>
-    <button class="ghost close" data-act="close" aria-label="Close">✕</button></div>
-    ${S._adPanel ? `<p class="small"><button class="linkbtn" data-act="adgo">Open him in the ${esc(S.pos)} ${S.mode === "stats" ? "Stats" : "Attributes"} tab</button> <span class="muted">(this panel sits over the page you were on)</span></p>` : ""}
-    <div class="drole"><label for="drawerRole" class="small muted">Role</label><select id="drawerRole">${roleOptions(sc.pos, sc.role)}</select>${S.pRole && S.pRole !== pageRole() ? `<span class="small muted">this panel only · page stays on ${esc(pageRole())}</span><button class="ghost small" data-act="prolereset">Back to ${esc(pageRole())}</button>` : `<span class="small muted">changes this panel only</span>`}</div>
-    <div class="dtiles">
-      <div class="tile"><span class="tv acc">${fmtS(r.overall)}${isS ? "" : "<small>/20</small>"}</span><span class="tl">${esc(sc.role)}</span></div>
-      <div class="tile"><span class="tv">#${r.rank ?? "–"}<small> of ${sc.ranked.length}</small></span><span class="tl">${esc(sc.role === "Balanced" ? "overall" : sc.role)}${r.orank != null ? " · " + pctTxt(r.orank) : ""}</span></div>
-      <div class="tile"><span class="tv">${r.fair ? esc(fmtMoney(r.fair)) : "–"}</span><span class="tl">Fair value</span></div>
-      ${isS && p.mins != null ? `<div class="tile"><span class="tv">${p.mins}</span><span class="tl">Minutes</span></div>` : ""}
+  // FM-style profile banner: name, position, age and club on the left; key numbers and actions; the panel fills the window
+  const si = SAVE && p.uid ? saveUidIndex().get(String(p.uid).startsWith("s") ? String(p.uid) : "s" + p.uid) : null;
+  const cEnd = si != null && SAVE.cEnd && SAVE.cEnd[si] && typeof sDate === "function" ? sDate(SAVE.cEnd[si]) : null;
+  const tile = (v, l, cls) => `<div class="tile"><span class="tv ${cls || ""}">${v}</span><span class="tl">${l}</span></div>`;
+  let h = `<header class="phero">
+    <div class="dhead pbanner">
+      <div class="pident">${pBackHtml()}<h2>${starForP(p)}${esc(p.name)}</h2>
+        <p class="psub">${p.bestPos ? `<b>${esc(p.bestPos)}</b>` : ""}${p.age != null ? ` · ${p.age} years old` : ""}${p.nat ? ` · ${esc(p.nat)}` : ""}${p.foot ? ` · ${esc(p.foot)} foot` : ""}${p.height ? ` · ${esc(p.height)}` : ""}</p>
+        ${p.position && p.position !== p.bestPos ? `<p class="small muted">Positions ${esc(p.position)}${p.pers ? " · " + esc(p.pers) : ""}</p>` : p.pers ? `<p class="small muted">${esc(p.pers)}</p>` : ""}
+        <p class="pacts">${SAVE && p.uid && saveUidIndex().has(p.uid) ? `<button class="linkbtn small" data-simfor="${esc(p.uid)}">Find similar players ↓</button>` : ""}${typeof cmpPanelHtml === "function" ? " " + cmpPanelHtml(p) : ""}</p>${youthNote(p)}</div>
+      <div class="pclub"><b>${esc(p.club || "No club")}</b>${p.div && p.div !== "-" ? `<span class="small muted">${esc(p.div)}${isS && p.lg ? ` · strength ${p.lg.k.toFixed(2)}${S.league ? "" : " (adjustment off)"}` : ""}</span>` : ""}${typeof slPanelHtml === "function" ? slPanelHtml(p) : ""}</div>
+      <button class="ghost close" data-act="close" aria-label="Close" title="Close (Esc)">✕</button></div>
+  </header><div class="pbelow">
+    <div class="ptiles dtiles">
+      ${tile(`${fmtS(r.overall)}${isS ? "" : "<small>/20</small>"}`, esc(sc.role), "acc")}
+      ${tile(`#${r.rank ?? "–"}<small> of ${sc.ranked.length}</small>`, `${esc(sc.role === "Balanced" ? "overall" : sc.role)}${r.orank != null ? " · " + pctTxt(r.orank) : ""}`)}
+      ${tile(r.fair ? esc(fmtMoney(r.fair)) : "–", "Fair value")}
+      ${tile(esc(p.valTxt || "–"), "Value")}
+      ${p.wage ? tile(esc(p.wage), "Wage") : ""}
+      ${cEnd ? tile(cEnd.toLocaleDateString("en-GB", { month: "short", year: "numeric" }), "Contract ends") : ""}
+      ${isS && p.mins != null ? tile(p.mins, "Minutes") : ""}${p.apps ? tile(esc(p.apps), "Apps") : ""}
     </div>
-    ${S.mode === "stats" || S.mode === "attr" ? `<div class="rranks" id="rranks" data-pix="${esc(String(p.ix))}"><span class="small muted">His rank in every role…</span></div>` : ""}
-    <div class="badges">${p.club === FA_CLUB ? `<span class="tag good">Free agent: no transfer fee</span>` : ""}${typeTag(r)}${vfTag(r, true)}${gap.length ? `<span class="tag">${esc(gap.join(" · "))}</span>` : ""}
+    <div class="pctl"><div class="drole"><label for="drawerRole" class="small muted">Role</label><select id="drawerRole">${roleOptions(sc.pos, sc.role)}</select>${S.pRole && S.pRole !== pageRole() ? `<span class="small muted">this panel only · page stays on ${esc(pageRole())}</span><button class="ghost small" data-act="prolereset">Back to ${esc(pageRole())}</button>` : `<span class="small muted">changes this panel only</span>`}</div>
+      ${S._adPanel ? `<p class="small"><button class="linkbtn" data-act="adgo">Open him in the ${esc(S.pos)} ${S.mode === "stats" ? "Stats" : "Attributes"} tab</button> <span class="muted">(this panel sits over the page you were on)</span></p>` : ""}
+      <div class="badges">${p.club === FA_CLUB ? `<span class="tag good">Free agent: no transfer fee</span>` : ""}${typeTag(r)}${vfTag(r, true)}${gap.length ? `<span class="tag">${esc(gap.join(" · "))}</span>` : ""}
       ${p.mine ? `<span class="tag good">Your squad</span>` : p.ref ? `<span class="tag">From your ${esc(sc.pos)} scouting file</span>` : ""}
       ${p.rec ? `<span class="tag">Scout: ${esc(p.rec)}</span>` : ""}
-      ${isS && p.basic ? `<span class="tag warn">Basic-stats league: only goals, xG, xA, shots counted</span>` : ""}</div>`;
-  if (typeof playerCard === "function") h += playerCard(sc, r);
-  if (typeof traitsHtml === "function") h += traitsHtml(p, sc);
-  if (typeof playedHtml === "function") h += playedHtml(p);
-  h += capaHtml(p) + positionMapHtml(p) + (typeof posSwitchHtml === "function" ? posSwitchHtml(p, S.adCtx && S._adPanel ? S.adCtx.pos : sc.pos) : "");
+      ${isS && p.basic ? `<span class="tag warn">Basic-stats league: only goals, xG, xA, shots counted</span>` : ""}</div></div>
+    ${S.mode === "stats" || S.mode === "attr" ? `<div class="rranks" id="rranks" data-pix="${esc(String(p.ix))}"><span class="small muted">His rank in every role…</span></div>` : ""}
+  </div>`;
+  // three columns: who he is | how good he is | the numbers
+  const head0 = h; let c1 = "", c2 = "", c3 = "";
+  if (typeof playerCard === "function") c1 += playerCard(sc, r);
+  c1 += capaHtml(p) + positionMapHtml(p) + (typeof posSwitchHtml === "function" ? posSwitchHtml(p, S.adCtx && S._adPanel ? S.adCtx.pos : sc.pos) : "");
+  if (typeof playedHtml === "function") c1 += playedHtml(p);
+  if (typeof traitsHtml === "function") c1 += traitsHtml(p, sc);
+  h = "";   // the middle column is built in h below, then moved
   // how to read him: output (stats) against ability (attributes)
   const ln = linked(sc, p);
   if (ln && r.overall != null && ln.r.overall != null && r.orank != null && ln.r.orank != null) {
@@ -64,6 +80,7 @@ function openPlayer(sc, pid, silent) {
   if (cmp) series.push({ v: sc.cats.map(c => cmp.cs[c]), cls: "cmp", dots: true, fmt: fmtS });
   series.push({ v: sc.cats.map(c => r.cs[c]), cls: "me", dots: true, fmt: fmtS });
   h += radar(axes, series, mx) + `<p class="legend small"><span class="lg me"></span>${esc(p.name)}${cmp ? `<span class="lg cmp"></span>${esc(cmp.p.name)}` : ""}<span class="lg avg"></span>Pool ${isS ? "median (50)" : "median"}</p>`;
+  c2 = h; h = "";
   // where he sits
   h += `<h4>Where he sits in the pool</h4>${spread(sc, r)}`;
   if (isS) {
@@ -97,8 +114,10 @@ function openPlayer(sc, pid, silent) {
     if (o.kind === "attr") { if (lr.fits.length) h += `<div class="fits">${lr.fits.map(([n, v], i) => fitChip(sc, n, v.toFixed(1), i === 0)).join("")}</div><p class="small muted">His best 3 roles by attributes here. Tap one to see him in it; this panel only.</p>`; h += attrGrid(lr.p, o.weights); }
   } else h += `<p class="muted small linknote">Load a ${sc.pos} ${isS ? "attributes" : "stats"} export too and this player's ${isS ? "attribute rating" : "stats"} will show here.</p>`;
   h += seasonsHtml(p);
-  if (typeof simHtml === "function") h += simHtml(p, sc.pos);
-  dr.innerHTML = h;
+  c3 = h;
+  const sim = typeof simHtml === "function" ? simHtml(p, sc.pos) : "";
+  dr.innerHTML = head0 + `<div class="pgrid"><div class="pcol">${c1}</div><div class="pcol">${c2}</div><div class="pcol">${c3}</div></div>${sim ? `<div class="pwide">${sim}</div>` : ""}`;
+  dr.classList.add("pfull");
   dr.hidden = false; $("#scrim").hidden = false;
   if (!silent) dr.scrollTop = 0;
   document.querySelectorAll("tr[data-pid]").forEach(tr => tr.classList.toggle("rsel", +tr.dataset.pid === pid));
@@ -154,7 +173,7 @@ function pBack() {
   const dr = $("#drawer"); dr.scrollTop = x.top;
 }
 const pBackHtml = () => S.pStack && S.pStack.length ? `<button class="ghost small pback" data-act="pback">← Back to ${esc(S.pStack[S.pStack.length - 1].name || "previous player")}</button>` : "";
-function closeDrawer(silent) { $("#drawer").hidden = true; $("#scrim").hidden = true; if (!silent) { S.pStack = []; if (S.adOver) { S.adOver = null; S.adCtx = null; } S.sel = null; S.sSel = null; S.cmp = null; S.pRole = null; document.querySelectorAll("tr.rsel").forEach(t => t.classList.remove("rsel")); document.querySelectorAll("tr.rsel").forEach(t => t.classList.remove("rsel")); } }
+function closeDrawer(silent) { $("#drawer").hidden = true; $("#drawer").classList.remove("pfull"); $("#scrim").hidden = true; if (!silent) { S.pStack = []; if (S.adOver) { S.adOver = null; S.adCtx = null; } S.sel = null; S.sSel = null; S.cmp = null; S.pRole = null; document.querySelectorAll("tr.rsel").forEach(t => t.classList.remove("rsel")); document.querySelectorAll("tr.rsel").forEach(t => t.classList.remove("rsel")); } }
 
 // ---------- position map: FM's 1-20 rating at every position, on a pitch like FM's profile ----------
 // spots: [code, x %, y %] on a pitch with his own goal on the left (left flank at the top, as FM draws it)

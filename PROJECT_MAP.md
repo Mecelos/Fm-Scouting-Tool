@@ -46,7 +46,7 @@ How the tool looks. One file per area of the screen.
 | File | What it does | Lines | Size |
 | --- | --- | ---: | ---: |
 | `src/css/01-layout-topbar.css` | Page layout, top bar (search box, Help menu, narrow-screen page menus), loaded files, filters, chips, grid, print colours | 142 | 11 KB |
-| `src/css/02-table-scatter-drawer.css` | Main player table, scatter chart, player side panel | 89 | 7 KB |
+| `src/css/02-table-scatter-drawer.css` | Tables, scatter, side drawer (staff) and the full-window player profile (`#drawer.pfull`) | 124 | 10 KB |
 | `src/css/03-sections-tiles.css` | Shared building blocks: sections, tiles, tags, tiers, stacked bars, comparisons | 138 | 12 KB |
 | `src/css/04-my-squad.css` | My squad pages and suggested tactic | 97 | 9 KB |
 | `src/css/05-scouting-review-learn.css` | Scouting (incl. Compare and Upgrades), wide data pages, season review, navigation groups, Learn | 66 | 8 KB |
@@ -76,7 +76,7 @@ Everything the tool does, one feature per file. All files share one scope, so a 
 | `src/app/21-suggested-tactic.js` | Suggested tactic (My squad > Tactic) | 487 | 52 KB |
 | `src/app/22-defensive-shape.js` | Out-of-possession shape: every formation scored as a defensive shape | 343 | 42 KB |
 | `src/app/23-guide.js` | Guide page | 212 | 35 KB |
-| `src/app/24-player-drawer.js` | Player side panel, its back button, position map | 190 | 19 KB |
+| `src/app/24-player-drawer.js` | Player panel: full-window profile (FM-style banner, three columns), back button, attribute grid | 209 | 21 KB |
 | `src/app/25-save-loading.js` | Loading an FM save (.fm) into every tab | 267 | 22 KB |
 | `src/app/26-all-data.js` | All data: every player in one filterable table | 407 | 38 KB |
 | `src/app/27-stat-type-scores.js` | Stat-type scores (percentile ranks, 0-100) | 277 | 24 KB |

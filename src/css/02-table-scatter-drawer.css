@@ -87,3 +87,38 @@ table.heat { border-collapse: separate; border-spacing: 0; width: 100%; font-siz
 #tip { position: fixed; z-index: 60; pointer-events: none; background: #05070a; color: var(--ink); border: 1px solid var(--line2); border-radius: 6px; padding: 6px 9px; font-size: 12.5px; white-space: pre-line; max-width: 260px; }
 
 
+
+/* player profile: fills the Scout Lab window (FM-style banner + three columns); the staff panel keeps the side drawer */
+#drawer.pfull { inset: clamp(8px, 1.6vh, 22px) clamp(8px, 1.6vw, 28px); width: auto; padding: 0 0 calc(18px + env(safe-area-inset-bottom, 0px));
+  border: 1px solid var(--line2); border-radius: 14px; box-shadow: 0 24px 70px rgba(0, 0, 0, .6); overscroll-behavior: contain; }
+#drawer.pfull .phero { position: sticky; top: 0; z-index: 5; padding: 14px 22px 12px;
+  background: linear-gradient(100deg, color-mix(in srgb, var(--accent) 22%, var(--panel)) 0%, var(--panel) 46%), var(--panel);
+  border-bottom: 1px solid var(--line2); box-shadow: 0 8px 18px rgba(0, 0, 0, .25); }
+#drawer.pfull .pbelow { padding: 2px 22px 0; background: linear-gradient(100deg, color-mix(in srgb, var(--accent) 10%, var(--panel)) 0%, var(--panel) 46%); padding-bottom: 12px; border-bottom: 1px solid var(--line2); }
+#drawer.pfull .pbanner { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 18px; align-items: start; }
+#drawer.pfull .pbanner h2 { font-size: clamp(26px, 2.6vw, 40px); letter-spacing: .01em; }
+#drawer.pfull .psub { font-size: 15px; color: var(--ink2); margin-top: 4px; }
+#drawer.pfull .pacts { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: center; margin-top: 6px; }
+#drawer.pfull .pback { margin-bottom: 6px; }
+#drawer.pfull .pclub { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; text-align: right; padding: 4px 18px 0 18px; border-left: 1px solid var(--line2); min-width: 160px; }
+#drawer.pfull .pclub b { font-family: var(--f-display); font-size: 20px; }
+#drawer.pfull .close { font-size: 18px; padding: 6px 12px; }
+#drawer.pfull .ptiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); gap: 8px; margin: 12px 0 8px; }
+#drawer.pfull .ptiles .tile { padding: 8px 10px; }
+#drawer.pfull .pctl { display: flex; flex-wrap: wrap; gap: 6px 18px; align-items: center; }
+#drawer.pfull .pctl .badges { margin: 0; }
+#drawer.pfull .pctl .drole { margin: 0; }
+#drawer.pfull .rranks { margin-top: 8px; }
+.pgrid { display: grid; grid-template-columns: minmax(300px, .9fr) minmax(360px, 1.1fr) minmax(360px, 1.1fr); gap: 16px; padding: 16px 22px 0; align-items: start; }
+.pcol { min-width: 0; background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: 4px 16px 16px; }
+.pcol > h4:first-child, .pcol > section:first-child h4, .pcol > *:first-child { margin-top: 10px; }
+.pwide { margin: 16px 22px 0; background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: 4px 16px 16px; }
+@media (max-width: 1400px) { .pgrid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .pgrid > .pcol:nth-child(3) { grid-column: 1 / -1; } }
+@media (max-width: 780px) {
+  #drawer.pfull { inset: 0; border-radius: 0; border: 0; }
+  #drawer.pfull .phero { padding: 12px 14px 8px; position: static; }
+  #drawer.pfull .pbelow { padding: 0 14px 10px; }
+  #drawer.pfull .pbanner { grid-template-columns: minmax(0, 1fr) auto; }
+  #drawer.pfull .pclub { grid-column: 1 / -1; grid-row: 2; align-items: flex-start; text-align: left; border-left: 0; padding: 0; }
+  .pgrid { grid-template-columns: minmax(0, 1fr); padding: 12px 12px 0; } .pgrid > .pcol:nth-child(3) { grid-column: auto; } .pwide { margin: 12px 12px 0; }
+}

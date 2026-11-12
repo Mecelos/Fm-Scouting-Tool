@@ -347,7 +347,7 @@ function renderBandsPanel() {
 }
 // the staff panel
 function openStaff(i, silent) {
-  const dr = $("#drawer"); if (!hasStaff() || i == null || i >= SAVE.staff.n) { closeDrawer(true); return; }
+  const dr = $("#drawer"); dr.classList.remove("pfull"); if (!hasStaff() || i == null || i >= SAVE.staff.n) { closeDrawer(true); return; }
   if (S.sSel !== i) S.sPRole = null;
   S.sSel = i;
   const ST = SAVE.staff, d = staffData(), words = !!S.sWords;
