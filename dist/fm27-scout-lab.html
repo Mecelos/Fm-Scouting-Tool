@@ -14175,7 +14175,12 @@ function gsClose(clear) { const box = document.getElementById("gResults"), inp =
 function gsGo(k) {
   const x = GS.list[k]; if (!x) return; gsClose(true);
   if (x.kind === "player") { adOpen(x.i); return; }
-  hubF().mxOpp = String(x.t); S.guide = false; S.dataPage = false; S.mode = "matches"; S.mxTab = "opp"; S.sel = null; S.adCtx = null; render(); window.scrollTo(0, 0);
+  gsOppOpen(x.t, "opp");
+}
+// open the Matches page on one club (team number t); the next-game check is marked as seen so the pick isn't reset
+function gsOppOpen(t, tab) {
+  const f = hubF(), n = mxNextGame(); f.mxOppNext = n ? n.date + "|" + n.team : "none"; f.mxOpp = String(t);
+  S.guide = false; S.dataPage = false; S.mode = "matches"; S.mxTab = tab; S.sel = null; S.adCtx = null; render(); window.scrollTo(0, 0);
 }
 document.addEventListener("input", e => { if (e.target.id === "gSearch") { GS.at = 0; gsDraw(); } });
 document.addEventListener("focusin", e => { if (e.target.id === "gSearch" && e.target.value) gsDraw(); });
@@ -14198,10 +14203,12 @@ function gsSyncNav() { document.querySelectorAll(".navsel").forEach(s => { const
 // ---------- open a player from the link: fm27-scout-lab.html#player=<FM unique ID>&name=<name>&club=<club>, or #player=<name>&club=<club>&age=<age> ----------
 // Used by the "Scout Lab" button on FM's player profile. An ID opens that exact player; a name opens him if only one player
 // matches (the club decides between namesakes), otherwise the search box shows the candidates.
+// #club=<name> on its own (from the button on FM's opposition report) opens Matches › Brief on that club.
 function linkOpen() {
-  const h = new URLSearchParams(String(location.hash || "").replace(/^#/, "")), who = (h.get("player") || "").trim(); if (!who) return;
+  const h = new URLSearchParams(String(location.hash || "").replace(/^#/, "")), who = (h.get("player") || "").trim();
   const club = gsNorm(h.get("club") || "").trim(), inp = document.getElementById("gSearch");
   const ask = q => { if (!inp) return; inp.value = q; inp.focus(); GS.at = 0; gsDraw(); };
+  if (!who) { if (club) linkClub(club, h.get("club").trim(), ask); return; }
   if (!SAVE) { ask(who); return; }
   // by FM's ID; with a name in the link too, the ID must agree with it (an ID one off is accepted when the name matches)
   const nm = gsNorm(h.get("name") || "").trim(), ok = k => k != null && (!nm || gsNorm(SAVE.name[k]) === nm);
@@ -14216,6 +14223,20 @@ function linkOpen() {
     else { ask(h.get("name") || (/^\d+$/.test(who) ? "" : who)); return; }
   }
   S.guide = false; S.dataPage = false; render(); adOpen(i);
+}
+function linkClub(club, raw, ask) {
+  if (!SAVE || !SAVE.teams) { ask(raw); return; }
+  // names compared without dots and dashes ("SD Ponferradina" = "S.D. Ponferradina"); exact name first, then the longest
+  // club name found inside the link's name. Every club in the save is tried, so "Real Madrid Castilla" finds Castilla
+  // (and then says there's no report for it) instead of opening Real Madrid.
+  const k = v => " " + gsNorm(v).replace(/[^a-z0-9]+/g, " ").trim() + " ", qs = k(club), sq = v => k(v).replace(/ /g, ""), q = sq(club);
+  const C = SAVE.clubs, CS = SAVE.clubShort || [], teams = new Map(gsIndex().clubs.map(x => [x.c, x]));
+  let c = -1;
+  for (let i = 0; i < C.length && c < 0; i++) if (sq(C[i]) === q || (CS[i] && sq(CS[i]) === q)) c = i;
+  if (c < 0) { let best = 0; for (let i = 0; i < C.length; i++) for (const nm of [C[i], CS[i]]) { if (!nm) continue; const w = k(nm); if (w.length > 4 && (qs.includes(w) || w.includes(qs))) { const sc = Math.min(w.length, qs.length) * 2 + (teams.has(i) ? 1 : 0); if (sc > best) { best = sc; c = i; } } } }
+  const x = teams.get(c);
+  if (!x) { ask(raw); return; }   // not found, or a club the save keeps no team numbers for
+  gsClose(true); gsOppOpen(x.t, "brief");
 }
 window.addEventListener("hashchange", linkOpen);
 // ---------- Scouting > Compare: any players in the save side by side (up to 4), whatever their position or club ----------

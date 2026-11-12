@@ -98,7 +98,7 @@ Everything the tool does, one feature per file. All files share one scope, so a 
 | `src/app/43-player-traits.js` | Player traits and their effect on roles | 199 | 25 KB |
 | `src/app/44-diagnose.js` | Diagnose (player, role or system?) and opposition instructions | 179 | 22 KB |
 | `src/app/45-matchday-brief.js` | Matches > Brief: your next game on one narrow, printable page | 32 | 4 KB |
-| `src/app/46-search.js` | Search box (players and clubs), Help menu closing, narrow-screen page menus, opening a player from the link (#player=ID&name=…, used by the FM profile button) | 81 | 7 KB |
+| `src/app/46-search.js` | Search box (players and clubs), Help menu closing, narrow-screen page menus, opening a player from the link (#player=ID&name=…, used by the FM profile button), opening a club's Matches › Brief from #club=<name> (FM report pop-up button) | 102 | 9 KB |
 | `src/app/47-compare.js` | Scouting > Compare: any players side by side (profile, attributes, radar, stats per 90), and the Compare buttons in the player panel | 105 | 14 KB |
 | `src/app/48-upgrades.js` | Scouting > Upgrades: for each slot of your uploaded tactic, everyone in the save who performs better in that role, with filters; who started where (team sheets) and the panel's "Played this season" box | 179 | 21 KB |
 
@@ -145,10 +145,12 @@ Demo data shown before a save is loaded. Large. Never read these files; they are
 `fm-plugin/` holds **Scout Lab Link**, a BepInEx 6 (IL2CPP) plugin for FM27. It is not part of the html build.
 It adds a "SCOUT LAB" button to FM's top menu bar (after CLUB) while a player's profile is open, and opens that
 player in Scout Lab (`#player=<name>&club=<club>&age=<age>`, handled by `linkOpen()` in `app/46-search.js`).
+A second button sits left of the X on FM's opposition scout report pop-up (`#HCOppScoutFloatingBlock`) and opens
+Matches › Brief on that club (`#club=<name>`, handled by `linkClub()` in the same file).
 Ctrl+F9 in FM saves a map of the current screen to `BepInEx\scoutlab\screen_N.txt`.
 
 | File | What it does |
 |---|---|
-| `fm-plugin/Plugin.cs` | The plugin: finds the top bar and the profile header, adds the button, opens the browser |
+| `fm-plugin/Plugin.cs` | The plugin: finds the top bar, the profile header and the opposition report pop-up, adds the buttons, opens the browser |
 | `fm-plugin/ScoutLabLink.csproj` | Build settings; references the BepInEx and FM interop files on the PC it is built on |
 | `fm-plugin/build.bat` | Copy all three into `<FM27>\BepInEx\scoutlab-src\`, double-click to build and install |

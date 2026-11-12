@@ -1,5 +1,7 @@
 // Scout Lab Link: adds a "SCOUT LAB" button to FM27's top menu bar, after CLUB. It shows while a player's profile is
 // open; clicking it opens that player in Scout Lab (your fm27-scout-lab.html) in Chrome or Edge.
+// A second "SCOUT LAB" button sits next to the X on the opposition scout report pop-up; it opens Scout Lab's
+// Matches > Brief page on that club.
 // It only reads the screen (player name, club, age) and starts the browser: nothing in the game or the save changes.
 // Ctrl+F9 still saves a map of the current screen to BepInEx\scoutlab\screen_N.txt (for fixing the plugin after FM patches).
 using System;
@@ -17,7 +19,7 @@ using UnityEngine.UIElements;
 
 namespace ScoutLabLink
 {
-    [BepInPlugin("scoutlab.link", "Scout Lab Link", "0.2.0")]
+    [BepInPlugin("scoutlab.link", "Scout Lab Link", "0.3.0")]
     public class Plugin : BasePlugin
     {
         internal static ManualLogSource L;
@@ -30,7 +32,7 @@ namespace ScoutLabLink
             Browser = Config.Bind("ScoutLab", "Browser", "auto",
                 "chrome, edge, or auto (Chrome if installed, else Edge). Use the browser you normally open Scout Lab in: your loaded save is kept there.");
             AddComponent<Ticker>();
-            L.LogInfo("Scout Lab Link 0.2.0 loaded");
+            L.LogInfo("Scout Lab Link 0.3.0 loaded");
         }
     }
 
@@ -40,9 +42,11 @@ namespace ScoutLabLink
         int saved;
         float nextScan;
         VisualElement root, button, bar;
-        Label label;
-        Il2CppSystem.Action onClick;   // kept so it isn't garbage-collected
+        Label label, oppLabel, flashLabel;
+        Il2CppSystem.Action onClick, onOppClick;   // kept so they aren't garbage-collected
         string who;                    // name|club|age of the profile on screen, or null
+        string oppClub;                // club on the opposition report pop-up, or null
+        VisualElement oppButton;
 
         void Update()
         {
@@ -52,7 +56,7 @@ namespace ScoutLabLink
                 if (kb != null && kb.f9Key.wasPressedThisFrame && (kb.leftCtrlKey.isPressed || kb.rightCtrlKey.isPressed)) Dump();
             }
             catch (Exception e) { Plugin.L.LogError("Key check failed: " + e.Message); }
-            if (flashUntil > 0 && Time.unscaledTime > flashUntil) { flashUntil = 0; if (label != null) label.text = "SCOUT LAB"; }
+            if (flashUntil > 0 && Time.unscaledTime > flashUntil) { flashUntil = 0; if (flashLabel != null) flashLabel.text = "SCOUT LAB"; }
             if (Time.unscaledTime < nextScan) return;
             nextScan = Time.unscaledTime + 0.4f;
             try { Scan(); } catch (Exception e) { Plugin.L.LogWarning("Scan failed: " + e.Message); nextScan = Time.unscaledTime + 5f; }
@@ -69,12 +73,55 @@ namespace ScoutLabLink
                 if (root == null) return;
                 bar = null;
             }
+            ScanOppReport();
             who = ReadProfile();
             if (who == null) { if (button != null && button.parent != null) button.RemoveFromHierarchy(); return; }
             if (bar == null || bar.panel == null) bar = FindVisible(root, "ManagingClubButtons", 0);
             if (bar == null) return;
             if (button == null) MakeButton();
             if (button.parent == null || button.parent != bar) { button.RemoveFromHierarchy(); bar.Add(button); }
+        }
+
+        // ---- the opposition scout report pop-up: a button left of its X ----
+        void ScanOppReport()
+        {
+            var pop = FindVisible(root, "HCOppScoutFloatingBlock", 0);
+            VisualElement close = pop != null ? FindVisible(pop, "hc-scout-close", 0) : null;
+            TextElement name = pop != null ? FirstText(FindVisible(pop, "ReportHeader", 0)) : null;
+            if (close == null || close.parent == null || name == null) { oppClub = null; if (oppButton != null && oppButton.parent != null) oppButton.RemoveFromHierarchy(); return; }
+            oppClub = Clean(name.text);
+            if (oppButton == null) MakeOppButton(pop);
+            var host = close.parent;
+            if (oppButton.parent != host) { oppButton.RemoveFromHierarchy(); host.Add(oppButton); }
+            var c = close.layout; var s = oppButton.style;   // follow the X if the window is resized
+            if (c.height > 0) { s.top = new StyleLength(c.y); s.height = new StyleLength(c.height); s.right = new StyleLength(Math.Max(0f, host.layout.width - c.x + 10f)); }
+        }
+
+        void MakeOppButton(VisualElement pop)
+        {
+            var tab = FindVisible(pop, "navigation-tab-title-text", 0)?.TryCast<TextElement>();
+            var b = new Button(); b.name = "scoutlab-opp-button"; b.text = "";
+            var s = b.style;
+            s.position = new StyleEnum<Position>(Position.Absolute);
+            s.backgroundColor = new StyleColor(new Color(1f, 1f, 1f, 0.08f));
+            var edge = new StyleColor(new Color(1f, 1f, 1f, 0.35f));
+            s.borderTopColor = edge; s.borderBottomColor = edge; s.borderLeftColor = edge; s.borderRightColor = edge;
+            s.borderTopWidth = new StyleFloat(1f); s.borderBottomWidth = new StyleFloat(1f); s.borderLeftWidth = new StyleFloat(1f); s.borderRightWidth = new StyleFloat(1f);
+            var rad = new StyleLength(4f); s.borderTopLeftRadius = rad; s.borderTopRightRadius = rad; s.borderBottomLeftRadius = rad; s.borderBottomRightRadius = rad;
+            s.paddingLeft = new StyleLength(12f); s.paddingRight = new StyleLength(12f); s.paddingTop = new StyleLength(0f); s.paddingBottom = new StyleLength(0f);
+            s.marginLeft = new StyleLength(0f); s.marginRight = new StyleLength(0f); s.marginTop = new StyleLength(0f); s.marginBottom = new StyleLength(0f);
+            oppLabel = new Label("SCOUT LAB"); oppLabel.pickingMode = PickingMode.Ignore;
+            var ls = oppLabel.style;
+            ls.color = new StyleColor(Color.white);
+            if (tab != null) { var r = tab.resolvedStyle; ls.fontSize = new StyleLength(r.fontSize); ls.unityFontDefinition = new StyleFontDefinition(r.unityFontDefinition); ls.letterSpacing = new StyleLength(r.letterSpacing); }
+            else ls.fontSize = new StyleLength(14f);
+            ls.marginTop = new StyleLength(StyleKeyword.Auto); ls.marginBottom = new StyleLength(StyleKeyword.Auto);
+            b.Add(oppLabel);
+            b.tooltip = "Open this club's report in Scout Lab";
+            onOppClick = (Action)OpenClub;
+            b.add_clicked(onOppClick);
+            oppButton = b;
+            Plugin.L.LogInfo("Scout Lab report button made");
         }
 
         void MakeButton()
@@ -128,24 +175,37 @@ namespace ScoutLabLink
 
         void Open()
         {
+            if (who == null) return;
+            var p = who.Split('|');
+            Launch("#player=" + Uri.EscapeDataString(p[0]) + "&club=" + Uri.EscapeDataString(p[1]) + (p[2] != "" ? "&age=" + p[2] : ""), label, p[0] + " (" + p[1] + ")");
+        }
+
+        void OpenClub()
+        {
+            if (string.IsNullOrEmpty(oppClub)) return;
+            Launch("#club=" + Uri.EscapeDataString(oppClub), oppLabel, "report on " + oppClub);
+        }
+
+        // open Scout Lab with this link ending; the clicked button's label shows how it went
+        void Launch(string hash, Label shown, string what)
+        {
+            flashLabel = shown;
             try
             {
-                if (who == null) return;
-                var p = who.Split('|');
                 var html = FindHtml();
                 if (html == null) { Plugin.L.LogWarning("Scout Lab not found: set HtmlPath in BepInEx\\config\\scoutlab.link.cfg"); Flash("NOT FOUND"); return; }
-                var url = new Uri(html).AbsoluteUri + "#player=" + Uri.EscapeDataString(p[0]) + "&club=" + Uri.EscapeDataString(p[1]) + (p[2] != "" ? "&age=" + p[2] : "");
+                var url = new Uri(html).AbsoluteUri + hash;
                 var exe = FindBrowser();
                 if (exe == null) { Plugin.L.LogWarning("No Chrome or Edge found"); Flash("NO BROWSER"); return; }
                 Process.Start(new ProcessStartInfo(exe, "\"" + url + "\"") { UseShellExecute = false });
-                Plugin.L.LogInfo("Opened " + p[0] + " (" + p[1] + ") in Scout Lab");
+                Plugin.L.LogInfo("Opened " + what + " in Scout Lab");
                 Flash("OPENED");
             }
             catch (Exception e) { Plugin.L.LogError("Open failed: " + e); Flash("ERROR"); }
         }
 
         float flashUntil;
-        void Flash(string t) { if (label == null) return; label.text = t; flashUntil = Time.unscaledTime + 1.5f; }
+        void Flash(string t) { if (flashLabel == null) return; flashLabel.text = t; flashUntil = Time.unscaledTime + 1.5f; }
 
         static string FindHtml()
         {
