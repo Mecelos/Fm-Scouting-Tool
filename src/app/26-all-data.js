@@ -294,6 +294,7 @@ function adColumns() {
   add("ca", "CA", "info", "num", i => T.ca[i], { d: 0, bench: "ca" });
   add("pa", "PA", "info", "num", i => T.pa[i] < 0 ? NaN : T.pa[i], { d: 0, bench: "pa" });
   add("club", "Club", "info", "str", st && st.clubOf ? i => { const r = row[i], k = r >= 0 ? st.clubOf[r] : -1; return k >= 0 ? T.clubs[k] : saveClub(i); } : saveClub, { w: 140, wn: 104, dk: st && st.clubOf ? "club_season" : "club" });
+  add("nat", "Nationality", "info", "str", saveNat, { w: 120, wn: 100 });
   add("pos", "Position", "info", "str", i => pc.str[i], { w: 120, wn: 100 });
   add("age", "Age", "info", "num", i => T.age[i] < 0 ? NaN : T.age[i], { d: 0 });
   add("value", "Value", "info", "num", i => T.value[i], { fmt: v => saveMoney(v), w: 74 });

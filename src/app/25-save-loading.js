@@ -45,7 +45,7 @@ function savePos() {
 function saveHeaders() {
   if (SAVE._headers) return SAVE._headers;
   const k = saveKind(), cols = k ? SAVE.stats[k].cols : {};
-  return (SAVE._headers = ["Player", "Club", "Age", "Position", "Best Pos", "Transfer Value", "Division", "Based In", "Unique ID", "Height", "Preferred Foot",
+  return (SAVE._headers = ["Player", "Club", "Age", "Position", "Best Pos", "Transfer Value", "Division", "Based In", "Unique ID", "Height", "Preferred Foot", "Nationality",
     ...FR.STAT_COLS.map(c => c[0]).filter(h => !STAT_NEEDS[h] || cols[STAT_NEEDS[h]]), ...ATTR_COLS.map(c => c[0])]);
 }
 function saveStatObj(st, r) {
@@ -58,7 +58,7 @@ function saveRow(i) {
   const T = SAVE, k = saveKind(), st = k ? T.stats[k] : null, r = st ? st.row[i] : -1, s = r >= 0 ? saveStatObj(st, r) : null;
   const pc = savePos(), club = saveClub(i), lg = CLUB_LEAGUES[club], v = T.value[i];
   const out = [T.name[i], club, T.age[i] < 0 ? "" : T.age[i], pc.str[i], pc.best[i], v === v ? saveMoney(v) : "", lg ? lg[0] : "", lg ? lg[1] : "", "s" + T.uid[i],
-    T.height[i] ? T.height[i] + " cm" : "", footTxt(T.feet[i * 2], T.feet[i * 2 + 1])];
+    T.height[i] ? T.height[i] + " cm" : "", footTxt(T.feet[i * 2], T.feet[i * 2 + 1]), saveNat(i)];
   const want = new Set(saveHeaders());
   FR.STAT_COLS.forEach(([h, f]) => { if (!want.has(h)) return; const x = s ? f(null, s) : null; out.push(x == null || (typeof x === "number" && !isFinite(x)) ? "" : x); });
   ATTR_COLS.forEach(([, a]) => out.push(T.attrs[i * 52 + a]));

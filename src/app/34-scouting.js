@@ -179,21 +179,34 @@ function scTargets() {
   });
   return h;
 }
-// ---- contract watch ----
+// ---- contract watch: transfer targets whose contracts run out (your own club left out) ----
+// contracts are grouped by the summer they end in: a contract ending in January-June counts for that summer, July onward for the next
+const scEndYear = raw => { const d = sDate(raw); return d ? (d.getUTCMonth() >= 6 ? d.getUTCFullYear() + 1 : d.getUTCFullYear()) : null; };
 function scContracts() {
   if (!scHasC()) return `<section class="panel"><p class="muted">Contracts are read from saves loaded with this version. Open <b>Data</b> and load your save again to see them.</p></section>`;
-  const F = scF(), mine = [...mineSet()], C = SC_COLS;
+  const F = scF(), C = SC_COLS, gd = scGameDate(), now = gd.getUTCMonth() >= 6 ? gd.getUTCFullYear() + 1 : gd.getUTCFullYear();
   const mon = { k: "mon", l: "Months left", c: "num", v: i => SAVE.cEnd[i] ? scMonths(SAVE.cEnd[i]) : null, h: i => { const m = SAVE.cEnd[i] ? scMonths(SAVE.cEnd[i]) : null; return m == null ? "–" : `<b class="${m <= 6 ? "bad" : m <= 12 ? "warnc" : ""}">${Math.max(0, Math.round(m))}</b>`; } };
-  const mineRows = mine.filter(i => SAVE.cEnd[i]); if (!(F.sort || {}).cmine) mineRows.sort((a, b) => SAVE.cEnd[a] - SAVE.cEnd[b]);
-  const soon = mineRows.filter(i => scMonths(SAVE.cEnd[i]) <= 12), wages = mine.reduce((s, i) => s + (scWage(i) || 0), 0);
-  const minCA = F.cCA ?? 130, maxAge = F.cAge ?? 30, within = F.cMon ?? 12, mset = mineSet(), out = [];
-  for (let i = 0; i < SAVE.n; i++) { if (!SAVE.name[i] || mset.has(i) || !SAVE.cEnd[i] || !(SAVE.ca[i] >= minCA) || SAVE.age[i] > maxAge) continue; const m = scMonths(SAVE.cEnd[i]); if (m != null && m >= 0 && m <= within) out.push(i); }
+  const nat = { ph: 1, k: "nat", l: "Nationality", c: "left small", v: i => saveNat(i), h: i => esc(saveNat(i) || "–") };
+  const minCA = F.cCA ?? 120, maxAge = F.cAge ?? 30, pos = F.cPos || "all", natQ = gsNorm(F.cNat || "").trim(), maxV = F.cVal;
+  const yr = +F.cYear >= now && +F.cYear <= now + 2 ? +F.cYear : now, k = pos === "all" ? -1 : POSITIONS.indexOf(pos), pc = savePos(), mset = mineSet();
+  const counts = { [now]: 0, [now + 1]: 0, [now + 2]: 0 }, out = [];
+  for (let i = 0; i < SAVE.n; i++) {
+    if (!SAVE.name[i] || mset.has(i) || !SAVE.cEnd[i] || (SAVE.cLoan && SAVE.cLoan[i]) || !(SAVE.ca[i] >= minCA) || SAVE.age[i] > maxAge) continue;
+    const m = scMonths(SAVE.cEnd[i]); if (m == null || m < 0) continue;
+    if (k >= 0 && !(pc.bits[i] & (1 << k))) continue;
+    if (natQ && !gsNorm(saveNat(i)).includes(natQ)) continue;
+    if (maxV != null && maxV !== "" && (scVal(i) ?? 0) > maxV * 1e6) continue;
+    const y = scEndYear(SAVE.cEnd[i]); if (y in counts) counts[y]++;
+    if (y === yr) out.push(i);
+  }
   if (!(F.sort || {}).cout) out.sort((a, b) => SAVE.ca[b] - SAVE.ca[a]);
-  return `<section class="panel"><div class="ph"><h3>Your squad's contracts</h3><span class="muted small">soonest first · wage bill <b>${esc(saveMoney(wages))}</b> p/w · ${soon.length} end within a year</span></div>
-    ${scTable("cmine", mineRows, [C.name, C.age, C.pos, C.ca, C.pa, C.wage, C.end, mon], 120)}<p class="small muted">Red = 6 months or less (other clubs can agree a pre-contract with him if they're abroad), amber = within a year. "loan" = his contract is with his parent club.</p></section>
-    <section class="panel"><div class="ph"><h3>Bargains: contracts running out elsewhere</h3><span class="muted small">good players whose clubs must sell cheap or lose them free</span></div>
-    <div class="filters">${scNum("cCA", "Min CA", minCA, 5)}${scNum("cAge", "Max age", maxAge)}${scNum("cMon", "Ending within (months)", within, 1, 96)}<span class="poolnote">${out.length.toLocaleString()} players</span></div>
-    ${scTable("cout", out, [C.name, C.age, C.club, C.pos, C.ca, C.pa, C.value, C.wage, C.end, mon])}</section>`;
+  const yLabel = y => y === now ? `This summer (ends by June ${y})` : `Summer ${y}`;
+  const left = Math.max(0, Math.round((Date.UTC(now, 5, 30) - gd) / (30.44 * 864e5)));
+  return `<section class="panel"><div class="ph"><h3>Contract watch: transfer targets</h3><span class="muted small">players at other clubs whose contracts run out · your own squad is left out</span></div>
+    <div class="filters">${scSel("cYear", "Contract ends", yr, [now, now + 1, now + 2].map(y => [y, `${yLabel(y)} · ${counts[y].toLocaleString()}`]))}${scNum("cCA", "Min CA", minCA, 5)}${scNum("cAge", "Max age", maxAge)}${scSel("cPos", "Position", pos, POS_OPTS)}
+      <label class="fl"><span class="small muted">Nationality</span><input type="text" class="scin" data-f="cNat" value="${esc(F.cNat || "")}" placeholder="e.g. Spain" style="width:110px"></label>${scNum("cVal", "Max value (M)", maxV, 1)}<span class="poolnote">${out.length.toLocaleString()} players</span></div>
+    <p class="small muted">${yr === now ? `These contracts end in about ${left} month${left === 1 ? "" : "s"}: sign now for a small fee, or agree a free transfer for when they run out.` : `Ending in summer ${yr}: their clubs have ${yr - now} more year${yr - now === 1 ? "" : "s"} to renew, or sell before they can leave for free.`} Red = 6 months or less, amber = within a year.</p>
+    ${scTable("cout", out, [C.name, C.age, nat, C.club, C.pos, C.ca, C.pa, C.value, C.wage, C.end, mon])}</section>`;
 }
 // ---- shortlist ----
 function scShort() {

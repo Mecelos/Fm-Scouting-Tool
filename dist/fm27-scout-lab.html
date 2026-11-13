@@ -6513,6 +6513,10 @@ function divRating(country, tier, top) {
   if (r != null) return r;
   return Math.min(top - (TIER_GAP[tier] ?? 48), divRating(country, tier - 1, top) - 4);
 }
+// second step, on the finished stats score: pull it toward the average by league strength, so a top score in a weak league
+// ranks below the same score in a strong one. Premier League 1.00, LaLiga ~0.89, Championship ~0.81, Guatemala ~0.65.
+const TRUST_SLOPE = 0.02;
+const leagueTrust = rating => rating == null ? 1 : Math.exp(-TRUST_SLOPE * Math.max(0, PL_RATING - rating));
 function leagueFactor(country, div) {
   country = (country || "").trim(); div = (div || "").trim();
   country = COUNTRY_ALIAS[country] || country;
@@ -6764,7 +6768,8 @@ function scoreStats(model, pos, role, opts) {
     const wAll = wl.reduce((t, x) => t + x[1], 0), wHave = wl.reduce((t, x) => t + (x[0] != null ? x[1] : 0), 0);
     const cov = wAll ? wHave / wAll : 1;
     const rel = (model.hasMins ? Math.min(1, 0.4 + 0.6 * (p.mins || 0) / 1350) : 1) * cov;
-    const overall = raw == null || (model.hasMins && !(p.mins > 0)) ? null : 50 + (raw - 50) * rel; // no minutes = no stats score
+    const lq = opts.league && p.lg ? leagueTrust(p.lg.rating) : 1;   // a 90 in a weak league counts for less (world league ranking)
+    const overall = raw == null || (model.hasMins && !(p.mins > 0)) ? null : 50 + (raw - 50) * rel * lq; // no minutes = no stats score
     return { p, mp, cs, overall, raw, rel, cov };
   });
   const primCat = {}; Object.keys(mw).forEach(k => primCat[k] = cats.find(c => k in CATS[c].m) || "other");
@@ -9454,7 +9459,7 @@ function savePos() {
 function saveHeaders() {
   if (SAVE._headers) return SAVE._headers;
   const k = saveKind(), cols = k ? SAVE.stats[k].cols : {};
-  return (SAVE._headers = ["Player", "Club", "Age", "Position", "Best Pos", "Transfer Value", "Division", "Based In", "Unique ID", "Height", "Preferred Foot",
+  return (SAVE._headers = ["Player", "Club", "Age", "Position", "Best Pos", "Transfer Value", "Division", "Based In", "Unique ID", "Height", "Preferred Foot", "Nationality",
     ...FR.STAT_COLS.map(c => c[0]).filter(h => !STAT_NEEDS[h] || cols[STAT_NEEDS[h]]), ...ATTR_COLS.map(c => c[0])]);
 }
 function saveStatObj(st, r) {
@@ -9467,7 +9472,7 @@ function saveRow(i) {
   const T = SAVE, k = saveKind(), st = k ? T.stats[k] : null, r = st ? st.row[i] : -1, s = r >= 0 ? saveStatObj(st, r) : null;
   const pc = savePos(), club = saveClub(i), lg = CLUB_LEAGUES[club], v = T.value[i];
   const out = [T.name[i], club, T.age[i] < 0 ? "" : T.age[i], pc.str[i], pc.best[i], v === v ? saveMoney(v) : "", lg ? lg[0] : "", lg ? lg[1] : "", "s" + T.uid[i],
-    T.height[i] ? T.height[i] + " cm" : "", footTxt(T.feet[i * 2], T.feet[i * 2 + 1])];
+    T.height[i] ? T.height[i] + " cm" : "", footTxt(T.feet[i * 2], T.feet[i * 2 + 1]), saveNat(i)];
   const want = new Set(saveHeaders());
   FR.STAT_COLS.forEach(([h, f]) => { if (!want.has(h)) return; const x = s ? f(null, s) : null; out.push(x == null || (typeof x === "number" && !isFinite(x)) ? "" : x); });
   ATTR_COLS.forEach(([, a]) => out.push(T.attrs[i * 52 + a]));
@@ -9971,6 +9976,7 @@ function adColumns() {
   add("ca", "CA", "info", "num", i => T.ca[i], { d: 0, bench: "ca" });
   add("pa", "PA", "info", "num", i => T.pa[i] < 0 ? NaN : T.pa[i], { d: 0, bench: "pa" });
   add("club", "Club", "info", "str", st && st.clubOf ? i => { const r = row[i], k = r >= 0 ? st.clubOf[r] : -1; return k >= 0 ? T.clubs[k] : saveClub(i); } : saveClub, { w: 140, wn: 104, dk: st && st.clubOf ? "club_season" : "club" });
+  add("nat", "Nationality", "info", "str", saveNat, { w: 120, wn: 100 });
   add("pos", "Position", "info", "str", i => pc.str[i], { w: 120, wn: 100 });
   add("age", "Age", "info", "num", i => T.age[i] < 0 ? NaN : T.age[i], { d: 0 });
   add("value", "Value", "info", "num", i => T.value[i], { fmt: v => saveMoney(v), w: 74 });
@@ -12096,21 +12102,34 @@ function scTargets() {
   });
   return h;
 }
-// ---- contract watch ----
+// ---- contract watch: transfer targets whose contracts run out (your own club left out) ----
+// contracts are grouped by the summer they end in: a contract ending in January-June counts for that summer, July onward for the next
+const scEndYear = raw => { const d = sDate(raw); return d ? (d.getUTCMonth() >= 6 ? d.getUTCFullYear() + 1 : d.getUTCFullYear()) : null; };
 function scContracts() {
   if (!scHasC()) return `<section class="panel"><p class="muted">Contracts are read from saves loaded with this version. Open <b>Data</b> and load your save again to see them.</p></section>`;
-  const F = scF(), mine = [...mineSet()], C = SC_COLS;
+  const F = scF(), C = SC_COLS, gd = scGameDate(), now = gd.getUTCMonth() >= 6 ? gd.getUTCFullYear() + 1 : gd.getUTCFullYear();
   const mon = { k: "mon", l: "Months left", c: "num", v: i => SAVE.cEnd[i] ? scMonths(SAVE.cEnd[i]) : null, h: i => { const m = SAVE.cEnd[i] ? scMonths(SAVE.cEnd[i]) : null; return m == null ? "–" : `<b class="${m <= 6 ? "bad" : m <= 12 ? "warnc" : ""}">${Math.max(0, Math.round(m))}</b>`; } };
-  const mineRows = mine.filter(i => SAVE.cEnd[i]); if (!(F.sort || {}).cmine) mineRows.sort((a, b) => SAVE.cEnd[a] - SAVE.cEnd[b]);
-  const soon = mineRows.filter(i => scMonths(SAVE.cEnd[i]) <= 12), wages = mine.reduce((s, i) => s + (scWage(i) || 0), 0);
-  const minCA = F.cCA ?? 130, maxAge = F.cAge ?? 30, within = F.cMon ?? 12, mset = mineSet(), out = [];
-  for (let i = 0; i < SAVE.n; i++) { if (!SAVE.name[i] || mset.has(i) || !SAVE.cEnd[i] || !(SAVE.ca[i] >= minCA) || SAVE.age[i] > maxAge) continue; const m = scMonths(SAVE.cEnd[i]); if (m != null && m >= 0 && m <= within) out.push(i); }
+  const nat = { ph: 1, k: "nat", l: "Nationality", c: "left small", v: i => saveNat(i), h: i => esc(saveNat(i) || "–") };
+  const minCA = F.cCA ?? 120, maxAge = F.cAge ?? 30, pos = F.cPos || "all", natQ = gsNorm(F.cNat || "").trim(), maxV = F.cVal;
+  const yr = +F.cYear >= now && +F.cYear <= now + 2 ? +F.cYear : now, k = pos === "all" ? -1 : POSITIONS.indexOf(pos), pc = savePos(), mset = mineSet();
+  const counts = { [now]: 0, [now + 1]: 0, [now + 2]: 0 }, out = [];
+  for (let i = 0; i < SAVE.n; i++) {
+    if (!SAVE.name[i] || mset.has(i) || !SAVE.cEnd[i] || (SAVE.cLoan && SAVE.cLoan[i]) || !(SAVE.ca[i] >= minCA) || SAVE.age[i] > maxAge) continue;
+    const m = scMonths(SAVE.cEnd[i]); if (m == null || m < 0) continue;
+    if (k >= 0 && !(pc.bits[i] & (1 << k))) continue;
+    if (natQ && !gsNorm(saveNat(i)).includes(natQ)) continue;
+    if (maxV != null && maxV !== "" && (scVal(i) ?? 0) > maxV * 1e6) continue;
+    const y = scEndYear(SAVE.cEnd[i]); if (y in counts) counts[y]++;
+    if (y === yr) out.push(i);
+  }
   if (!(F.sort || {}).cout) out.sort((a, b) => SAVE.ca[b] - SAVE.ca[a]);
-  return `<section class="panel"><div class="ph"><h3>Your squad's contracts</h3><span class="muted small">soonest first · wage bill <b>${esc(saveMoney(wages))}</b> p/w · ${soon.length} end within a year</span></div>
-    ${scTable("cmine", mineRows, [C.name, C.age, C.pos, C.ca, C.pa, C.wage, C.end, mon], 120)}<p class="small muted">Red = 6 months or less (other clubs can agree a pre-contract with him if they're abroad), amber = within a year. "loan" = his contract is with his parent club.</p></section>
-    <section class="panel"><div class="ph"><h3>Bargains: contracts running out elsewhere</h3><span class="muted small">good players whose clubs must sell cheap or lose them free</span></div>
-    <div class="filters">${scNum("cCA", "Min CA", minCA, 5)}${scNum("cAge", "Max age", maxAge)}${scNum("cMon", "Ending within (months)", within, 1, 96)}<span class="poolnote">${out.length.toLocaleString()} players</span></div>
-    ${scTable("cout", out, [C.name, C.age, C.club, C.pos, C.ca, C.pa, C.value, C.wage, C.end, mon])}</section>`;
+  const yLabel = y => y === now ? `This summer (ends by June ${y})` : `Summer ${y}`;
+  const left = Math.max(0, Math.round((Date.UTC(now, 5, 30) - gd) / (30.44 * 864e5)));
+  return `<section class="panel"><div class="ph"><h3>Contract watch: transfer targets</h3><span class="muted small">players at other clubs whose contracts run out · your own squad is left out</span></div>
+    <div class="filters">${scSel("cYear", "Contract ends", yr, [now, now + 1, now + 2].map(y => [y, `${yLabel(y)} · ${counts[y].toLocaleString()}`]))}${scNum("cCA", "Min CA", minCA, 5)}${scNum("cAge", "Max age", maxAge)}${scSel("cPos", "Position", pos, POS_OPTS)}
+      <label class="fl"><span class="small muted">Nationality</span><input type="text" class="scin" data-f="cNat" value="${esc(F.cNat || "")}" placeholder="e.g. Spain" style="width:110px"></label>${scNum("cVal", "Max value (M)", maxV, 1)}<span class="poolnote">${out.length.toLocaleString()} players</span></div>
+    <p class="small muted">${yr === now ? `These contracts end in about ${left} month${left === 1 ? "" : "s"}: sign now for a small fee, or agree a free transfer for when they run out.` : `Ending in summer ${yr}: their clubs have ${yr - now} more year${yr - now === 1 ? "" : "s"} to renew, or sell before they can leave for free.`} Red = 6 months or less, amber = within a year.</p>
+    ${scTable("cout", out, [C.name, C.age, nat, C.club, C.pos, C.ca, C.pa, C.value, C.wage, C.end, mon])}</section>`;
 }
 // ---- shortlist ----
 function scShort() {
@@ -14568,5 +14587,39 @@ document.addEventListener("change", e => {
   if (t.dataset.upf) { f[t.dataset.upf] = t.type === "checkbox" ? t.checked : t.value.trim(); f.more = {}; upRedraw(); }
   else if (t.dataset.uppick != null) { f.pick[t.dataset.uppick] = t.value; upRedraw(); }
 });
+// ---------- Nationality: the save stores each player's nation as a number (its place in FM27's nation list) ----------
+// FM keeps the names in its own database files, not in the save, so the list is written out here. It was matched from
+// the best-known players of each number (FM orders nations by continent, then alphabetically). Numbers not listed show "".
+const NATION_NAMES = (() => {
+  const N = [];
+  const put = (start, names) => names.forEach((n, k) => { if (n) N[start + k] = n; });
+  put(0, ["Algeria", "Angola", "Benin", "Botswana", "Burkina Faso", "Burundi", "Cameroon", "Cape Verde", "Central African Rep.", "Chad",
+    "Djibouti", "Egypt", "Equatorial Guinea", "Ethiopia", "Gabon", "Gambia", "Ghana", "Guinea", "Guinea-Bissau", "Ivory Coast",
+    "Kenya", "Lesotho", "Liberia", "Libya", "Madagascar", "Malawi", "Mali", "Mauritania", "Mauritius", "Morocco",
+    "Mozambique", "Namibia", "Niger", "Nigeria", "Rwanda", "São Tomé e Príncipe", "Senegal", "Seychelles", "Sierra Leone", "Somalia",
+    "South Africa", "Sudan", "Eswatini", "Tanzania", "Congo", "Togo", "Tunisia", "Uganda", "DR Congo", "Zambia", "Zimbabwe"]);
+  put(51, ["Afghanistan", "Bahrain", "Bangladesh", "Brunei", "China", "Hong Kong", "India", "Indonesia", "Iran", "Iraq",
+    "Japan", "Jordan", "Cambodia", "Kazakhstan", "Kuwait", "Kyrgyzstan", "Laos", "Lebanon", "Macau", "Malaysia",
+    "Maldives", "Myanmar", "Nepal", "North Korea", "Oman", "Pakistan", "Qatar", "Saudi Arabia", "Singapore", "South Korea",
+    "Sri Lanka", "Syria", "Chinese Taipei", "Tajikistan", "Thailand", "Philippines", "Turkmenistan", "UAE", "Uzbekistan", "Vietnam", "Yemen"]);
+  put(92, ["Antigua & Barbuda", "Aruba", "Barbados", "Belize", "Bermuda", "Canada", "Cayman Islands", "Costa Rica", "Cuba", "Dominica",
+    "El Salvador", "Grenada", "Guatemala", "Guyana", "Haiti", "Honduras", "Jamaica", "Mexico", "Curaçao", "Nicaragua",
+    "Panama", "Puerto Rico", "St Kitts & Nevis", "St Lucia", "St Vincent & Grenadines", "Suriname", "Bahamas", "Trinidad & Tobago", "United States"]);
+  put(126, ["Albania", "Andorra", "Armenia", "Austria", "Azerbaijan", "Belgium", "Belarus", "Bosnia & Herzegovina", "Bulgaria", "Croatia",
+    "Cyprus", "Czech Republic", "Denmark", "England", "Estonia", "Faroe Islands", "Finland", "France", "Georgia", "Germany",
+    "Greece", "Hungary", "Iceland", "Israel", "Italy", "Latvia", "Liechtenstein", "Lithuania", "Luxembourg", "North Macedonia",
+    "Malta", "Moldova", "Netherlands", "Northern Ireland", "Norway", "Poland", "Portugal", "Republic of Ireland", "Romania", "Russia",
+    "San Marino", "Scotland", "Slovakia", "Slovenia", "Spain", "Sweden", "Switzerland", "Türkiye", "Ukraine", "Wales", "Serbia"]);
+  put(177, ["Australia", "Cook Islands", "Fiji", "New Zealand", "Papua New Guinea", "Solomon Islands", "Tahiti", "Tonga", "Vanuatu", "Samoa"]);
+  put(187, ["Argentina", "Bolivia", "Brazil", "Chile", "Colombia", "Ecuador", "Paraguay", "Peru", "Uruguay", "Venezuela", "Palestine"]);
+  put(201, ["American Samoa", "Mongolia", "Guam", "Eritrea", "Anguilla", "", "Montserrat", "US Virgin Islands", "Turks & Caicos", "New Caledonia",
+    "Bhutan", "Dominican Republic"]);
+  put(216, ["Gibraltar", "", "", "Kosovo"]);
+  put(225, ["French Guiana", "Guadeloupe", "Martinique", "", "", "Réunion", "Mayotte", "", "", "Comoros", "", "Timor-Leste", "", "", "Zanzibar",
+    "South Sudan", "", "", "Northern Mariana Islands", "", "", "", "Montenegro"]);
+  return N;
+})();
+const nationName = k => (k != null && k >= 0 && NATION_NAMES[k]) || "";
+const saveNat = i => SAVE && SAVE.nation ? nationName(SAVE.nation[i]) : "";
 
 </script>

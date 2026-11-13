@@ -64,7 +64,7 @@ Everything the tool does, one feature per file. All files share one scope, so a 
 | --- | --- | ---: | ---: |
 | `src/app/10-model-metrics-attributes.js` | Scoring model: stat metrics, stat categories, attributes | 166 | 14 KB |
 | `src/app/11-model-roles-types-tiers.js` | Scoring model: roles, player types (auto tags), stat impact tiers per position | 165 | 22 KB |
-| `src/app/12-league-strength.js` | League strength adjustments | 154 | 15 KB |
+| `src/app/12-league-strength.js` | League strength: per-stat factor, plus `leagueTrust()` that pulls weak-league stats scores toward average | 158 | 16 KB |
 | `src/app/13-app-parsing.js` | App start and parsing of FM export files | 119 | 6 KB |
 | `src/app/14-dataset-model.js` | Turning loaded data into the scored player model | 153 | 9 KB |
 | `src/app/15-analytics-state.js` | Shared analytics, app state and browser storage | 130 | 9 KB |
@@ -86,7 +86,7 @@ Everything the tool does, one feature per file. All files share one scope, so a 
 | `src/app/31-import-events-boot.js` | File import, click/keyboard events, app start-up | 245 | 21 KB |
 | `src/app/32-my-tactic-reading.js` | My tactic: reading an FM tactic file, shape helpers, player fit | 275 | 36 KB |
 | `src/app/33-my-tactic-analysis.js` | My tactic: analysis, scores, page and events | 328 | 50 KB |
-| `src/app/34-scouting.js` | Scouting: wonderkids, transfer targets, contract watch, shortlist | 245 | 26 KB |
+| `src/app/34-scouting.js` | Scouting: wonderkids, transfer targets, contract watch (other clubs' contracts ending this summer / next / the one after, with CA, age, position, nationality, value filters), shortlist | 258 | 27 KB |
 | `src/app/35-development-planner.js` | Development snapshots and squad Planner | 129 | 17 KB |
 | `src/app/36-effectiveness-season-review.js` | Tactical effectiveness and Season review | 185 | 17 KB |
 | `src/app/37-staff-review-similar.js` | Staff review and Similar players | 194 | 77 KB |
@@ -101,6 +101,7 @@ Everything the tool does, one feature per file. All files share one scope, so a 
 | `src/app/46-search.js` | Search box (players and clubs), Help menu closing, narrow-screen page menus, opening a player from the link (#player=ID&name=…, used by the FM profile button), opening a club's Matches › Brief from #club=<name> (FM report pop-up button) | 102 | 9 KB |
 | `src/app/47-compare.js` | Scouting > Compare: any players side by side (profile, attributes, radar, stats per 90), and the Compare buttons in the player panel | 105 | 14 KB |
 | `src/app/48-upgrades.js` | Scouting > Upgrades: for each slot of your uploaded tactic, everyone in the save who performs better in that role, with filters; who started where (team sheets) and the panel's "Played this season" box | 179 | 21 KB |
+| `src/app/49-nations.js` | Nation names for the save's nation numbers (FM27 order), `saveNat(i)`: used by the profile, All data and Contract watch | 40 | 4 KB |
 
 ## FM save reader (src/save-reader)
 

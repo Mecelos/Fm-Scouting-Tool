@@ -142,6 +142,10 @@ function divRating(country, tier, top) {
   if (r != null) return r;
   return Math.min(top - (TIER_GAP[tier] ?? 48), divRating(country, tier - 1, top) - 4);
 }
+// second step, on the finished stats score: pull it toward the average by league strength, so a top score in a weak league
+// ranks below the same score in a strong one. Premier League 1.00, LaLiga ~0.89, Championship ~0.81, Guatemala ~0.65.
+const TRUST_SLOPE = 0.02;
+const leagueTrust = rating => rating == null ? 1 : Math.exp(-TRUST_SLOPE * Math.max(0, PL_RATING - rating));
 function leagueFactor(country, div) {
   country = (country || "").trim(); div = (div || "").trim();
   country = COUNTRY_ALIAS[country] || country;
