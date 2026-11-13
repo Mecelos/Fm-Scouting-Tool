@@ -50,6 +50,18 @@
         if (best) managed.push(best);
       }
     }
+    // still none (FM's own backups are called "last save overwrite backup"): the summary has the manager's name and, right
+    // after it, the club's short name ("Patryk Slowinski", "Valencia"); take the club with that short name and the most players
+    if (!managed.length) {
+      const count = new Map(); for (let i = 0; i < T.n; i++) { const k = T.clubIdx[i]; if (k >= 0) count.set(k, (count.get(k) || 0) + 1); }
+      for (let j = 1; j < strings.length && !managed.length; j++) {
+        if (strings[j - 1].end !== strings[j].lenAt) continue;
+        const want = strings[j].text.toLowerCase(); let best = null, bestN = 0;
+        T.clubs.forEach((name, k) => { const c = clubs.byUid.get(T.clubUid[k]); if (!c || String(c.short || "").toLowerCase() !== want) return;
+          const n = count.get(k) || 0; if (n > bestN) { best = { club: name, short: c.short, uid: T.clubUid[k], manager: strings[j - 1].text, fromSummary: true }; bestN = n; } });
+        if (best && bestN >= 15) managed.push(best);
+      }
+    }
     progress("Reading season stats", 0.8);
     let statsError = null;
     T.stats = {};

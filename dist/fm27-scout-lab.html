@@ -2206,6 +2206,18 @@ button[disabled] { opacity: .6; cursor: progress; }
         if (best) managed.push(best);
       }
     }
+    // still none (FM's own backups are called "last save overwrite backup"): the summary has the manager's name and, right
+    // after it, the club's short name ("Patryk Slowinski", "Valencia"); take the club with that short name and the most players
+    if (!managed.length) {
+      const count = new Map(); for (let i = 0; i < T.n; i++) { const k = T.clubIdx[i]; if (k >= 0) count.set(k, (count.get(k) || 0) + 1); }
+      for (let j = 1; j < strings.length && !managed.length; j++) {
+        if (strings[j - 1].end !== strings[j].lenAt) continue;
+        const want = strings[j].text.toLowerCase(); let best = null, bestN = 0;
+        T.clubs.forEach((name, k) => { const c = clubs.byUid.get(T.clubUid[k]); if (!c || String(c.short || "").toLowerCase() !== want) return;
+          const n = count.get(k) || 0; if (n > bestN) { best = { club: name, short: c.short, uid: T.clubUid[k], manager: strings[j - 1].text, fromSummary: true }; bestN = n; } });
+        if (best && bestN >= 15) managed.push(best);
+      }
+    }
     progress("Reading season stats", 0.8);
     let statsError = null;
     T.stats = {};
@@ -5837,6 +5849,18 @@ Yth;John Taylor;4;1;6;8;1;9;4;2;8;4;11;1;5;8;2;13;5;5;8;2;6;6;9;11;2;5;4;5;14;10
           if (!(sh === want || nl === want || nl.startsWith(want + " ") || sh.startsWith(want))) return;
           const n = count.get(k) || 0; if (n > bestN) { best = { club: name, short: c ? c.short : name, uid: u, manager: null, fromName: true }; bestN = n; } });
         if (best) managed.push(best);
+      }
+    }
+    // still none (FM's own backups are called "last save overwrite backup"): the summary has the manager's name and, right
+    // after it, the club's short name ("Patryk Slowinski", "Valencia"); take the club with that short name and the most players
+    if (!managed.length) {
+      const count = new Map(); for (let i = 0; i < T.n; i++) { const k = T.clubIdx[i]; if (k >= 0) count.set(k, (count.get(k) || 0) + 1); }
+      for (let j = 1; j < strings.length && !managed.length; j++) {
+        if (strings[j - 1].end !== strings[j].lenAt) continue;
+        const want = strings[j].text.toLowerCase(); let best = null, bestN = 0;
+        T.clubs.forEach((name, k) => { const c = clubs.byUid.get(T.clubUid[k]); if (!c || String(c.short || "").toLowerCase() !== want) return;
+          const n = count.get(k) || 0; if (n > bestN) { best = { club: name, short: c.short, uid: T.clubUid[k], manager: strings[j - 1].text, fromSummary: true }; bestN = n; } });
+        if (best && bestN >= 15) managed.push(best);
       }
     }
     progress("Reading season stats", 0.8);
