@@ -103,3 +103,8 @@ document.addEventListener("input", e => {
 document.addEventListener("keydown", e => { if (e.target.id === "cmpQ" && e.key === "Enter") { const b = document.querySelector("#cmpRes [data-cmppick]"); if (b) b.click(); } if (e.target.id === "cmpQ" && e.key === "Escape") { e.target.value = ""; const box = document.getElementById("cmpRes"); if (box) box.hidden = true; } });
 document.addEventListener("change", e => { if (e.target.id === "cmpMine" && e.target.value) { cmpAdd(e.target.value); cmpRedraw(); } });
 document.addEventListener("click", e => { if (!e.target.closest(".cmpsearch")) { const box = document.getElementById("cmpRes"); if (box) box.hidden = true; } });
+// another Scout Lab tab changed the compare list or the shortlist (e.g. a tab opened from FM's SCOUT LAB button): follow it here
+window.addEventListener("storage", e => {
+  if (e.key === CMP_KEY) { S._cmp = null; if (SAVE) cmpRedraw(); }
+  else if (e.key === SL_KEY) { SL = slLoad(); if (SAVE && S.mode === "scout" && S.scTab === "short" && !S.guide && !S.dataPage) { const y = window.scrollY; render(); window.scrollTo(0, y); } }
+});
