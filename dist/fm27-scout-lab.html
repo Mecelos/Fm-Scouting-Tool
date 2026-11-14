@@ -689,6 +689,10 @@ button.fit { background: none; font: inherit; font-size: 12.5px; cursor: pointer
 .rvhist { display: flex; flex-wrap: wrap; gap: 4px 12px; } .rvh b { color: var(--ink2); }
 .rvpri { display: flex; flex-wrap: wrap; gap: 6px; } .rvp { display: grid; gap: 2px; background: var(--panel2); border-radius: var(--r); padding: 6px 10px; text-decoration: none; color: inherit; min-width: 150px; }
 @media (max-width: 900px) { .rvups { grid-template-columns: minmax(0, 1fr); } .rvt td.rvsum { min-width: 200px; } }
+
+/* opponent line-ups */
+.olgames li { margin-bottom: 6px; }
+.olpos { opacity: .7; }
 /* planner */
 .depth { display: grid; gap: 4px; }
 .drow { display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 3px 10px; align-items: start; background: var(--panel2); border-radius: var(--r); padding: 5px 8px; }
@@ -1603,10 +1607,15 @@ button[disabled] { opacity: .6; cursor: progress; }
       if (d[k + 6] !== 2 || d[k + 11] !== 2 || d[k + 16] !== 0xff || d[k + 5] > 1) continue;   // byte 5: 0 home, 1 away
       const key = u32(d, k); if (!names.has(key) || seen.has(key)) continue;
       const s = u32(d, k + 7), p = u32(d, k + 12); if (!p) continue;   // p 0 = an unused substitute
+      // h: 0 home, 1 away; s: starting position (0 = came off the bench), p: position at the end; the role block may be missing
+      // role block: 02 <in-possession position> <IP role u64> 02 <out-of-possession position> <OOP role u64>
+      // (FM27 lets a player stand somewhere else out of possession, e.g. an AMC who drops to MC: op)
+      const row = { n: names.get(key), h: d[k + 5], s, p, ip: "", oop: "", op: 0 }; seen.add(key); out.push(row);
+      const okPos = v => { const b = v & 0x1ffff; return b > 0 && (b & (b - 1)) === 0 && v >>> 22 === 0; };
       for (let q = k + 17; q < k + 400 && q + 30 < d.length; q++) {
-        if (d[q] !== 2 || d[q + 13] !== 2 || u32(d, q + 14) !== p) continue;
-        const q1 = u32(d, q + 1); if (q1 !== s && q1 !== p) continue;
-        out.push({ n: names.get(key), s, p, ip: hex(q + 5), oop: hex(q + 18) }); seen.add(key); break;
+        if (d[q] !== 2 || d[q + 13] !== 2) continue;
+        const q1 = u32(d, q + 1), q2 = u32(d, q + 14); if ((q1 !== s && q1 !== p) || !okPos(q2)) continue;
+        row.ip = hex(q + 5); row.oop = hex(q + 18); row.op = q2; break;
       }
     }
     return out;
@@ -1614,7 +1623,7 @@ button[disabled] { opacity: .6; cursor: progress; }
   async function readMatches(src, idx, clubs, myUid) {
     if (!idx.sections.match_stats_cfg) return null;
     const d = await readSection(src, idx, "match_stats_cfg");
-    const comps = [], compIx = new Map(), mid = [], comp = [], home = [], away = [], full = [], hg = [], ag = [], ev = [], mine = [];
+    const comps = [], compIx = new Map(), mid = [], comp = [], home = [], away = [], full = [], hg = [], ag = [], ev = [], mine = [], lu = [];
     const isMine = t => { const tc = clubs.teamToClub.get(t); return myUid != null && tc && tc.uid === myUid; };
     const isTeam = t => clubs.teamToClub.has(t) || clubs.fielded.has(t);
     const tag = ascii("pks_");
@@ -1638,8 +1647,12 @@ button[disabled] { opacity: .6; cursor: progress; }
           let names = new Map(), lineup = null, full = null;
           try { full = zstd(d.subarray(at, at + sz)); } catch (e) { }
           if (full) { try { names = matchNames(full, g.flatMap(x => [x[0], x[1]])); } catch (e) { } try { lineup = matchLineup(full); } catch (e) { } }
+          lu[mid.length] = lineup;
           mine.push({ r: mid.length, goals: g.filter(x => goalType(x[3]) >= 0 && x[3] < 4).map(([s, as, side, raw, minute]) => ({ m: minute, side, type: goalType(raw), by: names.get(s) || "", as: names.get(as) || "" })),
             shoot: g.filter(x => x[3] >= 4).map(([s, , side, type]) => ({ side, scored: type === 4, by: names.get(s) || "" })), lineup });
+        }
+        else if (g && sz > 15000) {   // FM keeps full match data for your league and cups: both team sheets, for the opponent report
+          try { lu[mid.length] = matchLineup(zstd(d.subarray(at, at + sz))); } catch (e) { }
         }
         mid.push(id); comp.push(c); home.push(ts[0]); away.push(ts[1]); full.push(sz > 120000 ? 1 : 0); hg.push(a); ag.push(b);
       }
@@ -1647,7 +1660,7 @@ button[disabled] { opacity: .6; cursor: progress; }
     // events: [match row, minute, side of the team credited, type] per goal (own goals already count for the other side)
     const E = Uint16Array.from(ev);
     return { n: mid.length, comps, id: Uint32Array.from(mid), comp: Uint16Array.from(comp), home: Uint32Array.from(home), away: Uint32Array.from(away), full: Uint8Array.from(full),
-      hg: Uint8Array.from(hg), ag: Uint8Array.from(ag), ev: E, mine, v: 2 };
+      hg: Uint8Array.from(hg), ag: Uint8Array.from(ag), ev: E, mine, lu: Array.from({ length: mid.length }, (x, k) => lu[k] || null), v: 2 };
   }
   // your upcoming games, from the inbox (news). The save keeps no readable fixture list, but match previews and opposition
   // reports name the game: "<u16 date: day of year in the low 9 bits, counted from 1> <u16 year> ... <your team u32> 00 <opponent u32>".
@@ -5248,10 +5261,15 @@ Yth;John Taylor;4;1;6;8;1;9;4;2;8;4;11;1;5;8;2;13;5;5;8;2;6;6;9;11;2;5;4;5;14;10
       if (d[k + 6] !== 2 || d[k + 11] !== 2 || d[k + 16] !== 0xff || d[k + 5] > 1) continue;   // byte 5: 0 home, 1 away
       const key = u32(d, k); if (!names.has(key) || seen.has(key)) continue;
       const s = u32(d, k + 7), p = u32(d, k + 12); if (!p) continue;   // p 0 = an unused substitute
+      // h: 0 home, 1 away; s: starting position (0 = came off the bench), p: position at the end; the role block may be missing
+      // role block: 02 <in-possession position> <IP role u64> 02 <out-of-possession position> <OOP role u64>
+      // (FM27 lets a player stand somewhere else out of possession, e.g. an AMC who drops to MC: op)
+      const row = { n: names.get(key), h: d[k + 5], s, p, ip: "", oop: "", op: 0 }; seen.add(key); out.push(row);
+      const okPos = v => { const b = v & 0x1ffff; return b > 0 && (b & (b - 1)) === 0 && v >>> 22 === 0; };
       for (let q = k + 17; q < k + 400 && q + 30 < d.length; q++) {
-        if (d[q] !== 2 || d[q + 13] !== 2 || u32(d, q + 14) !== p) continue;
-        const q1 = u32(d, q + 1); if (q1 !== s && q1 !== p) continue;
-        out.push({ n: names.get(key), s, p, ip: hex(q + 5), oop: hex(q + 18) }); seen.add(key); break;
+        if (d[q] !== 2 || d[q + 13] !== 2) continue;
+        const q1 = u32(d, q + 1), q2 = u32(d, q + 14); if ((q1 !== s && q1 !== p) || !okPos(q2)) continue;
+        row.ip = hex(q + 5); row.oop = hex(q + 18); row.op = q2; break;
       }
     }
     return out;
@@ -5259,7 +5277,7 @@ Yth;John Taylor;4;1;6;8;1;9;4;2;8;4;11;1;5;8;2;13;5;5;8;2;6;6;9;11;2;5;4;5;14;10
   async function readMatches(src, idx, clubs, myUid) {
     if (!idx.sections.match_stats_cfg) return null;
     const d = await readSection(src, idx, "match_stats_cfg");
-    const comps = [], compIx = new Map(), mid = [], comp = [], home = [], away = [], full = [], hg = [], ag = [], ev = [], mine = [];
+    const comps = [], compIx = new Map(), mid = [], comp = [], home = [], away = [], full = [], hg = [], ag = [], ev = [], mine = [], lu = [];
     const isMine = t => { const tc = clubs.teamToClub.get(t); return myUid != null && tc && tc.uid === myUid; };
     const isTeam = t => clubs.teamToClub.has(t) || clubs.fielded.has(t);
     const tag = ascii("pks_");
@@ -5283,8 +5301,12 @@ Yth;John Taylor;4;1;6;8;1;9;4;2;8;4;11;1;5;8;2;13;5;5;8;2;6;6;9;11;2;5;4;5;14;10
           let names = new Map(), lineup = null, full = null;
           try { full = zstd(d.subarray(at, at + sz)); } catch (e) { }
           if (full) { try { names = matchNames(full, g.flatMap(x => [x[0], x[1]])); } catch (e) { } try { lineup = matchLineup(full); } catch (e) { } }
+          lu[mid.length] = lineup;
           mine.push({ r: mid.length, goals: g.filter(x => goalType(x[3]) >= 0 && x[3] < 4).map(([s, as, side, raw, minute]) => ({ m: minute, side, type: goalType(raw), by: names.get(s) || "", as: names.get(as) || "" })),
             shoot: g.filter(x => x[3] >= 4).map(([s, , side, type]) => ({ side, scored: type === 4, by: names.get(s) || "" })), lineup });
+        }
+        else if (g && sz > 15000) {   // FM keeps full match data for your league and cups: both team sheets, for the opponent report
+          try { lu[mid.length] = matchLineup(zstd(d.subarray(at, at + sz))); } catch (e) { }
         }
         mid.push(id); comp.push(c); home.push(ts[0]); away.push(ts[1]); full.push(sz > 120000 ? 1 : 0); hg.push(a); ag.push(b);
       }
@@ -5292,7 +5314,7 @@ Yth;John Taylor;4;1;6;8;1;9;4;2;8;4;11;1;5;8;2;13;5;5;8;2;6;6;9;11;2;5;4;5;14;10
     // events: [match row, minute, side of the team credited, type] per goal (own goals already count for the other side)
     const E = Uint16Array.from(ev);
     return { n: mid.length, comps, id: Uint32Array.from(mid), comp: Uint16Array.from(comp), home: Uint32Array.from(home), away: Uint32Array.from(away), full: Uint8Array.from(full),
-      hg: Uint8Array.from(hg), ag: Uint8Array.from(ag), ev: E, mine, v: 2 };
+      hg: Uint8Array.from(hg), ag: Uint8Array.from(ag), ev: E, mine, lu: Array.from({ length: mid.length }, (x, k) => lu[k] || null), v: 2 };
   }
   // your upcoming games, from the inbox (news). The save keeps no readable fixture list, but match previews and opposition
   // reports name the game: "<u16 date: day of year in the low 9 bits, counted from 1> <u16 year> ... <your team u32> 00 <opponent u32>".
@@ -13476,7 +13498,7 @@ function mxOpp(B) {
   const q = ms.filter(m => !STY.includes(m)).sort((a, b) => D.pct[b][i] - D.pct[a][i]), strong = q.slice(0, 3).filter(m => D.pct[m][i] >= 60), weak = q.slice(-3).reverse().filter(m => D.pct[m][i] < 40);
   const met_ = m => `<li><b>${esc(HUB_M[m][0])}</b>${itip(m)} <span class="${hubCls(D.pct[m][i])}">${D.rank[m][i]}${["st", "nd", "rd"][((D.rank[m][i] + 90) % 100 - 10) % 10 - 1] || "th"} of ${D.n}</span> <span class="muted small">(${hubFmt(m, D.val[m][i])}, league ${hubFmt(m, D.avg[m])})</span></li>`;
   const danger = mxDanger(T.club);
-  const tips = mxOppTips(D, i, tm);
+  const tips = typeof olChanges === "function" ? olChanges(B, cur.t, mxOppTips(D, i, tm)) : mxOppTips(D, i, tm).slice(0, 2);
   const lg = D0.comp ? D0.comp.name : "your league";
   const intro = isNext ? `Your next game, from your inbox: <b>${esc(name)}</b>, ${esc(mxDay(next.date))}. Pick another team to scout anyone else.`
     : next ? `Your next game is <b>${esc(mxClubName(B, next.team, next.club))}</b> (${esc(mxDay(next.date))}). <button class="linkbtn" data-mxact="next">Show it</button>`
@@ -13488,10 +13510,11 @@ function mxOpp(B) {
     <section class="tiles">${[["Form rank", od.outside ? "<small>not in your league</small>" : row ? `${pos(cur.t) + 1}<small> of ${lt.length}</small>` : "–"], [`Points, last ${lt.n || "–"}`, row ? `${row.pts}<small> of ${row.p * 3}</small>` : "–"], [od.outside ? "Goals in their league" : "League goals (season)", `${Math.round(T.v("goals"))} – ${Math.round(T.k("goals_allowed"))}<small> in ${T.g}</small>`], ["Last 5", last.map(mxBadge).join("") || "–"], ["Played them", `${met.get(cur.t) || 0}×`]].map(([l, v]) => `<div class="tile"><span class="tv">${v}</span><span class="tl">${esc(l)}</span></div>`).join("")}</section>
     ${last.length ? `<p class="small muted">${last.map(x => `${x.res} ${x.s} ${x.h ? "v" : "at"} ${esc(x.o)}`).join(" · ")}</p>` : ""}
     <div class="homesw"><div><h4 class="okc">Where they're strong</h4>${strong.length ? `<ul>${strong.map(met_).join("")}</ul>` : `<p class="small muted">Nothing stands out.</p>`}</div><div><h4 class="bad">Where they're weak</h4>${weak.length ? `<ul>${weak.map(met_).join("")}</ul>` : `<p class="small muted">No clear weakness.</p>`}</div></div></section>
-    <section class="panel"><div class="ph"><h3>What to try against ${esc(name)}</h3><span class="small muted">from their numbers, not a guarantee</span></div>
+    ${typeof olHtml === "function" ? olHtml(B, cur.t, false) : ""}
+    <section class="panel"><div class="ph"><h3>How to approach ${esc(name)}</h3><span class="small muted">two changes at most, from their line-ups and numbers</span></div>
       ${tips.length ? `<ul class="why">${tips.map(([w, y]) => `<li>${w} <span class="muted small">— ${y}.</span></li>`).join("")}</ul>` : `<p class="small muted">They're average almost everywhere: play your usual game.</p>`}
-      ${learnBox("These come from where they rank in the league on each number. Only change one or two things for a match.", "pct")}</section>
-    ${typeof mxOIHtml === "function" ? mxOIHtml(B, T, danger, D, i) : ""}
+      ${learnBox("Line-up ideas come from the formation and roles they used in their last games; the rest from where they rank in the league on each number. Each change to your roles or instructions costs a little tactical familiarity, so only change one or two things for a match. Opposition instructions (below) don't count: they don't change your tactic.", "pct")}</section>
+    ${typeof mxOIHtml === "function" ? mxOIHtml(B, T, danger, D, i, cur.t) : ""}
     ${danger.length ? `<section class="panel"><div class="ph"><h3>Danger men</h3><span class="small muted">most goals + assists in the league</span></div><div class="tscroll"><table class="gtable narrow"><thead><tr><th>Player</th><th>Pos</th><th class="num">G</th><th class="num">A</th><th class="num">xG</th><th class="num">Rating</th><th class="num">Min</th></tr></thead><tbody>
       ${danger.slice(0, 5).map(d => `<tr><td><button class="linkbtn" data-sci="${d.p}">${esc(SAVE.name[d.p])}</button></td><td class="small">${esc(savePos().str[d.p] || "")}</td><td class="num">${d.g}</td><td class="num">${d.a}</td><td class="num">${d.xg.toFixed(1)}</td><td class="num">${d.r === d.r ? d.r.toFixed(2) : "–"}</td><td class="num">${Math.round(d.min)}</td></tr>`).join("")}</tbody></table></div>
       <p class="small muted">Give the top one a tight marker: Opposition instructions › Tight marking (and Show onto weaker foot for a winger).</p></section>` : ""}
@@ -14163,9 +14186,9 @@ function mxOI(B, T, danger, D, i) {
   }
   return out.slice(0, 2);
 }
-function mxOIHtml(B, T, danger, D, i) {
-  const L = mxOI(B, T, danger, D, i); if (!L.length) return "";
-  return `<section class="panel"><div class="ph"><h3>Opposition instructions</h3><span class="small muted">just ${L.length === 1 ? "one" : "two"}, so your shape stays</span></div>
+function mxOIHtml(B, T, danger, D, i, t) {
+  const L0 = mxOI(B, T, danger, D, i), L = t != null && typeof olOIs === "function" ? olOIs(B, t, L0) : L0; if (!L.length) return "";
+  return `<section class="panel"><div class="ph"><h3>Opposition instructions</h3><span class="small muted">${L.length === 1 ? "just one" : L.length === 2 ? "just two" : "three"}: they don't change your tactic</span></div>
     <ol class="dgsteps">${L.map(x => `<li>${x.w}<div class="small">${x.why}</div><div class="small muted">Effect on your shape: ${x.cost}</div></li>`).join("")}</ol>
     <p class="small muted">Set them in FM: Tactics › Opposition Instructions, before the match. Each one pulls a player of yours toward a man; more than two and your shape stops being yours.</p></section>`;
 }
@@ -14180,7 +14203,7 @@ function mxBrief(B) {
   if (!od) return `<section class="panel mxbrief"><div class="ph"><h3>Matchday brief</h3></div><p class="muted">No opponent found in this save yet. <button class="linkbtn" data-mxtab="opp">Open Next opponent</button> to pick one.</p></section>`;
   const D = od.D, i = od.i, T = D.teams[i], me = D.teams.findIndex(x => x.mine), name = mxName(B, P.pick), isNext = next && next.team === P.pick;
   const mine5 = B.comp.slice(-5), their5 = mxLast5(B, P.pick), tm = mxTiming(B, P.pick, true), tw = mxTimingWords(tm, "They");
-  const tips = mxOppTips(D, i, tm).slice(0, 3), danger = mxDanger(T.club), ois = typeof mxOI === "function" ? mxOI(B, T, danger, D, i) : [];
+  const ol = typeof olChanges === "function", tips = ol ? olChanges(B, P.pick, mxOppTips(D, i, tm)) : mxOppTips(D, i, tm).slice(0, 2), danger = mxDanger(T.club), ois0 = typeof mxOI === "function" ? mxOI(B, T, danger, D, i) : [], ois = ol ? olOIs(B, P.pick, ois0) : ois0;
   const lg = B.D.comp ? B.D.comp.name : "your league";
   const rows = me < 0 ? "" : MX_BRIEF_M.filter(m => HUB_M[m]).map(m => {
     const a = D.val[m][me], b = D.val[m][i], hi = HUB_M[m][2]; if (!(a === a) || !(b === b)) return "";
@@ -14194,11 +14217,11 @@ function mxBrief(B) {
     ${T.g < 3 ? `<p class="small mxnote bad">Little data: only ${T.g} game${T.g === 1 ? "" : "s"} of stats for ${esc(name)} in your save. A rough guide only.</p>` : ""}
     <div class="mxbform"><div><span class="small muted">You</span>${mine5.map(mxBadge).join("") || "–"}</div><div><span class="small muted">${esc(name)}</span>${their5.map(mxBadge).join("") || "–"}</div></div>
     ${rows ? `<h4>You against them</h4><table class="gtable narrow mxbtab"><thead><tr><th></th><th class="num">You</th><th class="num">Them</th><th>Edge</th></tr></thead><tbody>${rows}</tbody></table>` : ""}
-    <h4>What to try</h4>${tips.length ? `<ol class="mxblist">${tips.map(([w, y]) => `<li>${w}<div class="small muted">${y}.</div></li>`).join("")}</ol>` : `<p class="small muted">They're average almost everywhere: play your usual game.</p>`}
+    <h4>How to approach it <span class="small muted">(two changes at most)</span></h4>${tips.length ? `<ol class="mxblist">${tips.map(([w, y]) => `<li>${w}<div class="small muted">${y}.</div></li>`).join("")}</ol>` : `<p class="small muted">They're average almost everywhere: play your usual game.</p>`}
     ${ois.length ? `<h4>Opposition instructions</h4><ol class="mxblist">${ois.map(x => `<li>${x.w}<div class="small muted">${x.why}</div></li>`).join("")}</ol>` : ""}
     ${danger.length ? `<h4>Danger men</h4><ul class="mxblist">${danger.slice(0, 3).map(d => `<li><button class="linkbtn" data-sci="${d.p}">${esc(SAVE.name[d.p])}</button> <span class="small muted">${esc(savePos().str[d.p] || "")} · ${d.g} goal${d.g === 1 ? "" : "s"}, ${d.a} assist${d.a === 1 ? "" : "s"}</span></li>`).join("")}</ul>` : ""}
     <h4>When they score and concede</h4>${tw.length ? `<ul class="mxblist">${tw.slice(0, 2).map(x => `<li>${x}</li>`).join("")}</ul>` : `<p class="small muted">No strong pattern in their last ${tm.games} games.</p>`}
-  </section>`;
+  </section>${ol ? olHtml(B, P.pick, true).replace('class="panel"', 'class="panel mxbrief"') : ""}`;
 }
 document.addEventListener("click", e => { if (e.target.closest('[data-mxact="print"]')) window.print(); });
 // ---------- Search box in the top bar: any player or club in the loaded save, from any tab ----------
@@ -14626,5 +14649,113 @@ const NATION_NAMES = (() => {
 })();
 const nationName = k => (k != null && k >= 0 && NATION_NAMES[k]) || "";
 const saveNat = i => SAVE && SAVE.nation ? nationName(SAVE.nation[i]) : "";
+// ---------- Opponent line-ups: formation, roles and likely XI from their last games' team sheets ----------
+// FM keeps both team sheets for every match in your league and cups (SAVE.matches.lu[row]: [{ n name, h 0 home/1 away,
+// s start position, p end position, ip, oop role bits, op out-of-possession position }]). Positions and roles use the tactic-file bits (POS_BITS, IP_BITS).
+const OL_N = 6;   // how many recent games the report reads
+const OL_ORDER = ["GK", "DR", "WBR", "DCR", "DC", "DCL", "DL", "WBL", "DMR", "DM", "DML", "MR", "MCR", "MC", "MCL", "ML", "AMR", "AMCR", "AMC", "AMCL", "AML", "STR", "ST", "STL"];
+const OL_LINE = { GK: -1, DR: 0, DL: 0, DC: 0, WBR: 0, WBL: 0, DM: 1, MR: 2, ML: 2, MC: 2, AMR: 3, AML: 3, AMC: 3, ST: 4 };
+function olSlot(p) {
+  const base = p & 0x1ffff, code = POS_BITS[base]; if (!code) return null;
+  const side = p & 0x100000 ? "L" : p & 0x200000 ? "R" : base === 0x8000 ? "R" : base === 0x10000 ? "L" : "";
+  const two = ["DC", "DM", "MC", "AMC", "ST"].includes(code);   // centre slots carry a side when there are two or three of them
+  return { code, slot: two && side ? code + side : code };
+}
+function olRoleIP(hex) { return hex ? upRole(hex) : null; }
+function olRoleOOP(hex) { if (!hex) return null; try { const r = OOP_BITS.get(BigInt("0x" + hex) & ~DUTY_MASK); return r || null; } catch (e) { return null; } }
+function olFormation(xi) {
+  const n = [0, 0, 0, 0, 0]; xi.forEach(x => { const l = OL_LINE[x.code]; if (l >= 0) n[l]++; });
+  return n.filter(v => v > 0).join("-");
+}
+// a club's players by name, to link a team-sheet name to a player in the save (and spot those who have left)
+function olNames(club) {
+  if (!SAVE._olN) SAVE._olN = new Map();
+  if (SAVE._olN.has(club)) return SAVE._olN.get(club);
+  const at = new Map(), any = new Map();
+  for (let i = 0; i < SAVE.n; i++) { const k = gsNorm(SAVE.name[i]); if (SAVE.clubIdx[i] === club) at.set(k, i); else if (!any.has(k)) any.set(k, i); }
+  const r = { at, any }; SAVE._olN.set(club, r); return r;
+}
+function olData(B, t) {
+  const M = B.M; if (!M || !M.lu) return null;
+  const k = B.byTeam.get(t), club = k != null ? B.TM.club[k] : -1, nm = club >= 0 ? olNames(club) : null;
+  const find = n => { const q = gsNorm(n); if (!nm) return { i: null, left: false }; if (nm.at.has(q)) return { i: nm.at.get(q), left: false }; return nm.any.has(q) ? { i: nm.any.get(q), left: true } : { i: null, left: false }; };
+  const rows = B.order.filter(r => (M.home[r] === t || M.away[r] === t) && M.hg[r] !== 255 && !mxFriendly(M.comps[M.comp[r]]) && M.lu[r]).slice(-OL_N).reverse();
+  if (!rows.length) return null;
+  const games = rows.map(r => {
+    const home = M.home[r] === t, side = home ? 0 : 1, L = M.lu[r];
+    const xi = L.filter(x => x.h === side && x.s).map(x => { const sl = olSlot(x.s); const os = x.op ? olSlot(x.op) : null; return sl ? { ...sl, n: x.n, ip: olRoleIP(x.ip), oop: olRoleOOP(x.oop), os: os || sl, ...find(x.n) } : null; }).filter(Boolean)
+      .sort((a, b) => OL_ORDER.indexOf(a.slot) - OL_ORDER.indexOf(b.slot));
+    const subs = L.filter(x => x.h === side && !x.s && x.p).map(x => x.n);
+    const gf = home ? M.hg[r] : M.ag[r], ga = home ? M.ag[r] : M.hg[r];
+    return { r, home, opp: home ? M.away[r] : M.home[r], gf, ga, res: gf > ga ? "W" : gf < ga ? "L" : "D", comp: M.comps[M.comp[r]], xi, subs,
+      form: xi.length === 11 ? olFormation(xi) : "?", oform: xi.length === 11 ? olFormation(xi.map(x => x.os)) : "?" };
+  });
+  games.forEach((g, j) => { const nx = games[j + 1]; g.changes = nx && nx.xi.length >= 10 ? g.xi.filter(x => !nx.xi.some(y => y.n === x.n)).length : null; });
+  const forms = new Map(); games.forEach(g => { if (g.form !== "?") forms.set(g.form, (forms.get(g.form) || 0) + 1); });
+  const main = [...forms.entries()].sort((a, b) => b[1] - a[1] || 0)[0];
+  const tmpl = main ? games.find(g => g.form === main[0]) : games[0];   // the most recent game in their usual shape
+  // likely XI: for each slot of that shape, who started there most (recent games count more); players who've left are skipped
+  const used = new Set(), xi = [];
+  tmpl.xi.forEach(sl => {
+    const cand = new Map();
+    games.forEach((g, j) => g.xi.forEach(x => { if (x.slot !== sl.slot || x.left) return; const c = cand.get(x.n) || { x, w: 0, starts: 0, ip: new Map(), oop: new Map() }; c.w += games.length - j; c.starts++; if (x.ip) c.ip.set(x.ip, (c.ip.get(x.ip) || 0) + 1); if (x.oop) c.oop.set(x.oop, (c.oop.get(x.oop) || 0) + 1); cand.set(x.n, c); }));
+    const best = [...cand.values()].filter(c => !used.has(c.x.n)).sort((a, b) => b.w - a.w)[0];
+    const top = m => [...m.entries()].sort((a, b) => b[1] - a[1])[0];
+    if (best) { used.add(best.x.n); xi.push({ slot: sl.slot, code: sl.code, os: sl.os.code !== sl.code ? sl.os.slot : null, n: best.x.n, i: best.x.i, starts: best.starts, ip: (top(best.ip) || [sl.ip])[0], oop: (top(best.oop) || [sl.oop])[0] }); }
+    else xi.push({ slot: sl.slot, code: sl.code, os: sl.os.code !== sl.code ? sl.os.slot : null, n: "?", i: null, starts: 0, ip: sl.ip, oop: sl.oop });
+  });
+  const left = [...new Set(games.flatMap(g => g.xi.filter(x => x.left).map(x => x.n)))];
+  return { t, club, games, forms, main: main ? main[0] : null, mainN: main ? main[1] : 0, oform: tmpl.oform, xi, left };
+}
+// what their shape and roles suggest, in plain words, with at most a small cost to your own tactic
+function olTips(O) {
+  if (!O || !O.xi.length) return [];
+  const out = [], X = O.xi, has = (codes, roles) => X.filter(x => codes.includes(x.code) && (!roles || roles.includes(x.ip)));
+  const nm = x => x.i != null ? `<button class="linkbtn" data-sci="${x.i}">${esc(x.n)}</button>` : `<b>${esc(x.n)}</b>`;
+  const mine = typeof currentSlots === "function" ? currentSlots().map(s => s.code) : [];
+  const myWide = c => mine.some(m => (c === "R" ? ["AMR", "MR"] : ["AML", "ML"]).includes(m));
+  // their full-backs/wing-backs who bomb on: leave your winger up on that side to counter into the space
+  const att = has(["DR", "DL", "WBR", "WBL"], ["Wing-Back", "Advanced Wing-Back", "Playmaking Wing-Back"]);
+  if (att.length) { const x = att[0], side = /R$/.test(x.code) ? "R" : "L", mySide = side === "R" ? "left" : "right";
+    out.push({ w: `Leave your ${mySide} winger up when they attack: OOP role <b>Wide Outlet Winger</b>`, why: `${nm(x)} plays as a ${esc(x.ip)} and gets forward, so the space behind him is open for your counter${myWide(side === "R" ? "L" : "R") ? "" : " (only if you play a winger on that side)"}`, cost: "one out-of-possession role on one player" }); }
+  // their deep playmaker: press him
+  const pm = has(["DM", "MC"], ["Deep-Lying Playmaker", "Half-Back", "Midfield Playmaker", "Box-to-Box Playmaker"]);
+  if (pm.length) out.push({ w: `${nm(pm[0])}: opposition instruction <b>Trigger press: Always</b>`, why: `He starts their attacks from deep as a ${esc(pm[0].ip)}; pressure on the ball stops him picking passes`, cost: "none on familiarity: opposition instructions don't change your tactic", oi: pm[0].n });
+  // a target man: mark him tight
+  const tf = has(["ST"], ["Target Forward"]);
+  if (tf.length) out.push({ w: `${nm(tf[0])}: opposition instruction <b>Tight marking: Always</b>`, why: `He's their Target Forward: long balls go to him, so don't let him win them unchallenged`, cost: "none on familiarity", oi: tf[0].n });
+  // two strikers against your back four: keep a full-back home
+  const st = has(["ST"]).length, dc = has(["DC"]).length;
+  if (st >= 2) out.push({ w: `Keep one full-back at home: OOP role <b>Holding Full-Back</b> on your weaker side`, why: `They start two strikers, who pin both your centre-backs; with both full-backs up you're two against two at the back`, cost: "one out-of-possession role on one player" });
+  if (dc >= 3) out.push({ w: `Keep your wide players high and wide`, why: `They play a back ${dc + has(["WBR", "WBL", "DR", "DL"]).length} with three centre-backs; the channels between their wing-backs and outside centre-backs are where you get in`, cost: "none if your wingers already play wide; otherwise one role change" });
+  const inv = has(["DR", "DL", "WBR", "WBL"], ["Inverted Wing-Back", "Inverted Full-Back", "Inside Full-Back"]);
+  if (inv.length) out.push({ w: `Use your width`, why: `${nm(inv[0])} tucks into midfield (${esc(inv[0].ip)}), which leaves the touchline empty on that side`, cost: "none if you already play wingers" });
+  if (!has(["DM"]).length && has(["MC"]).length <= 2 && X.length >= 10) out.push({ w: `Get a man between their lines`, why: `They have no defensive midfielder, so the space in front of their centre-backs is free for your attacking midfielder or a dropping forward`, cost: "none if you already play an attacking midfielder" });
+  return out;
+}
+function olHtml(B, t, brief) {
+  const O = olData(B, t); if (!O) return "";
+  const name = mxName(B, t), G = O.games;
+  const forms = [...O.forms.entries()].sort((a, b) => b[1] - a[1]).map(([f, n]) => `<b>${esc(f)}</b> ×${n}`).join(" · ");
+  const xi = `<div class="tscroll"><table class="gtable narrow"><thead><tr><th>Pos</th><th>Likely starter</th><th class="num">Starts</th><th>In possession</th><th>Out of possession</th></tr></thead><tbody>
+    ${O.xi.map(x => `<tr><td class="small">${esc(x.slot)}</td><td>${x.i != null ? `<button class="linkbtn" data-sci="${x.i}">${esc(x.n)}</button>` : esc(x.n)}</td><td class="num small">${x.starts}/${G.length}</td><td class="small">${esc(x.ip || "–")}</td><td class="small">${esc(x.oop || "–")}${x.os ? ` <span class="muted">(moves to ${esc(x.os)})</span>` : ""}</td></tr>`).join("")}</tbody></table></div>`;
+  const games = G.map(g => `<li><b class="${mxResCls(g.res)}">${g.res} ${g.gf}–${g.ga}</b> ${g.home ? "v" : "at"} ${esc(mxName(B, g.opp))} <span class="small muted">· ${esc(g.comp)} · ${esc(g.form)}${g.changes != null ? ` · ${g.changes} change${g.changes === 1 ? "" : "s"}` : ""}</span>
+    ${brief ? "" : `<div class="small muted">${g.xi.map(x => `${esc(x.n)} <span class="olpos">${esc(x.slot)}${x.ip ? ", " + esc(x.ip) : ""}</span>`).join(" · ")}</div>`}</li>`).join("");
+  return `<section class="panel"><div class="ph"><h3>How ${esc(name)} line up</h3><span class="small muted">from their last ${G.length} team sheet${G.length === 1 ? "" : "s"} in the save</span></div>
+    <p>Shape: ${forms || "–"}${O.main ? ` <span class="small muted">(${O.mainN} of ${G.length} games)</span>` : ""}${O.oform && O.oform !== "?" && O.oform !== O.main ? ` · out of possession it becomes <b>${esc(O.oform)}</b>` : ""}</p>
+    <h4>Likely XI and roles</h4>${xi}
+    ${O.left.length ? `<p class="small muted">Started recently but no longer at the club: ${O.left.map(esc).join(", ")}.</p>` : ""}
+    <h4>Game by game</h4><ul class="why olgames">${games}</ul>
+    <p class="small muted">Line-ups are read for games FM keeps in full: your league and cups. Injuries and suspensions aren't checked, so look at their squad in FM before the game.</p></section>`;
+}
+// the two changes for the game: their line-up first (roles are certain), then their numbers; OIs don't touch familiarity
+function olChanges(B, t, numTips) {
+  const L = olTips(olData(B, t)), out = L.filter(x => !x.oi).map(x => [x.w, x.why + ` (cost: ${x.cost})`]);
+  return out.concat(numTips || []).slice(0, 2);
+}
+function olOIs(B, t, ois) {
+  const L = olTips(olData(B, t)).filter(x => x.oi), seen = new Set((ois || []).map(x => x.w));
+  return (ois || []).concat(L.filter(x => ![...seen].some(w => w.includes(esc(x.oi)))).map(x => ({ w: x.w, why: x.why + ".", cost: "None on familiarity." }))).slice(0, 3);
+}
 
 </script>

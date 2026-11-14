@@ -220,7 +220,7 @@ function mxOpp(B) {
   const q = ms.filter(m => !STY.includes(m)).sort((a, b) => D.pct[b][i] - D.pct[a][i]), strong = q.slice(0, 3).filter(m => D.pct[m][i] >= 60), weak = q.slice(-3).reverse().filter(m => D.pct[m][i] < 40);
   const met_ = m => `<li><b>${esc(HUB_M[m][0])}</b>${itip(m)} <span class="${hubCls(D.pct[m][i])}">${D.rank[m][i]}${["st", "nd", "rd"][((D.rank[m][i] + 90) % 100 - 10) % 10 - 1] || "th"} of ${D.n}</span> <span class="muted small">(${hubFmt(m, D.val[m][i])}, league ${hubFmt(m, D.avg[m])})</span></li>`;
   const danger = mxDanger(T.club);
-  const tips = mxOppTips(D, i, tm);
+  const tips = typeof olChanges === "function" ? olChanges(B, cur.t, mxOppTips(D, i, tm)) : mxOppTips(D, i, tm).slice(0, 2);
   const lg = D0.comp ? D0.comp.name : "your league";
   const intro = isNext ? `Your next game, from your inbox: <b>${esc(name)}</b>, ${esc(mxDay(next.date))}. Pick another team to scout anyone else.`
     : next ? `Your next game is <b>${esc(mxClubName(B, next.team, next.club))}</b> (${esc(mxDay(next.date))}). <button class="linkbtn" data-mxact="next">Show it</button>`
@@ -232,10 +232,11 @@ function mxOpp(B) {
     <section class="tiles">${[["Form rank", od.outside ? "<small>not in your league</small>" : row ? `${pos(cur.t) + 1}<small> of ${lt.length}</small>` : "–"], [`Points, last ${lt.n || "–"}`, row ? `${row.pts}<small> of ${row.p * 3}</small>` : "–"], [od.outside ? "Goals in their league" : "League goals (season)", `${Math.round(T.v("goals"))} – ${Math.round(T.k("goals_allowed"))}<small> in ${T.g}</small>`], ["Last 5", last.map(mxBadge).join("") || "–"], ["Played them", `${met.get(cur.t) || 0}×`]].map(([l, v]) => `<div class="tile"><span class="tv">${v}</span><span class="tl">${esc(l)}</span></div>`).join("")}</section>
     ${last.length ? `<p class="small muted">${last.map(x => `${x.res} ${x.s} ${x.h ? "v" : "at"} ${esc(x.o)}`).join(" · ")}</p>` : ""}
     <div class="homesw"><div><h4 class="okc">Where they're strong</h4>${strong.length ? `<ul>${strong.map(met_).join("")}</ul>` : `<p class="small muted">Nothing stands out.</p>`}</div><div><h4 class="bad">Where they're weak</h4>${weak.length ? `<ul>${weak.map(met_).join("")}</ul>` : `<p class="small muted">No clear weakness.</p>`}</div></div></section>
-    <section class="panel"><div class="ph"><h3>What to try against ${esc(name)}</h3><span class="small muted">from their numbers, not a guarantee</span></div>
+    ${typeof olHtml === "function" ? olHtml(B, cur.t, false) : ""}
+    <section class="panel"><div class="ph"><h3>How to approach ${esc(name)}</h3><span class="small muted">two changes at most, from their line-ups and numbers</span></div>
       ${tips.length ? `<ul class="why">${tips.map(([w, y]) => `<li>${w} <span class="muted small">— ${y}.</span></li>`).join("")}</ul>` : `<p class="small muted">They're average almost everywhere: play your usual game.</p>`}
-      ${learnBox("These come from where they rank in the league on each number. Only change one or two things for a match.", "pct")}</section>
-    ${typeof mxOIHtml === "function" ? mxOIHtml(B, T, danger, D, i) : ""}
+      ${learnBox("Line-up ideas come from the formation and roles they used in their last games; the rest from where they rank in the league on each number. Each change to your roles or instructions costs a little tactical familiarity, so only change one or two things for a match. Opposition instructions (below) don't count: they don't change your tactic.", "pct")}</section>
+    ${typeof mxOIHtml === "function" ? mxOIHtml(B, T, danger, D, i, cur.t) : ""}
     ${danger.length ? `<section class="panel"><div class="ph"><h3>Danger men</h3><span class="small muted">most goals + assists in the league</span></div><div class="tscroll"><table class="gtable narrow"><thead><tr><th>Player</th><th>Pos</th><th class="num">G</th><th class="num">A</th><th class="num">xG</th><th class="num">Rating</th><th class="num">Min</th></tr></thead><tbody>
       ${danger.slice(0, 5).map(d => `<tr><td><button class="linkbtn" data-sci="${d.p}">${esc(SAVE.name[d.p])}</button></td><td class="small">${esc(savePos().str[d.p] || "")}</td><td class="num">${d.g}</td><td class="num">${d.a}</td><td class="num">${d.xg.toFixed(1)}</td><td class="num">${d.r === d.r ? d.r.toFixed(2) : "–"}</td><td class="num">${Math.round(d.min)}</td></tr>`).join("")}</tbody></table></div>
       <p class="small muted">Give the top one a tight marker: Opposition instructions › Tight marking (and Show onto weaker foot for a winger).</p></section>` : ""}

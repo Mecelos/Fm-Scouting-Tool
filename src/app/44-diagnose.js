@@ -171,9 +171,9 @@ function mxOI(B, T, danger, D, i) {
   }
   return out.slice(0, 2);
 }
-function mxOIHtml(B, T, danger, D, i) {
-  const L = mxOI(B, T, danger, D, i); if (!L.length) return "";
-  return `<section class="panel"><div class="ph"><h3>Opposition instructions</h3><span class="small muted">just ${L.length === 1 ? "one" : "two"}, so your shape stays</span></div>
+function mxOIHtml(B, T, danger, D, i, t) {
+  const L0 = mxOI(B, T, danger, D, i), L = t != null && typeof olOIs === "function" ? olOIs(B, t, L0) : L0; if (!L.length) return "";
+  return `<section class="panel"><div class="ph"><h3>Opposition instructions</h3><span class="small muted">${L.length === 1 ? "just one" : L.length === 2 ? "just two" : "three"}: they don't change your tactic</span></div>
     <ol class="dgsteps">${L.map(x => `<li>${x.w}<div class="small">${x.why}</div><div class="small muted">Effect on your shape: ${x.cost}</div></li>`).join("")}</ol>
     <p class="small muted">Set them in FM: Tactics › Opposition Instructions, before the match. Each one pulls a player of yours toward a man; more than two and your shape stops being yours.</p></section>`;
 }

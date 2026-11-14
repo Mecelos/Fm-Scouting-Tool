@@ -87,10 +87,15 @@
       if (d[k + 6] !== 2 || d[k + 11] !== 2 || d[k + 16] !== 0xff || d[k + 5] > 1) continue;   // byte 5: 0 home, 1 away
       const key = u32(d, k); if (!names.has(key) || seen.has(key)) continue;
       const s = u32(d, k + 7), p = u32(d, k + 12); if (!p) continue;   // p 0 = an unused substitute
+      // h: 0 home, 1 away; s: starting position (0 = came off the bench), p: position at the end; the role block may be missing
+      // role block: 02 <in-possession position> <IP role u64> 02 <out-of-possession position> <OOP role u64>
+      // (FM27 lets a player stand somewhere else out of possession, e.g. an AMC who drops to MC: op)
+      const row = { n: names.get(key), h: d[k + 5], s, p, ip: "", oop: "", op: 0 }; seen.add(key); out.push(row);
+      const okPos = v => { const b = v & 0x1ffff; return b > 0 && (b & (b - 1)) === 0 && v >>> 22 === 0; };
       for (let q = k + 17; q < k + 400 && q + 30 < d.length; q++) {
-        if (d[q] !== 2 || d[q + 13] !== 2 || u32(d, q + 14) !== p) continue;
-        const q1 = u32(d, q + 1); if (q1 !== s && q1 !== p) continue;
-        out.push({ n: names.get(key), s, p, ip: hex(q + 5), oop: hex(q + 18) }); seen.add(key); break;
+        if (d[q] !== 2 || d[q + 13] !== 2) continue;
+        const q1 = u32(d, q + 1), q2 = u32(d, q + 14); if ((q1 !== s && q1 !== p) || !okPos(q2)) continue;
+        row.ip = hex(q + 5); row.oop = hex(q + 18); row.op = q2; break;
       }
     }
     return out;
@@ -98,7 +103,7 @@
   async function readMatches(src, idx, clubs, myUid) {
     if (!idx.sections.match_stats_cfg) return null;
     const d = await readSection(src, idx, "match_stats_cfg");
-    const comps = [], compIx = new Map(), mid = [], comp = [], home = [], away = [], full = [], hg = [], ag = [], ev = [], mine = [];
+    const comps = [], compIx = new Map(), mid = [], comp = [], home = [], away = [], full = [], hg = [], ag = [], ev = [], mine = [], lu = [];
     const isMine = t => { const tc = clubs.teamToClub.get(t); return myUid != null && tc && tc.uid === myUid; };
     const isTeam = t => clubs.teamToClub.has(t) || clubs.fielded.has(t);
     const tag = ascii("pks_");
@@ -122,8 +127,12 @@
           let names = new Map(), lineup = null, full = null;
           try { full = zstd(d.subarray(at, at + sz)); } catch (e) { }
           if (full) { try { names = matchNames(full, g.flatMap(x => [x[0], x[1]])); } catch (e) { } try { lineup = matchLineup(full); } catch (e) { } }
+          lu[mid.length] = lineup;
           mine.push({ r: mid.length, goals: g.filter(x => goalType(x[3]) >= 0 && x[3] < 4).map(([s, as, side, raw, minute]) => ({ m: minute, side, type: goalType(raw), by: names.get(s) || "", as: names.get(as) || "" })),
             shoot: g.filter(x => x[3] >= 4).map(([s, , side, type]) => ({ side, scored: type === 4, by: names.get(s) || "" })), lineup });
+        }
+        else if (g && sz > 15000) {   // FM keeps full match data for your league and cups: both team sheets, for the opponent report
+          try { lu[mid.length] = matchLineup(zstd(d.subarray(at, at + sz))); } catch (e) { }
         }
         mid.push(id); comp.push(c); home.push(ts[0]); away.push(ts[1]); full.push(sz > 120000 ? 1 : 0); hg.push(a); ag.push(b);
       }
@@ -131,7 +140,7 @@
     // events: [match row, minute, side of the team credited, type] per goal (own goals already count for the other side)
     const E = Uint16Array.from(ev);
     return { n: mid.length, comps, id: Uint32Array.from(mid), comp: Uint16Array.from(comp), home: Uint32Array.from(home), away: Uint32Array.from(away), full: Uint8Array.from(full),
-      hg: Uint8Array.from(hg), ag: Uint8Array.from(ag), ev: E, mine, v: 2 };
+      hg: Uint8Array.from(hg), ag: Uint8Array.from(ag), ev: E, mine, lu: Array.from({ length: mid.length }, (x, k) => lu[k] || null), v: 2 };
   }
   // your upcoming games, from the inbox (news). The save keeps no readable fixture list, but match previews and opposition
   // reports name the game: "<u16 date: day of year in the low 9 bits, counted from 1> <u16 year> ... <your team u32> 00 <opponent u32>".

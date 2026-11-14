@@ -20,7 +20,7 @@ Start here when a request names a tab or a part of the screen. All paths are und
 | My squad: Planner | `app/35-development-planner.js` | `css/08-planner-my-tactic.css` |
 | My squad: Season review | `app/36-effectiveness-season-review.js` | `css/05-scouting-review-learn.css` |
 | Data Hub | `app/38-data-hub.js` | `css/07-data-hub.css` |
-| Matches (results, last game, next opponent, tactic changes) | `app/41-matches.js`; next game read from the inbox in `save-reader/06-team-totals-matches.js` | `css/07-data-hub.css` (the `mx…` classes) |
+| Matches (results, last game, next opponent, tactic changes) | `app/41-matches.js`, opponent line-ups in `app/50-opp-lineups.js`; next game read from the inbox in `save-reader/06-team-totals-matches.js` | `css/07-data-hub.css` (the `mx…` classes) |
 | Matches: Brief (matchday one-pager) | `app/45-matchday-brief.js` | `css/07-data-hub.css` |
 | Matches: Diagnose and opposition instructions | `app/44-diagnose.js` | `css/03-sections-tiles.css` |
 | Scouting (wonderkids, targets, contracts, shortlist) | `app/34-scouting.js` | `css/05-scouting-review-learn.css` |
@@ -102,6 +102,7 @@ Everything the tool does, one feature per file. All files share one scope, so a 
 | `src/app/47-compare.js` | Scouting > Compare: any players side by side (profile, attributes, radar, stats per 90), and the Compare buttons in the player panel | 105 | 14 KB |
 | `src/app/48-upgrades.js` | Scouting > Upgrades: for each slot of your uploaded tactic, everyone in the save who performs better in that role, with filters; who started where (team sheets) and the panel's "Played this season" box | 179 | 21 KB |
 | `src/app/49-nations.js` | Nation names for the save's nation numbers (FM27 order), `saveNat(i)`: used by the profile, All data and Contract watch | 40 | 4 KB |
+| `src/app/50-opp-lineups.js` | Opponent line-ups from the save's team sheets (`SAVE.matches.lu`): shape in and out of possession, likely XI with IP/OOP roles, game by game, and line-up-based changes (max 2) and OIs for Next opponent and the Brief | 108 | 12 KB |
 
 ## FM save reader (src/save-reader)
 
@@ -114,7 +115,7 @@ Reads .fm save files. These files are one block of code split into pieces: 02 op
 | `src/save-reader/03-container-metadata.js` | Opening the .fm file: byte source, container frames, save metadata | 122 | 6 KB |
 | `src/save-reader/04-names-clubs.js` | Name pools and the club table | 232 | 11 KB |
 | `src/save-reader/05-players.js` | Player records | 162 | 10 KB |
-| `src/save-reader/06-team-totals-matches.js` | Team totals, the season's matches (for Data Hub), team sheets of your matches (who played where, in which roles), and your upcoming games from the inbox | 174 | 13 KB |
+| `src/save-reader/06-team-totals-matches.js` | Team totals, the season's matches (for Data Hub), team sheets of every match FM keeps in full (both teams: who played where, IP/OOP roles and out-of-possession positions), and your upcoming games from the inbox | 174 | 13 KB |
 | `src/save-reader/07-season-stats.js` | Season statistics and archived past seasons | 191 | 10 KB |
 | `src/save-reader/08-staff.js` | Staff: coaches, medical, recruitment, directors | 272 | 22 KB |
 | `src/save-reader/09-public-api.js` | What the reader hands to the app (keeps only CA 100+ players and your whole club: `compactPlayers`, `MIN_CA`), and the Scout Lab table format | 219 | 19 KB |

@@ -82,3 +82,7 @@
 .rvhist { display: flex; flex-wrap: wrap; gap: 4px 12px; } .rvh b { color: var(--ink2); }
 .rvpri { display: flex; flex-wrap: wrap; gap: 6px; } .rvp { display: grid; gap: 2px; background: var(--panel2); border-radius: var(--r); padding: 6px 10px; text-decoration: none; color: inherit; min-width: 150px; }
 @media (max-width: 900px) { .rvups { grid-template-columns: minmax(0, 1fr); } .rvt td.rvsum { min-width: 200px; } }
+
+/* opponent line-ups */
+.olgames li { margin-bottom: 6px; }
+.olpos { opacity: .7; }
