@@ -19,7 +19,7 @@ using UnityEngine.UIElements;
 
 namespace ScoutLabLink
 {
-    [BepInPlugin("scoutlab.link", "Scout Lab Link", "0.3.0")]
+    [BepInPlugin("scoutlab.link", "Scout Lab Link", "0.3.1")]
     public class Plugin : BasePlugin
     {
         internal static ManualLogSource L;
@@ -32,7 +32,7 @@ namespace ScoutLabLink
             Browser = Config.Bind("ScoutLab", "Browser", "auto",
                 "chrome, edge, or auto (Chrome if installed, else Edge). Use the browser you normally open Scout Lab in: your loaded save is kept there.");
             AddComponent<Ticker>();
-            L.LogInfo("Scout Lab Link 0.3.0 loaded");
+            L.LogInfo("Scout Lab Link 0.3.1 loaded");
         }
     }
 
@@ -85,16 +85,47 @@ namespace ScoutLabLink
         // ---- the opposition scout report pop-up: a button left of its X ----
         void ScanOppReport()
         {
+            // 1) FM's default look: the report is a pop-up with an X; the button goes left of the X
             var pop = FindVisible(root, "HCOppScoutFloatingBlock", 0);
             VisualElement close = pop != null ? FindVisible(pop, "hc-scout-close", 0) : null;
-            TextElement name = pop != null ? FirstText(FindVisible(pop, "ReportHeader", 0)) : null;
-            if (close == null || close.parent == null || name == null) { oppClub = null; if (oppButton != null && oppButton.parent != null) oppButton.RemoveFromHierarchy(); return; }
-            oppClub = Clean(name.text);
-            if (oppButton == null) MakeOppButton(pop);
-            var host = close.parent;
-            if (oppButton.parent != host) { oppButton.RemoveFromHierarchy(); host.Add(oppButton); }
-            var c = close.layout; var s = oppButton.style;   // follow the X if the window is resized
-            if (c.height > 0) { s.top = new StyleLength(c.y); s.height = new StyleLength(c.height); s.right = new StyleLength(Math.Max(0f, host.layout.width - c.x + 10f)); }
+            if (pop != null && close != null && close.parent != null)
+            {
+                var name = FirstText(FindVisible(pop, "ReportHeader", 0));
+                if (name == null) { HideOpp(); return; }
+                oppClub = Clean(name.text);
+                if (oppButton == null) MakeOppButton(pop);
+                var host = close.parent;
+                if (oppButton.parent != host) { oppButton.RemoveFromHierarchy(); host.Add(oppButton); }
+                var c = close.layout; var s = oppButton.style;   // follow the X if the window is resized
+                s.left = new StyleLength(StyleKeyword.Auto);
+                if (c.height > 0) { s.top = new StyleLength(c.y); s.height = new StyleLength(c.height); s.right = new StyleLength(Math.Max(0f, host.layout.width - c.x + 10f)); }
+                return;
+            }
+            // 2) skins that show the report as a full page: the button sits at the right end of the report's header bar
+            var header = FindVisible(root, "ReportHeader", 0);
+            var card = header != null ? header.parent : null;
+            if (card == null || !HasText(card, "Formation Analysis", 0)) { HideOpp(); return; }
+            var club = FirstText(header);
+            if (club == null) { HideOpp(); return; }
+            oppClub = Clean(club.text);
+            if (oppButton == null) MakeOppButton(card);
+            if (oppButton.parent != header) { oppButton.RemoveFromHierarchy(); header.Add(oppButton); }
+            var st = oppButton.style; float h = 36f;
+            st.left = new StyleLength(StyleKeyword.Auto); st.height = new StyleLength(h); st.right = new StyleLength(24f);
+            st.top = new StyleLength(Math.Max(0f, (header.layout.height - h) / 2f));
+        }
+
+        void HideOpp() { oppClub = null; if (oppButton != null && oppButton.parent != null) oppButton.RemoveFromHierarchy(); }
+
+        // is there a visible text element reading exactly t under ve?
+        static bool HasText(VisualElement ve, string t, int depth)
+        {
+            if (ve == null || depth > 90 || Hidden(ve)) return false;
+            var te = ve.TryCast<TextElement>();
+            if (te != null && Clean(te.text ?? "") == t) return true;
+            int n = ve.hierarchy.childCount;
+            for (int i = 0; i < n; i++) if (HasText(ve.hierarchy.ElementAt(i), t, depth + 1)) return true;
+            return false;
         }
 
         void MakeOppButton(VisualElement pop)
