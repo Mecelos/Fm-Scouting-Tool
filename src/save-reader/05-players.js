@@ -130,7 +130,8 @@
     const T = { v: 2, n, name: new Array(n), uid: new Uint32Array(n), pindex: new Uint32Array(n), teamId: new Uint32Array(n), clubIdx: new Int32Array(n).fill(-1), teamSlot: new Int8Array(n).fill(-1),
       age: new Int16Array(n).fill(-1), birth: new Uint32Array(n), nation: new Int32Array(n).fill(-1), height: new Uint8Array(n), ca: new Int16Array(n), pa: new Int16Array(n), histSel: new Uint32Array(n).fill(MISSING),
       value: new Float64Array(n).fill(NaN), rep: new Uint16Array(n * 3), pos: new Uint8Array(n * 15), feet: new Uint8Array(n * 2), attrs: new Uint8Array(n * 52), pers: new Uint8Array(n * 8), traits: new Uint8Array(n * 8),
-      clubs: clubs.clubs.map(c => c.name), clubShort: clubs.clubs.map(c => c.short), clubUid: Float64Array.from(clubs.clubs.map(c => c.uid)) };
+      clubs: clubs.clubs.map(c => c.name), clubShort: clubs.clubs.map(c => c.short), clubUid: Float64Array.from(clubs.clubs.map(c => c.uid)),
+      clubNation: Int16Array.from(clubs.clubs.map(c => c.nation == null ? -1 : c.nation)) };   // the club's country (nation number, as for players)
     for (let i = 0; i < n; i++) {
       const { rec, pindex, uid } = recs[i];
       const last = i === n - 1, winEnd = last ? db.length : recs[i + 1].rec;

@@ -1488,7 +1488,8 @@ button[disabled] { opacity: .6; cursor: progress; }
     const T = { v: 2, n, name: new Array(n), uid: new Uint32Array(n), pindex: new Uint32Array(n), teamId: new Uint32Array(n), clubIdx: new Int32Array(n).fill(-1), teamSlot: new Int8Array(n).fill(-1),
       age: new Int16Array(n).fill(-1), birth: new Uint32Array(n), nation: new Int32Array(n).fill(-1), height: new Uint8Array(n), ca: new Int16Array(n), pa: new Int16Array(n), histSel: new Uint32Array(n).fill(MISSING),
       value: new Float64Array(n).fill(NaN), rep: new Uint16Array(n * 3), pos: new Uint8Array(n * 15), feet: new Uint8Array(n * 2), attrs: new Uint8Array(n * 52), pers: new Uint8Array(n * 8), traits: new Uint8Array(n * 8),
-      clubs: clubs.clubs.map(c => c.name), clubShort: clubs.clubs.map(c => c.short), clubUid: Float64Array.from(clubs.clubs.map(c => c.uid)) };
+      clubs: clubs.clubs.map(c => c.name), clubShort: clubs.clubs.map(c => c.short), clubUid: Float64Array.from(clubs.clubs.map(c => c.uid)),
+      clubNation: Int16Array.from(clubs.clubs.map(c => c.nation == null ? -1 : c.nation)) };   // the club's country (nation number, as for players)
     for (let i = 0; i < n; i++) {
       const { rec, pindex, uid } = recs[i];
       const last = i === n - 1, winEnd = last ? db.length : recs[i + 1].rec;
@@ -2306,7 +2307,7 @@ button[disabled] { opacity: .6; cursor: progress; }
       for (let j = 0; j < m; j++) { const i = keep[j]; for (let k = 0; k < w; k++) out[j * w + k] = v[i * w + k]; }
       return out;
     };
-    for (const k of Object.keys(T)) { const v = T[k]; if (k === "clubs" || k === "clubShort" || k === "clubUid") continue; if (Array.isArray(v) || ArrayBuffer.isView(v)) T[k] = pick(v); }
+    for (const k of Object.keys(T)) { const v = T[k]; if (k === "clubs" || k === "clubShort" || k === "clubUid" || k === "clubNation") continue; if (Array.isArray(v) || ArrayBuffer.isView(v)) T[k] = pick(v); }
     for (const kind of Object.keys(T.stats || {})) {   // season stats: keep the lines of kept players, renumbered
       const st = T.stats[kind]; if (!st || !st.row) continue;
       const lines = []; keep.forEach((i, j) => { if (st.row[i] >= 0) lines.push([j, st.row[i]]); });
@@ -5142,7 +5143,8 @@ Yth;John Taylor;4;1;6;8;1;9;4;2;8;4;11;1;5;8;2;13;5;5;8;2;6;6;9;11;2;5;4;5;14;10
     const T = { v: 2, n, name: new Array(n), uid: new Uint32Array(n), pindex: new Uint32Array(n), teamId: new Uint32Array(n), clubIdx: new Int32Array(n).fill(-1), teamSlot: new Int8Array(n).fill(-1),
       age: new Int16Array(n).fill(-1), birth: new Uint32Array(n), nation: new Int32Array(n).fill(-1), height: new Uint8Array(n), ca: new Int16Array(n), pa: new Int16Array(n), histSel: new Uint32Array(n).fill(MISSING),
       value: new Float64Array(n).fill(NaN), rep: new Uint16Array(n * 3), pos: new Uint8Array(n * 15), feet: new Uint8Array(n * 2), attrs: new Uint8Array(n * 52), pers: new Uint8Array(n * 8), traits: new Uint8Array(n * 8),
-      clubs: clubs.clubs.map(c => c.name), clubShort: clubs.clubs.map(c => c.short), clubUid: Float64Array.from(clubs.clubs.map(c => c.uid)) };
+      clubs: clubs.clubs.map(c => c.name), clubShort: clubs.clubs.map(c => c.short), clubUid: Float64Array.from(clubs.clubs.map(c => c.uid)),
+      clubNation: Int16Array.from(clubs.clubs.map(c => c.nation == null ? -1 : c.nation)) };   // the club's country (nation number, as for players)
     for (let i = 0; i < n; i++) {
       const { rec, pindex, uid } = recs[i];
       const last = i === n - 1, winEnd = last ? db.length : recs[i + 1].rec;
@@ -5960,7 +5962,7 @@ Yth;John Taylor;4;1;6;8;1;9;4;2;8;4;11;1;5;8;2;13;5;5;8;2;6;6;9;11;2;5;4;5;14;10
       for (let j = 0; j < m; j++) { const i = keep[j]; for (let k = 0; k < w; k++) out[j * w + k] = v[i * w + k]; }
       return out;
     };
-    for (const k of Object.keys(T)) { const v = T[k]; if (k === "clubs" || k === "clubShort" || k === "clubUid") continue; if (Array.isArray(v) || ArrayBuffer.isView(v)) T[k] = pick(v); }
+    for (const k of Object.keys(T)) { const v = T[k]; if (k === "clubs" || k === "clubShort" || k === "clubUid" || k === "clubNation") continue; if (Array.isArray(v) || ArrayBuffer.isView(v)) T[k] = pick(v); }
     for (const kind of Object.keys(T.stats || {})) {   // season stats: keep the lines of kept players, renumbered
       const st = T.stats[kind]; if (!st || !st.row) continue;
       const lines = []; keep.forEach((i, j) => { if (st.row[i] >= 0) lines.push([j, st.row[i]]); });
@@ -6462,7 +6464,7 @@ const LEAGUE_TIER = {
   "England|Enterprise National": 5, "England|Enterprise North": 6, "England|Enterprise South": 6,
   "England|EFL Championship": 2, "England|EFL League One": 3, "England|EFL League Two": 4, "England|National League": 5,
   "England|National League North": 6, "England|National League South": 6,
-  "Spain|First Division": 1, "Spain|Second Division": 2, "Spain|Spanish Federation 1A": 3, "Spain|Spanish Federation 1B": 3, "Spain|LaLiga": 1, "Spain|LaLiga 2": 2,
+  "Spain|First Division": 1, "Spain|Second Division": 2, "Spain|Spanish Federation 1A": 3, "Spain|Spanish Federation 1B": 3, "Spain|LaLiga": 1, "Spain|LaLiga 2": 2, "Spain|LALIGA EA SPORTS": 1, "Spain|LaLiga EA Sports": 1, "Spain|LALIGA HYPERMOTION": 2, "Spain|LaLiga Hypermotion": 2,
   "Germany|Bundesliga": 1, "Germany|Bundesliga 2": 2, "Germany|2. Bundesliga": 2, "Germany|3. Liga": 3,
   "Italy|Serie A": 1, "Italy|Serie BKT": 2, "Italy|Serie B": 2,
   "France|Ligue 1": 1, "France|Ligue 2 BKT": 2, "France|Ligue 2": 2, "France|Ligue 3": 3, "France|National - A": 3, "France|National - B": 3,
@@ -9489,10 +9491,28 @@ function saveStatObj(st, r) {
   return s;
 }
 const footTxt = (l, r) => l >= 15 && r >= 15 ? "Either" : r >= l ? (l <= 5 ? "Right Only" : "Right") : (r <= 5 ? "Left Only" : "Left");
+// a club's league from the save itself: country from the club's nation, division from the league it plays its matches in.
+// Used before CLUB_LEAGUES (learned from exports), which goes out of date with promotions and FM's renamed clubs.
+const LG_SKIP = /cup|copa|coupe|pokal|coppa|trophy|troph|shield|super|champions league|champions cup|europa|conference|libertadores|sudamericana|recopa|friendly|youth|u1\d|u2\d|under|juvenil|honor|premier league 2|international|qualifying|alliance|nachwuchs|viareggio|central league|stadyumu/i;
+function saveLeague(club) {
+  const T = SAVE; if (!T._lg) {
+    const per = new Map(), M = T.matches, TM = T.teams;
+    if (M && TM) { const tc = new Map(); for (let k = 0; k < TM.n; k++) tc.set(TM.team[k], TM.club[k]);
+      for (let r = 0; r < M.n; r++) { const cn = M.comps[M.comp[r]]; if (LG_SKIP.test(cn)) continue;
+        for (const t of [M.home[r], M.away[r]]) { const c = tc.get(t); if (c == null || c < 0) continue; const m = per.get(c) || new Map(); m.set(cn, (m.get(cn) || 0) + 1); per.set(c, m); } } }
+    T._lg = new Map(); T.clubs.forEach((name, c) => {
+      const country = T.clubNation ? nationName(T.clubNation[c]) : "", m = per.get(c);
+      const div = m ? [...m.entries()].sort((x, y) => y[1] - x[1])[0][0] : "";
+      const old = T._lg.get(name);   // a name can repeat (e.g. a club and its national-team twin): keep the one with a league
+      if ((country || div) && !(old && old[0] && !div)) T._lg.set(name, [div, country]);
+    });
+  }
+  return T._lg.get(club) || null;
+}
 // one player as an export row (same headers as an FM27 export)
 function saveRow(i) {
   const T = SAVE, k = saveKind(), st = k ? T.stats[k] : null, r = st ? st.row[i] : -1, s = r >= 0 ? saveStatObj(st, r) : null;
-  const pc = savePos(), club = saveClub(i), lg = CLUB_LEAGUES[club], v = T.value[i];
+  const pc = savePos(), club = saveClub(i), own = saveLeague(club), ex = CLUB_LEAGUES[club], lg = own && own[0] ? own : ex || own, v = T.value[i];
   const out = [T.name[i], club, T.age[i] < 0 ? "" : T.age[i], pc.str[i], pc.best[i], v === v ? saveMoney(v) : "", lg ? lg[0] : "", lg ? lg[1] : "", "s" + T.uid[i],
     T.height[i] ? T.height[i] + " cm" : "", footTxt(T.feet[i * 2], T.feet[i * 2 + 1]), saveNat(i)];
   const want = new Set(saveHeaders());

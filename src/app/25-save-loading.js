@@ -53,10 +53,28 @@ function saveStatObj(st, r) {
   return s;
 }
 const footTxt = (l, r) => l >= 15 && r >= 15 ? "Either" : r >= l ? (l <= 5 ? "Right Only" : "Right") : (r <= 5 ? "Left Only" : "Left");
+// a club's league from the save itself: country from the club's nation, division from the league it plays its matches in.
+// Used before CLUB_LEAGUES (learned from exports), which goes out of date with promotions and FM's renamed clubs.
+const LG_SKIP = /cup|copa|coupe|pokal|coppa|trophy|troph|shield|super|champions league|champions cup|europa|conference|libertadores|sudamericana|recopa|friendly|youth|u1\d|u2\d|under|juvenil|honor|premier league 2|international|qualifying|alliance|nachwuchs|viareggio|central league|stadyumu/i;
+function saveLeague(club) {
+  const T = SAVE; if (!T._lg) {
+    const per = new Map(), M = T.matches, TM = T.teams;
+    if (M && TM) { const tc = new Map(); for (let k = 0; k < TM.n; k++) tc.set(TM.team[k], TM.club[k]);
+      for (let r = 0; r < M.n; r++) { const cn = M.comps[M.comp[r]]; if (LG_SKIP.test(cn)) continue;
+        for (const t of [M.home[r], M.away[r]]) { const c = tc.get(t); if (c == null || c < 0) continue; const m = per.get(c) || new Map(); m.set(cn, (m.get(cn) || 0) + 1); per.set(c, m); } } }
+    T._lg = new Map(); T.clubs.forEach((name, c) => {
+      const country = T.clubNation ? nationName(T.clubNation[c]) : "", m = per.get(c);
+      const div = m ? [...m.entries()].sort((x, y) => y[1] - x[1])[0][0] : "";
+      const old = T._lg.get(name);   // a name can repeat (e.g. a club and its national-team twin): keep the one with a league
+      if ((country || div) && !(old && old[0] && !div)) T._lg.set(name, [div, country]);
+    });
+  }
+  return T._lg.get(club) || null;
+}
 // one player as an export row (same headers as an FM27 export)
 function saveRow(i) {
   const T = SAVE, k = saveKind(), st = k ? T.stats[k] : null, r = st ? st.row[i] : -1, s = r >= 0 ? saveStatObj(st, r) : null;
-  const pc = savePos(), club = saveClub(i), lg = CLUB_LEAGUES[club], v = T.value[i];
+  const pc = savePos(), club = saveClub(i), own = saveLeague(club), ex = CLUB_LEAGUES[club], lg = own && own[0] ? own : ex || own, v = T.value[i];
   const out = [T.name[i], club, T.age[i] < 0 ? "" : T.age[i], pc.str[i], pc.best[i], v === v ? saveMoney(v) : "", lg ? lg[0] : "", lg ? lg[1] : "", "s" + T.uid[i],
     T.height[i] ? T.height[i] + " cm" : "", footTxt(T.feet[i * 2], T.feet[i * 2 + 1]), saveNat(i)];
   const want = new Set(saveHeaders());

@@ -69,7 +69,7 @@ const LEAGUE_TIER = {
   "England|Enterprise National": 5, "England|Enterprise North": 6, "England|Enterprise South": 6,
   "England|EFL Championship": 2, "England|EFL League One": 3, "England|EFL League Two": 4, "England|National League": 5,
   "England|National League North": 6, "England|National League South": 6,
-  "Spain|First Division": 1, "Spain|Second Division": 2, "Spain|Spanish Federation 1A": 3, "Spain|Spanish Federation 1B": 3, "Spain|LaLiga": 1, "Spain|LaLiga 2": 2,
+  "Spain|First Division": 1, "Spain|Second Division": 2, "Spain|Spanish Federation 1A": 3, "Spain|Spanish Federation 1B": 3, "Spain|LaLiga": 1, "Spain|LaLiga 2": 2, "Spain|LALIGA EA SPORTS": 1, "Spain|LaLiga EA Sports": 1, "Spain|LALIGA HYPERMOTION": 2, "Spain|LaLiga Hypermotion": 2,
   "Germany|Bundesliga": 1, "Germany|Bundesliga 2": 2, "Germany|2. Bundesliga": 2, "Germany|3. Liga": 3,
   "Italy|Serie A": 1, "Italy|Serie BKT": 2, "Italy|Serie B": 2,
   "France|Ligue 1": 1, "France|Ligue 2 BKT": 2, "France|Ligue 2": 2, "France|Ligue 3": 3, "France|National - A": 3, "France|National - B": 3,

@@ -137,7 +137,7 @@
       for (let j = 0; j < m; j++) { const i = keep[j]; for (let k = 0; k < w; k++) out[j * w + k] = v[i * w + k]; }
       return out;
     };
-    for (const k of Object.keys(T)) { const v = T[k]; if (k === "clubs" || k === "clubShort" || k === "clubUid") continue; if (Array.isArray(v) || ArrayBuffer.isView(v)) T[k] = pick(v); }
+    for (const k of Object.keys(T)) { const v = T[k]; if (k === "clubs" || k === "clubShort" || k === "clubUid" || k === "clubNation") continue; if (Array.isArray(v) || ArrayBuffer.isView(v)) T[k] = pick(v); }
     for (const kind of Object.keys(T.stats || {})) {   // season stats: keep the lines of kept players, renumbered
       const st = T.stats[kind]; if (!st || !st.row) continue;
       const lines = []; keep.forEach((i, j) => { if (st.row[i] >= 0) lines.push([j, st.row[i]]); });
