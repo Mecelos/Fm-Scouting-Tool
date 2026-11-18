@@ -63,10 +63,7 @@ function olTips(O) {
   const nm = x => x.i != null ? `<button class="linkbtn" data-sci="${x.i}">${esc(x.n)}</button>` : `<b>${esc(x.n)}</b>`;
   const mine = typeof currentSlots === "function" ? currentSlots().map(s => s.code) : [];
   const myWide = c => mine.some(m => (c === "R" ? ["AMR", "MR"] : ["AML", "ML"]).includes(m));
-  // their full-backs/wing-backs who bomb on: leave your winger up on that side to counter into the space
-  const att = has(["DR", "DL", "WBR", "WBL"], ["Wing-Back", "Advanced Wing-Back", "Playmaking Wing-Back"]);
-  if (att.length) { const x = att[0], side = /R$/.test(x.code) ? "R" : "L", mySide = side === "R" ? "left" : "right";
-    out.push({ w: `Leave your ${mySide} winger up when they attack: OOP role <b>Wide Outlet Winger</b>`, why: `${nm(x)} plays as a ${esc(x.ip)} and gets forward, so the space behind him is open for your counter${myWide(side === "R" ? "L" : "R") ? "" : " (only if you play a winger on that side)"}`, cost: "one out-of-possession role on one player" }); }
+  // (their attacking full-backs get Tight marking in the Game plan, at no familiarity cost, instead of an outlet-winger role change)
   // their deep playmaker: press him
   const pm = has(["DM", "MC"], ["Deep-Lying Playmaker", "Half-Back", "Midfield Playmaker", "Box-to-Box Playmaker"]);
   if (pm.length) out.push({ w: `${nm(pm[0])}: opposition instruction <b>Trigger press: Always</b>`, why: `He starts their attacks from deep as a ${esc(pm[0].ip)}; pressure on the ball stops him picking passes`, cost: "none on familiarity: opposition instructions don't change your tactic", oi: pm[0].n });
@@ -97,9 +94,9 @@ function olHtml(B, t, brief) {
     <h4>Game by game</h4><ul class="why olgames">${games}</ul>
     <p class="small muted">Line-ups are read for games FM keeps in full: your league and cups. Injuries and suspensions aren't checked, so look at their squad in FM before the game.</p></section>`;
 }
-// the two changes for the game: their line-up first (roles are certain), then their numbers; OIs don't touch familiarity
+// the two changes for the game: their line-up first (roles are certain), advice that keeps your roles ahead of role changes, then their numbers; OIs don't touch familiarity
 function olChanges(B, t, numTips) {
-  const L = olTips(olData(B, t)), out = L.filter(x => !x.oi).map(x => [x.w, x.why + ` (cost: ${x.cost})`]);
+  const L = olTips(olData(B, t)), free = x => /^none/i.test(x.cost), out = L.filter(x => !x.oi).sort((a, b) => free(b) - free(a)).map(x => [x.w, x.why + ` (cost: ${x.cost})`]);
   return out.concat(numTips || []).slice(0, 2);
 }
 function olOIs(B, t, ois) {
