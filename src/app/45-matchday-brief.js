@@ -27,6 +27,6 @@ function mxBrief(B) {
     ${ois.length ? `<h4>Opposition instructions</h4><ol class="mxblist">${ois.map(x => `<li>${x.w}<div class="small muted">${x.why}</div></li>`).join("")}</ol>` : ""}
     ${danger.length ? `<h4>Danger men</h4><ul class="mxblist">${danger.slice(0, 3).map(d => `<li><button class="linkbtn" data-sci="${d.p}">${esc(SAVE.name[d.p])}</button> <span class="small muted">${esc(savePos().str[d.p] || "")} · ${d.g} goal${d.g === 1 ? "" : "s"}, ${d.a} assist${d.a === 1 ? "" : "s"}</span></li>`).join("")}</ul>` : ""}
     <h4>When they score and concede</h4>${tw.length ? `<ul class="mxblist">${tw.slice(0, 2).map(x => `<li>${x}</li>`).join("")}</ul>` : `<p class="small muted">No strong pattern in their last ${tm.games} games.</p>`}
-  </section>${ol ? olHtml(B, P.pick, true).replace('class="panel"', 'class="panel mxbrief"') : ""}`;
+  </section>${typeof gpHtml === "function" ? gpHtml(B, P.pick, true) : ""}${ol ? olHtml(B, P.pick, true).replace('class="panel"', 'class="panel mxbrief"') : ""}`;
 }
 document.addEventListener("click", e => { if (e.target.closest('[data-mxact="print"]')) window.print(); });
