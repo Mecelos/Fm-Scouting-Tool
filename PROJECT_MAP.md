@@ -103,7 +103,7 @@ Everything the tool does, one feature per file. All files share one scope, so a 
 | `src/app/48-upgrades.js` | Scouting > Upgrades: for each slot of your uploaded tactic, everyone in the save who performs better in that role, with filters; who started where (team sheets) and the panel's "Played this season" box | 179 | 21 KB |
 | `src/app/49-nations.js` | Nation names for the save's nation numbers (FM27 order), `saveNat(i)`: used by the profile, All data and Contract watch | 40 | 4 KB |
 | `src/app/50-opp-lineups.js` | Opponent line-ups from the save's team sheets (`SAVE.matches.lu`): shape in and out of possession, likely XI with IP/OOP roles, game by game, and line-up-based changes (max 2, advice that keeps your roles first) and OIs for Next opponent and the Brief | 105 | 12 KB |
-| `src/app/51-opp-gameplan.js` | Game plan for Next opponent and the Brief: back 3 or 4 in possession and what to do, mentality guide, opposition instructions by role, where the space is, weaknesses to check in FM, in-match checklist with their usual subs | 112 | 11 KB |
+| `src/app/51-opp-gameplan.js` | Game plan for Next opponent and the Brief: back 3, 2 or 4 in possession and what to do, mentality guide, opposition instructions by role, where the space is, weaknesses to check in FM, in-match checklist with their usual subs | 108 | 11 KB |
 
 ## FM save reader (src/save-reader)
 
