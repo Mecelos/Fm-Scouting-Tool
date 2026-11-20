@@ -12,7 +12,7 @@ Start here when a request names a tab or a part of the screen. All paths are und
 | --- | --- | --- |
 | Top bar, navigation buttons, Help menu (Learn, Guide, Scale) | `index.html`, clicks in `app/31-import-events-boot.js` | `css/01-layout-topbar.css` |
 | Search box, and the two page menus on narrow screens | `app/46-search.js` | `css/01-layout-topbar.css` |
-| Home (incl. weekly action plan, ask a question) | `app/40-home.js` | `css/06-home-player-card.css` |
+| Home (incl. weekly action plan, ask a question, since your last save) | `app/40-home.js`, since-your-last-save box in `app/53-home-changes.js` | `css/06-home-player-card.css` |
 | My squad: Overview and position tabs | `app/19-my-squad.js` | `css/04-my-squad.css` |
 | My squad: My tactic | `app/32-my-tactic-reading.js`, `app/33-my-tactic-analysis.js` | `css/08-planner-my-tactic.css` |
 | My squad: Suggested tactic | `app/21-suggested-tactic.js`, `app/22-defensive-shape.js` | `css/04-my-squad.css` |
@@ -105,6 +105,7 @@ Everything the tool does, one feature per file. All files share one scope, so a 
 | `src/app/50-opp-lineups.js` | Opponent line-ups from the save's team sheets (`SAVE.matches.lu`): shape in and out of possession, likely XI with IP/OOP roles, game by game, and line-up-based changes (max 2, advice that keeps your roles first) and OIs for Next opponent and the Brief | 105 | 12 KB |
 | `src/app/51-opp-gameplan.js` | Game plan for Next opponent and the Brief: back 3, 2 or 4 in possession and what to do, mentality guide, opposition instructions by role, where the space is, weaknesses to check in FM, in-match checklist with their usual subs | 108 | 11 KB |
 | `src/app/52-staff-knowledge.js` | Scouting knowledge (nations each staff member knows, 0-100, words in `KNOW_WORDS`): Staff › Scout knowledge tab (overall = scout rating + knowledge, must-know-nation filter, quick picks), Nations column on Scouts, the staff panel's nation list, My staff › Scouting coverage (key nations, gaps, who fills them) and the player panel's "your scouts know his nation" tag | 153 | 18 KB |
+| `src/app/53-home-changes.js` | Home › Since your last save: your squad against the snapshot of your previous save (improved, dropped off, arrived, left, squad value) | 36 | 4 KB |
 
 ## FM save reader (src/save-reader)
 
