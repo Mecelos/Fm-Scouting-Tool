@@ -104,7 +104,7 @@ Everything the tool does, one feature per file. All files share one scope, so a 
 | `src/app/49-nations.js` | Nation names for the save's nation numbers (FM27 order), `saveNat(i)`: used by the profile, All data and Contract watch | 40 | 4 KB |
 | `src/app/50-opp-lineups.js` | Opponent line-ups from the save's team sheets (`SAVE.matches.lu`): shape in and out of possession, likely XI with IP/OOP roles, game by game, and line-up-based changes (max 2, advice that keeps your roles first) and OIs for Next opponent and the Brief | 105 | 12 KB |
 | `src/app/51-opp-gameplan.js` | Game plan for Next opponent and the Brief: back 3, 2 or 4 in possession and what to do, mentality guide, opposition instructions by role, where the space is, weaknesses to check in FM, in-match checklist with their usual subs | 108 | 11 KB |
-| `src/app/52-staff-knowledge.js` | Scouting knowledge (nations each staff member knows, 0-100, words in `KNOW_WORDS`): the Staff › Scout knowledge tab (overall = scout rating + knowledge, must-know-nation filter, quick picks), the Nations column on Scouts, and the panel's full nation list | 107 | 12 KB |
+| `src/app/52-staff-knowledge.js` | Scouting knowledge (nations each staff member knows, 0-100, words in `KNOW_WORDS`): Staff › Scout knowledge tab (overall = scout rating + knowledge, must-know-nation filter, quick picks), Nations column on Scouts, the staff panel's nation list, My staff › Scouting coverage (key nations, gaps, who fills them) and the player panel's "your scouts know his nation" tag | 153 | 18 KB |
 
 ## FM save reader (src/save-reader)
 

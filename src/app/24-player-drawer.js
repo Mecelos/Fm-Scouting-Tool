@@ -37,7 +37,7 @@ function openPlayer(sc, pid, silent) {
     <div class="pctl"><div class="drole"><label for="drawerRole" class="small muted">Role</label><select id="drawerRole">${roleOptions(sc.pos, sc.role)}</select>${S.pRole && S.pRole !== pageRole() ? `<span class="small muted">this panel only · page stays on ${esc(pageRole())}</span><button class="ghost small" data-act="prolereset">Back to ${esc(pageRole())}</button>` : `<span class="small muted">changes this panel only</span>`}</div>
       ${S._adPanel ? `<p class="small"><button class="linkbtn" data-act="adgo">Open him in the ${esc(S.pos)} ${S.mode === "stats" ? "Stats" : "Attributes"} tab</button> <span class="muted">(this panel sits over the page you were on)</span></p>` : ""}
       <div class="badges">${p.club === FA_CLUB ? `<span class="tag good">Free agent: no transfer fee</span>` : ""}${typeTag(r)}${vfTag(r, true)}${gap.length ? `<span class="tag">${esc(gap.join(" · "))}</span>` : ""}
-      ${p.mine ? `<span class="tag good">Your squad</span>` : p.ref ? `<span class="tag">From your ${esc(sc.pos)} scouting file</span>` : ""}
+      ${typeof knowPlayerTag === "function" ? knowPlayerTag(p) : ""}${p.mine ? `<span class="tag good">Your squad</span>` : p.ref ? `<span class="tag">From your ${esc(sc.pos)} scouting file</span>` : ""}
       ${p.rec ? `<span class="tag">Scout: ${esc(p.rec)}</span>` : ""}
       ${isS && p.basic ? `<span class="tag warn">Basic-stats league: only goals, xG, xA, shots counted</span>` : ""}</div></div>
     ${S.mode === "stats" || S.mode === "attr" ? `<div class="rranks" id="rranks" data-pix="${esc(String(p.ix))}"><span class="small muted">His rank in every role…</span></div>` : ""}

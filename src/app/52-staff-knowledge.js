@@ -106,3 +106,48 @@ function knowTable(rows, rat, over, rank, nat) {
   if (sorted.length > 50) s += `<button class="ghost more" data-act="sshowall">${S.sShowAll ? "Show top 50" : sorted.length > 1000 ? `Show top 1,000 of ${sorted.length.toLocaleString()}` : `Show all ${sorted.length.toLocaleString()}`}</button>`;
   return s;
 }
+
+// ---------- My staff > Scouting coverage: which nations your scouts know, the gaps, and who would fill them ----------
+const KNOW_GOOD = 30;          // Very Good or better = "covered"
+const KNOW_TOP_PLAYERS = 2000; // the save's best players by ability decide which nations matter
+const KNOW_KEY_NATIONS = 15;
+function knowCoverageHtml() {
+  if (!hasKnow() || !SAVE.ca || !SAVE.nation) return "";
+  const d = staffData(), scouts = [...d.mine].filter(i => [14, 44].includes(staffJobCode(i)));
+  if (!scouts.length) return `<section><div class="sh"><h3>Scouting coverage</h3></div><p class="muted">You have no scouts at the club, so no nation is covered. Staff › Scout knowledge shows who knows the most nations.</p></section>`;
+  const best = new Map(); scouts.forEach(i => sKnow(i).forEach(([n, v]) => { if (v > (best.get(n) || 0)) best.set(n, v); }));
+  // nations that matter: where the save's best players come from
+  const ix = []; for (let i = 0; i < SAVE.n; i++) if (SAVE.ca[i] > 0 && SAVE.nation[i] >= 0) ix.push(i);
+  ix.sort((a, b) => SAVE.ca[b] - SAVE.ca[a]);
+  const tally = new Map(); ix.slice(0, KNOW_TOP_PLAYERS).forEach(i => tally.set(SAVE.nation[i], (tally.get(SAVE.nation[i]) || 0) + 1));
+  const key = [...tally.entries()].sort((a, b) => b[1] - a[1]).slice(0, KNOW_KEY_NATIONS);
+  const gaps = key.filter(([n]) => (best.get(n) || 0) < KNOW_GOOD);
+  const covered = [...best.entries()].filter(([, v]) => v >= KNOW_GOOD).sort((a, b) => b[1] - a[1]);
+  // who would fill the most gaps: anyone who could be your scout (in the job or a free agent), not already yours
+  const rat = staffRating("Scout"), pool = staffPool("Scout", "both").filter(i => !isNaN(rat[i]) && !d.mine.has(i));
+  const fills = gaps.length ? pool.map(i => [i, gaps.filter(([n]) => knowLevel(i, n) >= KNOW_GOOD).map(([n]) => n)]).filter(x => x[1].length)
+    .sort((a, b) => b[1].length - a[1].length || rat[b[0]] - rat[a[0]]) : [];
+  const freeFill = fills.filter(x => isFreeStaff(x[0])).slice(0, 2), clubFill = fills.filter(x => !isFreeStaff(x[0])).slice(0, 3);
+  const chip = ([n, v]) => `<span class="tag ${v >= KNOW_GOOD ? "good" : v >= KNOW_MIN ? "warn" : "bad"}" title="${esc(v ? knowWord(v) + " (" + v + ")" : "Nobody at your club knows it")}">${esc(knowNation(n))}</span>`;
+  const who = ([i, ns]) => `<li><button class="linkbtn" data-sid="${i}">${esc(SAVE.staff.name[i])}</button> <span class="small muted">${esc(isFreeStaff(i) ? "free agent" : sClub(i))} · ${sAge(i) ?? "?"} yrs · scout ${rat[i].toFixed(1)}${isFreeStaff(i) ? "" : " · " + esc(sWage(i))}</span>: covers <b>${ns.map(knowNation).map(esc).join(", ")}</b></li>`;
+  const verdict = !gaps.length ? `<b>Covered:</b> your scouts know all ${key.length} nations the best players come from.`
+    : `<b>${gaps.length} gap${gaps.length > 1 ? "s" : ""}:</b> nobody at your club knows ${gaps.map(([n]) => esc(knowNation(n))).join(", ")} well.${fills[0] ? ` Best fix: <b>${esc(SAVE.staff.name[fills[0][0]])}</b> covers ${fills[0][1].length} of them.` : ""}`;
+  return `<section><div class="sh"><h3>Scouting coverage</h3><span class="muted small">your ${scouts.length} scout${scouts.length > 1 ? "s" : ""} against the ${key.length} nations most of the save's best ${KNOW_TOP_PLAYERS.toLocaleString()} players come from</span></div>
+    <div class="panel"><p class="readbox ${gaps.length ? "warn" : "good"}">${verdict}</p>
+    <p class="small"><b>Key nations</b> <span class="muted">(green Very Good or better, amber Average to Good, red nobody)</span><br>${key.map(([n]) => chip([n, best.get(n) || 0])).join(" ")}</p>
+    ${gaps.length ? `<h4>Who would fill the gaps</h4>${fills.length ? `<ul class="why">${clubFill.concat(freeFill).map(who).join("")}</ul>` : `<p class="small muted">No scout in the save knows these nations well.</p>`}` : ""}
+    <p class="small muted">All nations your scouts know well (${covered.length}): ${covered.map(([n]) => esc(knowNation(n))).join(", ") || "none"}. Click a scout for his full list.</p></div></section>`;
+}
+
+// player panel: do your scouts know where he's from? (FM only shows a player's attributes clearly if they do)
+function knowPlayerTag(p) {
+  if (!p || p.mine || !hasKnow() || !SAVE.nation || !p.uid) return "";
+  const i = saveUidIndex().get(p.uid); if (i == null) return "";
+  const nat = SAVE.nation[i]; if (nat == null || nat < 0) return "";
+  const d = staffData(); let v = 0, who = null;
+  d.mine.forEach(s => { if (![14, 44].includes(staffJobCode(s))) return; const x = knowLevel(s, nat); if (x > v) { v = x; who = s; } });
+  const nn = esc(knowNation(nat));
+  return v >= KNOW_GOOD ? `<span class="tag good" title="${esc(SAVE.staff.name[who])} knows ${nn}: ${esc(knowWord(v))}">Your scouts know ${nn}</span>`
+    : v >= KNOW_MIN ? `<span class="tag warn" title="Best at your club: ${esc(SAVE.staff.name[who])}, ${esc(knowWord(v))}. His attributes in FM may be rough estimates.">Your scouts know ${nn} a little</span>`
+    : `<span class="tag bad" title="His attributes in FM may be hidden or rough until a scout who knows ${nn} watches him. Staff › Scout knowledge finds one.">Nobody at your club knows ${nn}</span>`;
+}

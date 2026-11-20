@@ -324,7 +324,7 @@ function renderMyStaff() {
       <td class="left small">${k.up != null ? `<button class="linkbtn" data-sid="${k.up}">${esc(SAVE.staff.name[k.up])}</button> ${k.rat[k.up].toFixed(1)} · ${esc(sClub(k.up))} · ${sAge(k.up) ?? "?"} yrs · ${esc(sWage(k.up))}` : b != null ? `<span class="muted">Nobody</span>` : ""}</td>
       <td class="left small">${k.fa != null ? `<button class="linkbtn" data-sid="${k.fa}">${esc(SAVE.staff.name[k.fa])}</button> ${k.rat[k.fa].toFixed(1)} · free agent · ${sAge(k.fa) ?? "?"} yrs` : `<span class="muted">Nobody</span>`}</td></tr>`;
   });
-  h += `</tbody></table></div></div><p class="small muted">Verdict from his rank among everyone in that job: top 10% Strong, top 30% Solid, top 60% Could upgrade, below that Priority upgrade. Tap a job for the full list.</p></section>`;
+  h += `</tbody></table></div></div><p class="small muted">Verdict from his rank among everyone in that job: top 10% Strong, top 30% Solid, top 60% Could upgrade, below that Priority upgrade. Tap a job for the full list.</p></section>`; h += knowCoverageHtml();
   // everyone at the club
   const isBoard = i => BOARD_JOBS.has(staffJobCode(i));
   const mine = [...d.mine].sort((a, b) => isBoard(a) - isBoard(b) || staffJobName(a).localeCompare(staffJobName(b)) || SAVE.staff.name[a].localeCompare(SAVE.staff.name[b]));
