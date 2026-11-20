@@ -29,7 +29,8 @@ Start here when a request names a tab or a part of the screen. All paths are und
 | Staff (incl. Scout knowledge tab: scouts by ability + nations known) | `app/30-staff.js`, staff review in `app/37-staff-review-similar.js`, scouting knowledge in `app/52-staff-knowledge.js` | `css/03-sections-tiles.css` |
 | All data | `app/26-all-data.js`, `app/27-stat-type-scores.js` | `css/09-all-data.css` |
 | Stats and Attr views: position tabs, main table, top 5, scatter | `app/18-render.js`, `app/17-charts.js` | `css/01-layout-topbar.css`, `css/02-table-scatter-drawer.css` |
-| Player side panel (opens when a player is clicked; jump bar `pJumpBar`) | `app/24-player-drawer.js` | `css/02-table-scatter-drawer.css` |
+| Player side panel (opens when a player is clicked; jump bar `pJumpBar`) | `app/24-player-drawer.js` |
+| Player career page (season by season, all-time, now) | `app/57-player-career.js` | `css/02-table-scatter-drawer.css` |
 | Player card, traits, similar players (inside the panel) | `app/39-learn-player-card.js`, `app/43-player-traits.js`, `app/37-staff-review-similar.js` | `css/06-home-player-card.css` |
 | Learn | `app/39-learn-player-card.js` | `css/05-scouting-review-learn.css` |
 | Guide | `app/23-guide.js` | `css/03-sections-tiles.css` |
@@ -109,6 +110,7 @@ Everything the tool does, one feature per file. All files share one scope, so a 
 | `src/app/54-verdicts.js` | "In one line" answer at the top of My squad › Overview, Data Hub › Overview, Matches › Brief/Results, Scouting › Wonderkids/Targets and Staff › My staff (added by `render()` in 18-render.js) | 44 | 5 KB |
 | `src/app/55-sell-loan.js` | Scouting › Sell & loan: who to sell (declining, ageing, fringe, under-performing, contract running out, each with its reasons) and young players to loan out (with the level of club) | 50 | 7 KB |
 | `src/app/56-plan-review.js` | Matches › Last game / Results: "Did the game plan work?" (the plan for your next game is kept in this browser when a save loads, `planTake`; a later save checks the result and whether the targeted players scored or assisted) | 37 | 5 KB |
+| `src/app/57-player-career.js` | Player career page (S.mode "career", link #career=<id>, opened from Season by season in the player panel): how he's doing now vs last season and career, season trend charts + season table, all-time totals, by club, best seasons, ability over time from save snapshots | 126 | 17 KB |
 
 ## FM save reader (src/save-reader)
 

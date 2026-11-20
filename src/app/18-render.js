@@ -7,6 +7,7 @@ function render() {
   if (S.guide) { closeDrawer(true); main.innerHTML = renderGuide(); window.scrollTo(0, 0); return; }
   if (S.dataPage) { closeDrawer(true); main.innerHTML = renderDataPage(); bindSaveInput(); return; }
   const lead = () => { if (typeof verdictHtml === "function") main.insertAdjacentHTML("afterbegin", verdictHtml()); };   // one-line answer first (54-verdicts)
+  if (S.mode === "career") { closeDrawer(true); if (!S.careerUid || !SAVE) { S.mode = "home"; } else { main.innerHTML = careerHtml(); return; } }   // player career page (57-player-career)
   if (S.mode === "squad") { renderSquad(main); lead(); return; }
   if (S.mode === "staff") { renderStaff(main); lead(); return; }
   if (S.mode === "scout") { renderScout(main); lead(); return; }
@@ -47,7 +48,7 @@ function renderTabs() {
   if (S.mode === "scout") { $("#postabs").innerHTML = scoutTabsHtml(); return; }
   if (S.mode === "hub") { $("#postabs").innerHTML = hubTabsHtml(); return; }
   if (S.mode === "matches") { $("#postabs").innerHTML = mxTabsHtml(); return; }
-  if (S.mode === "home" || S.mode === "learn") { $("#postabs").innerHTML = ""; return; }
+  if (S.mode === "home" || S.mode === "learn" || S.mode === "career") { $("#postabs").innerHTML = ""; return; }
   if (S.mode === "staff") {
     $("#postabs").innerHTML = staffTabsHtml();
     const st = $("#postabs [aria-selected=true]"); if (st) st.scrollIntoView({ block: "nearest", inline: "nearest" });

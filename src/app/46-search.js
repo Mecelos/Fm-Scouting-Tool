@@ -67,6 +67,8 @@ function gsSyncNav() { document.querySelectorAll(".navsel").forEach(s => { const
 // #club=<name> on its own (from the button on FM's opposition report) opens Matches › Brief on that club.
 function linkOpen() {
   const h = new URLSearchParams(String(location.hash || "").replace(/^#/, "")), who = (h.get("player") || "").trim();
+  if (h.get("career")) { if (SAVE && typeof careerOpen === "function" && "s" + h.get("career") !== S.careerUid) { careerOpen(h.get("career")); } return; }
+  if (S.mode === "career") { S.mode = S.careerFrom && S.careerFrom !== "career" ? S.careerFrom : "home"; S.careerUid = null; render(); return; }   // back from a career page
   const club = gsNorm(h.get("club") || "").trim(), inp = document.getElementById("gSearch");
   const ask = q => { if (!inp) return; inp.value = q; inp.focus(); GS.at = 0; gsDraw(); };
   if (!who) { if (club) linkClub(club, h.get("club").trim(), ask); return; }

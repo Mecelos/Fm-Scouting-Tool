@@ -131,7 +131,8 @@ function seasonsHtml(p) {
     if (c[4] && S.adColor !== false && (c[5] ? (a.v.minutes || 0) >= AD_MIN_MINS : (a.dm || 0) >= AD_MIN_MINS)) { const t = benchFor(c[4], g); if (t) bg = ` style="background:${adColor(adScore(v, t))}"`; }
     return `<td class="num"${bg}>${c[3] ? v.toFixed(c[3]) : Math.round(v).toLocaleString()}${c[5] && /%/.test(c[0]) ? "%" : ""}</td>`;
   };
-  return `<h4>Season by season</h4><div class="tscroll"><table class="gtable narrow seasons"><thead><tr><th>Season</th><th>Club</th>${C.map(c => `<th class="num" title="${esc(c[1])}">${esc(c[0])}</th>`).join("")}</tr></thead><tbody>
+  const open = S.mode === "career" ? "" : ` <button class="linkbtn carlink" data-career="${esc(String(p.uid))}">Open career page: season by season, all-time, now</button>`;
+  return `${S.mode === "career" ? "" : `<h4>Season by season${open}</h4>`}<div class="tscroll"><table class="gtable narrow seasons"><thead><tr><th>Season</th><th>Club</th>${C.map(c => `<th class="num" title="${esc(c[1])}">${esc(c[0])}</th>`).join("")}</tr></thead><tbody>
     ${list.map(a => `<tr class="${a.y === "all" ? "alltime" : a.y === "cur" ? "cur" : ""}"><td>${esc(a.label)}${a.y === "cur" ? " <span class=\"muted small\">so far</span>" : ""}</td><td title="${a.club >= 0 ? esc(SAVE.clubs[a.club]) : ""}">${a.y === "all" ? `${a.n} seasons` : esc(a.club >= 0 ? (SAVE.clubShort && SAVE.clubShort[a.club]) || SAVE.clubs[a.club] : "")}</td>${C.map(c => cell(a, c)).join("")}</tr>`).join("")}</tbody></table></div>
     <p class="small muted">${esc(SAVE_KINDS[kind])} (switch in All data or on the Data page). Per 90s and percentages are coloured for his position once a season has ${AD_MIN_MINS}+ minutes. Seasons from before your career can hold only apps, goals, assists and rating; the other numbers count only seasons that recorded them.</p>`;
 }
