@@ -1,9 +1,10 @@
 // ---------- Scouting knowledge: the nations each staff member knows, read from the save (0-100 per nation) ----------
-// FM shows the number as a word. Only two are confirmed from FM27 screens: 100 = Complete, 30 = Very Good.
-// The other bands are a best guess until checked against a scout with varied levels: change them here.
-const KNOW_WORDS = [[100, "Complete"], [30, "Very Good"], [20, "Good"], [10, "Average"], [5, "Basic"], [1, "Minimal"]];
+// FM shows the number as a word. Checked on FM27 screens: 100 Complete, 90 Outstanding, 60 and 77 Exceptional, 47 Extensive,
+// 30 Very Good, 17 Above Average, 10 and 12 Average, 1 Minimal. Where each band starts between those is a best guess.
+const KNOW_WORDS = [[100, "Complete"], [80, "Outstanding"], [60, "Exceptional"], [40, "Extensive"], [30, "Very Good"], [20, "Good"],
+  [15, "Above Average"], [10, "Average"], [5, "Basic"], [1, "Minimal"]];
 const KNOW_MIN = 10; // Average or better counts as a nation he knows
-const KNOW_WEIGHT = { "Complete": 1, "Very Good": 0.8, "Good": 0.6, "Average": 0.4 }; // knowledge points per nation
+const KNOW_WEIGHT = { "Complete": 1, "Outstanding": 0.9, "Exceptional": 0.8, "Extensive": 0.7, "Very Good": 0.6, "Good": 0.5, "Above Average": 0.45, "Average": 0.4 }; // knowledge points per nation
 const KNOW_MIX = { rating: 0.6, know: 0.4 }; // overall score on the Scout knowledge tab
 const hasKnow = () => !!(SAVE && SAVE.staff && SAVE.staff.knowAt);
 const knowWord = v => { for (const [lo, w] of KNOW_WORDS) if (v >= lo) return w; return "None"; };
@@ -60,7 +61,7 @@ function renderScoutKnowledge() {
   const natN = new Map(); pool.forEach(i => sKnow(i).forEach(([n, v]) => { if (v >= KNOW_MIN) natN.set(n, (natN.get(n) || 0) + 1); }));
   const nat = S.sKNat != null && natN.has(S.sKNat) ? S.sKNat : null;
   let rows = staffFilter(pool); if (nat != null) rows = rows.filter(i => knowLevel(i, nat) >= KNOW_MIN);
-  h += `<p class="small muted rolehow"><b>Overall</b> (out of 100) = ${KNOW_MIX.rating * 100}% his ${esc(role.toLowerCase())} rating + ${KNOW_MIX.know * 100}% his nation knowledge, each judged against the ${pool.length.toLocaleString()} people here. Knowledge points: each nation at Average or better counts (Complete 1, Very Good 0.8, Good 0.6, Average 0.4). This score is only used on this tab; the Scouts tab still rates scouting ability alone.</p>`;
+  h += `<p class="small muted rolehow"><b>Overall</b> (out of 100) = ${KNOW_MIX.rating * 100}% his ${esc(role.toLowerCase())} rating + ${KNOW_MIX.know * 100}% his nation knowledge, each judged against the ${pool.length.toLocaleString()} people here. Knowledge points: each nation at Average or better counts (${Object.entries(KNOW_WEIGHT).map(([w, x]) => w + " " + x).join(", ")}). This score is only used on this tab; the Scouts tab still rates scouting ability alone.</p>`;
   const extra = `<label class="fl"><span class="small muted">Must know (Average or better)</span><select id="sKNat"><option value="">Any nation</option>${[...natN].sort((a, b) => knowNation(a[0]).localeCompare(knowNation(b[0]))).map(([n, c]) => `<option value="${n}" ${n === nat ? "selected" : ""}>${esc(knowNation(n))} (${c.toLocaleString()})</option>`).join("")}</select></label>`;
   h += staffFiltersHtml(extra);
   const mineIn = pool.filter(i => d.mine.has(i)), myBest = mineIn[0], best = rows[0];

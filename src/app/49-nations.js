@@ -25,6 +25,7 @@ const NATION_NAMES = (() => {
   put(187, ["Argentina", "Bolivia", "Brazil", "Chile", "Colombia", "Ecuador", "Paraguay", "Peru", "Uruguay", "Venezuela", "Palestine"]);
   put(201, ["American Samoa", "Mongolia", "Guam", "Eritrea", "Anguilla", "", "Montserrat", "US Virgin Islands", "Turks & Caicos", "New Caledonia",
     "Bhutan", "Dominican Republic"]);
+  put(213, ["Great Britain"]); // seen in scouts' nation knowledge
   put(216, ["Gibraltar", "", "", "Kosovo"]);
   put(225, ["French Guiana", "Guadeloupe", "Martinique", "", "", "Réunion", "Mayotte", "", "", "Comoros", "", "Timor-Leste", "", "", "Zanzibar",
     "South Sudan", "", "", "Northern Mariana Islands", "", "", "", "Montenegro"]);
