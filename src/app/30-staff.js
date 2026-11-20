@@ -88,7 +88,7 @@ const STAFF_TABS = [["Mine", "My staff"], ["Review", "Staff review"], ["Assistan
   ["Coaches", "Coaches", ["All-round coach", "Attacking coach", "Defending coach", "Possession coach", "Technical coach", "Tactical coach"]],
   ["Fitness", "Fitness", ["Fitness coach"]], ["GK", "GK coach", ["Goalkeeping coach"]], ["SP", "Set pieces", ["Set piece coach"]],
   ["Youth", "Youth", ["Head of youth development", "Youth coach"]], ["Medical", "Medical", ["Physio", "Head physio", "Sports scientist", "Head of sports science", "Doctor"]],
-  ["Scouts", "Scouts", ["Scout", "Chief scout"]], ["Analysts", "Analysts", ["Performance analyst", "Recruitment analyst", "Head of performance analysis"]],
+  ["Scouts", "Scouts", ["Scout", "Chief scout"]], ["Know", "Scout knowledge", ["Scout", "Chief scout"]], ["Analysts", "Analysts", ["Performance analyst", "Recruitment analyst", "Head of performance analysis"]],
   ["Directors", "Directors", ["Director of football", "Technical director"]], ["Managers", "Managers", ["Manager"]], ["All", "All staff"]];
 const STAFF_TAB = Object.fromEntries(STAFF_TABS.map(t => [t[0], t]));
 // the key jobs My staff checks, best of your people for each
@@ -201,7 +201,7 @@ function renderStaff(main) {
   if (SAVE.staff && !SAVE.staff.n) { main.innerHTML = `<section class="panel"><h3>No staff in this save</h3><p class="muted">Scout Lab found no club staff in this save.</p></section>`; renderSaveNote(); return; }
   if (!hasStaff()) { main.innerHTML = `<section class="panel"><h3>Load your save once more</h3><p class="muted">This save was loaded before Scout Lab read staff${SAVE.meta.staffError ? ` (${esc(SAVE.meta.staffError)})` : ""}. Load it again (<button class="linkbtn" data-act="datapage">Data</button>) on the device that has the .fm file and the Staff tabs fill; your cloud copy updates too, so your other devices get them next time they open Scout Lab.</p></section>`; renderSaveNote(); return; }
   const tab = STAFF_TAB[S.stab] ? S.stab : "Mine";
-  main.innerHTML = tab === "Mine" ? renderMyStaff() : tab === "Review" ? renderStaffReview() : tab === "All" ? renderAllStaff() : renderStaffRole(tab);
+  main.innerHTML = tab === "Mine" ? renderMyStaff() : tab === "Review" ? renderStaffReview() : tab === "All" ? renderAllStaff() : tab === "Know" ? renderScoutKnowledge() : renderStaffRole(tab);
   main.insertAdjacentHTML("beforeend", renderBandsPanel());
   renderSaveNote();
   if (S.sSel != null) openStaff(S.sSel, true);
@@ -249,7 +249,7 @@ function renderStaffRole(tab) {
   h += `<section class="panel tablepanel">${staffTable(rows, rat, role, wts.map(x => x[0]), rank)}</section>`;
   return h;
 }
-const staffSortDefault = tab => tab === "All" ? { k: "name", d: 1 } : { k: "rating", d: -1 };
+const staffSortDefault = tab => tab === "All" ? { k: "name", d: 1 } : tab === "Know" ? { k: "overall", d: -1 } : { k: "rating", d: -1 };
 function staffSort() { const tab = STAFF_TAB[S.stab] ? S.stab : "Mine", v = (S.sSorts || {})[tab]; return v && v.k ? v : staffSortDefault(tab); }
 function setStaffSort(k) {
   const tab = STAFF_TAB[S.stab] ? S.stab : "Mine", cur = staffSort();
@@ -267,21 +267,21 @@ function staffCards(top, rat, role, rank) {
       <span class="cmeta">${isFreeStaff(i) ? `${sAge(i) ?? "?"} · ${esc(staffJobName(i))}` : `${esc(sClub(i))} · ${sAge(i) ?? "?"} · ${esc(staffJobName(i))}`}</span>
       <span class="cscore">${rat[i].toFixed(1)}<small>/20 · ${esc(bandOf(rat[i]).w)}</small></span>
       <span class="cstack" title="Main attribute · related attributes · people skills">${[["main", 1], ["rel", 2], ["ppl", 3]].map(([k, c]) => p[k] > 0 ? `<span class="seg s${c}" style="flex:${(p[k] / t).toFixed(3)}"></span>` : "").join("")}<span class="cgap" style="flex:${Math.max(0, 20 - rat[i]).toFixed(3)}"></span></span>
-      <span class="ctags">${isFreeStaff(i) ? `<span class="tag good">Free agent</span>` : `<span class="tag">${esc(sWage(i))}</span>`}${staffData().mine.has(i) ? `<span class="tag good">Your club</span>` : ""}</span></button>`;
+      <span class="ctags">${isFreeStaff(i) ? `<span class="tag good">Free agent</span>` : `<span class="tag">${esc(sWage(i))}</span>`}${staffData().mine.has(i) ? `<span class="tag good">Your club</span>` : ""}${S.stab === "Scouts" && hasKnow() ? `<span class="tag" title="${esc(knowShort(i, 8))}">${esc(knowTxt(i))}</span>` : ""}</span></button>`;
   }).join("")}</div><div class="legend stackleg"><span><i class="sw s1"></i>Main attribute (×3)</span><span><i class="sw s2"></i>Related attributes</span><span><i class="sw s3"></i>People skills</span></div>`;
 }
 function staffTable(rows, rat, role, attrs, rank) {
-  const ss = staffSort(), k = ss.k, dir = ss.d, words = !!S.sWords;
-  const val = (i, c) => c === "rating" ? rat[i] : c === "name" ? SAVE.staff.name[i] : c === "club" ? sClub(i) : c === "age" ? sAge(i) : c === "wage" ? (isNaN(SAVE.staff.wage[i]) ? null : SAVE.staff.wage[i]) : c === "end" ? SAVE.staff.cEnd[i] || null : c === "job" ? staffJobName(i) : sAttr(i, c);
+  const ss = staffSort(), k = ss.k, dir = ss.d, words = !!S.sWords, kn = S.stab === "Scouts" && hasKnow();
+  const val = (i, c) => c === "know" ? knowData().cnt[i] + knowData().pts[i] / 1000 : c === "rating" ? rat[i] : c === "name" ? SAVE.staff.name[i] : c === "club" ? sClub(i) : c === "age" ? sAge(i) : c === "wage" ? (isNaN(SAVE.staff.wage[i]) ? null : SAVE.staff.wage[i]) : c === "end" ? SAVE.staff.cEnd[i] || null : c === "job" ? staffJobName(i) : sAttr(i, c);
   const sorted = [...rows].sort((a, b) => { const x = val(a, k), y = val(b, k); if (typeof x === "string" || typeof y === "string") return dir * -String(x ?? "").localeCompare(String(y ?? "")); return dir * ((x ?? -1e9) - (y ?? -1e9)); });
   const lim = S.sShowAll ? 1000 : 50, shown = sorted.slice(0, lim);
   const th = (c, l, cls = "", title = "") => `<th class="${cls} ${k === c ? "sorted" : ""}" data-ssort="${c}"${title ? ` data-tip="${esc(title)}"` : ""}><button>${esc(l)}${k === c ? (dir < 0 ? " ↓" : " ↑") : ""}</button></th>`;
-  let s = `<div class="tscroll"><table class="heat stafft"><thead><tr><th class="num">#</th>${th("name", "Name", "left")}${th("job", "Job", "left")}${th("age", "Age", "num")}${th("wage", "Wage", "num")}${th("end", "Contract", "num", "When his contract ends")}${rat ? th("rating", "Rating", "num strong", role + ": rating out of 20") : ""}`;
+  let s = `<div class="tscroll"><table class="heat stafft"><thead><tr><th class="num">#</th>${th("name", "Name", "left")}${th("job", "Job", "left")}${th("age", "Age", "num")}${th("wage", "Wage", "num")}${th("end", "Contract", "num", "When his contract ends")}${rat ? th("rating", "Rating", "num strong", role + ": rating out of 20") : ""}${kn ? th("know", "Nations", "num", "Nations he knows at Average or better (complete in brackets). Click him for the full list.") : ""}`;
   s += attrs.map(a => th(a, SA[a][0], "num cat", `${SA[a][1]}: ${SA[a][2]}`)).join("") + `</tr></thead><tbody>`;
   shown.forEach(i => {
     s += `<tr data-sid="${i}" class="${S.sSel === i ? "rsel" : ""}"><td class="num muted">${rank ? rank.get(i) : ""}</td><td class="left pl"><span class="pn">${esc(SAVE.staff.name[i])}${staffData().mine.has(i) ? `<span class="inf">yours</span>` : ""}${isFreeStaff(i) ? `<span class="inf fa">free</span>` : ""}</span><span class="pc">${esc(sClub(i))}</span></td>
       <td class="left small">${esc(staffJobName(i))}</td><td class="num">${sAge(i) ?? "–"}</td><td class="num">${esc(sWage(i).replace(" p/w", ""))}</td><td class="num small">${SAVE.staff.cEnd[i] ? sDate(SAVE.staff.cEnd[i]).getUTCFullYear() : "–"}</td>
-      ${rat ? `<td class="num strong" title="${esc(bandTxt(rat[i]))}">${rat[i].toFixed(1)}</td>` : ""}${attrs.map(a => { const v = sAttr(i, a); return `<td class="num hc" style="background:${sColor(v)}" title="${esc(SA[a][1])}: ${v ?? "–"}${v ? " · " + esc(bandTxt(v)) : ""}">${sCell(v, words)}</td>`; }).join("")}</tr>`;
+      ${rat ? `<td class="num strong" title="${esc(bandTxt(rat[i]))}">${rat[i].toFixed(1)}</td>` : ""}${kn ? `<td class="num small" title="${esc(knowShort(i, 8))}">${esc(knowTxt(i))}</td>` : ""}${attrs.map(a => { const v = sAttr(i, a); return `<td class="num hc" style="background:${sColor(v)}" title="${esc(SA[a][1])}: ${v ?? "–"}${v ? " · " + esc(bandTxt(v)) : ""}">${sCell(v, words)}</td>`; }).join("")}</tr>`;
   });
   s += `</tbody></table></div>`;
   if (sorted.length > 50) s += `<button class="ghost more" data-act="sshowall">${S.sShowAll ? "Show top 50" : sorted.length > 1000 ? `Show top 1,000 of ${sorted.length.toLocaleString()}` : `Show all ${sorted.length.toLocaleString()}`}</button>`;
@@ -357,8 +357,8 @@ function openStaff(i, silent) {
   let h = `<div class="dhead"><div><h2>${esc(ST.name[i] || "?")}</h2><p class="muted">${esc(staffJobName(i))}${isFreeStaff(i) ? "" : " · " + esc(sClub(i))}${ST.listedIdx[i] >= 0 && ST.listedIdx[i] !== ST.clubIdx[i] ? ` (listed by ${esc(SAVE.clubs[ST.listedIdx[i]])})` : ""} · ${sAge(i) ?? "?"} yrs</p>
     <p class="muted small">${isFreeStaff(i) ? "Free agent: no club, so no compensation to pay" : ST.contract[i] ? `Wage ${esc(sWage(i))} · contract ${esc(sDateTxt(ST.cStart[i]))} to ${esc(sDateTxt(ST.cEnd[i]))}` : "No contract stored"}${ST.ca[i] > 0 ? ` · ability ${ST.ca[i]} (potential ${ST.pa[i]}), hidden in FM` : ""}</p></div>
     <button class="ghost close" data-act="close" aria-label="Close">✕</button></div>
-    <div class="drole"><label for="sPanelRole" class="small muted">Rate him as</label><select id="sPanelRole">${STAFF_TABS.filter(t => t[2]).map(t => `<optgroup label="${esc(t[1])}">${t[2].map(r => `<option ${r === pr ? "selected" : ""}>${esc(r)}</option>`).join("")}</optgroup>`).join("")}</select>${pr !== pageR ? `<span class="small muted">this panel only${role ? " · page stays on " + esc(role) : ""}</span><button class="ghost small" data-act="sprolereset">Back to ${esc(pageR)}</button>` : `<span class="small muted">changes this panel only</span>`}</div>`;
-  if (!d.has[i]) { h += `<p class="muted">The save holds no staff attributes for him.</p>`; dr.innerHTML = h; dr.hidden = false; $("#scrim").hidden = false; return; }
+    <div class="drole"><label for="sPanelRole" class="small muted">Rate him as</label><select id="sPanelRole">${STAFF_TABS.filter(t => t[2] && t[0] !== "Know").map(t => `<optgroup label="${esc(t[1])}">${t[2].map(r => `<option ${r === pr ? "selected" : ""}>${esc(r)}</option>`).join("")}</optgroup>`).join("")}</select>${pr !== pageR ? `<span class="small muted">this panel only${role ? " · page stays on " + esc(role) : ""}</span><button class="ghost small" data-act="sprolereset">Back to ${esc(pageR)}</button>` : `<span class="small muted">changes this panel only</span>`}</div>`;
+  if (!d.has[i]) { h += `<p class="muted">The save holds no staff attributes for him.</p>` + knowPanelHtml(i); dr.innerHTML = h; dr.hidden = false; $("#scrim").hidden = false; return; }
   if (pr) {
     const rat = staffRating(pr), pool = staffPool(pr, "emp").filter(x => !isNaN(rat[x])).sort((a, b) => rat[b] - rat[a]), rk = pool.indexOf(i), pc = rk < 0 ? staffPct(pr, i) : null;
     h += `<div class="dtiles"><div class="tile"><span class="tv acc">${rat[i].toFixed(1)}<small>/20</small></span><span class="tl">${esc(pr)} · ${esc(bandOf(rat[i]).w)}</span></div>
@@ -370,7 +370,8 @@ function openStaff(i, silent) {
     h += `<h4>Why he rates ${rat[i].toFixed(1)} as ${esc(pr.toLowerCase())}</h4><div class="whyst">${w.map(([a, x]) => { const v = sAttr(i, a); return `<div class="mrow"><span class="mlab">${esc(SA[a][1])} <small class="muted">×${x}</small></span><span class="mval">${v ?? "–"}${v ? ` <small class="mtot">${esc(bandOf(v).w)}</small>` : ""}</span><span class="mtrack"><span style="width:${v ? (v / 20 * 100).toFixed(1) : 0}%;background:${sColor(v)}"></span></span><span class="mpct">${v && tw ? Math.round(v * x / tw * 10) / 10 : "–"}</span></div>`; }).join("")}</div>
       <p class="small muted">Right-hand number = what each attribute adds to the ${rat[i].toFixed(1)} (value × weight ÷ ${tw}). The main attribute counts ×3; for coaches Motivating, Determination and Authority count ×2 because they drive how well a coach coaches whatever his speciality. An all-rounder beats a one-attribute specialist.</p>`;
   }
-  const tabOf = r => Object.values(STAFF_TAB).find(t => t[2] && t[2].includes(r))[0];
+  const tabOf = r => Object.values(STAFF_TAB).find(t => t[2] && t[2].includes(r))[0], scoutish = /scout|recruit/i.test(pr || "") || /^(Scouts|Know)$/.test(S.stab);
+  if (scoutish) h += knowPanelHtml(i);
   h += `<h4>Best jobs for him</h4><div class="fits">${ranks.map(([r, v, p], k) => `<button class="fit ${k === 0 ? "first" : ""} ${r === pr ? "cur" : ""}" data-sprole="${esc(r)}" title="${r === pr ? "Rated as this now" : "Rate him as " + esc(r) + " in this panel"} · ${esc(pctTxt(p))} of the people doing that job">${esc(r)} <b>${v.toFixed(1)}</b> <small>${esc(pctTxt(p))}</small></button>`).join("")}</div><p class="small muted">Judged against the people doing each job in the save, so jobs compare fairly. Tap one to rate him as that in this panel${pr ? `; <button class="linkbtn" data-sgo="${esc(tabOf(pr) + "|" + pr)}">open the ${esc(rolePlural(pr))} list</button>` : ""}.</p>`;
   h += `<h4>Attributes</h4><div class="agrid sagrid">${SA_GROUPS.map(([g, l]) => `<div><h5>${g}</h5>${l.map(a => { const v = sAttr(i, a); return `<div class="arow ${pr && STAFF_ROLES[pr].w[a] >= 2 ? "key" : ""}" data-tip="${esc(SA[a][1] + ": " + SA[a][2])}"><span>${esc(SA[a][1])}</span><b style="color:${v ? attrColor(v) : "var(--muted)"}">${v == null ? "–" : words ? esc(bandOf(v).w) : v}</b>${!words && v ? `<small class="muted aword">${esc(bandOf(v).w)}</small>` : ""}</div>`; }).join("")}</div>`).join("")}</div>
     <p class="muted small">Underlined: the main and related attributes for ${esc(pr || "his job")}. Numbers out of 20; the word is what FM shows (set the words under In-game words).</p>`;
@@ -379,6 +380,7 @@ function openStaff(i, silent) {
   const tend = [["attacking", "Attacking football"], ["directness", "Direct passing"], ["trigger_press", "Pressing"], ["tempo", "Tempo"], ["width", "Width"], ["flexibility", "Flexibility"], ["hardness_of_training", "Hard training"], ["squad_rotation", "Squad rotation"], ["buying_players", "Buying players"], ["patience", "Patience"]];
   h += `<h4>How he likes a team run</h4><p class="small muted">His preferences on 1–20, not how good he is: they show the style he'll push for (useful for an assistant or a manager).</p><div class="agrid"><div>${tend.map(([k, l]) => { const v = pv(k); return `<div class="arow"><span>${esc(l)}</span><b>${v >= 1 && v <= 20 ? v : "–"}</b></div>`; }).join("")}</div>
     <div>${["Adaptability", "Ambition", "Loyalty", "Pressure", "Professionalism", "Sportsmanship", "Temperament", "Controversy"].map((l, k) => `<div class="arow"><span>${l}</span><b>${ST.pers[i * 8 + k] || "–"}</b></div>`).join("")}</div></div>`;
+  if (!scoutish) h += knowPanelHtml(i);
   dr.innerHTML = h; dr.hidden = false; $("#scrim").hidden = false;
   if (!silent) dr.scrollTop = 0;
   document.querySelectorAll("tr[data-sid]").forEach(tr => tr.classList.toggle("rsel", +tr.dataset.sid === i));

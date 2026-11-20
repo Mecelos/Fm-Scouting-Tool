@@ -243,6 +243,20 @@
       clubIdx: new Int32Array(n).fill(-1), listedIdx: new Int32Array(n).fill(-1), teamSlot: new Int8Array(n).fill(-1), job: new Int16Array(n).fill(-1), lists: new Uint8Array(n),
       contract: new Uint8Array(n), free: new Uint8Array(n), usual: new Int16Array(n).fill(-1), wage: new Float64Array(n).fill(NaN), cStart: new Uint32Array(n), cEnd: new Uint32Array(n), ca: new Int16Array(n).fill(-1), pa: new Int16Array(n).fill(-1),
       rat: new Uint8Array(n * NR), pers: new Uint8Array(n * 8), pref: new Uint8Array(n * STAFF_PREFS.length), ratings: STAFF_RATINGS.map(r => [r[0], r[3]]), prefs: STAFF_PREFS.map(p => p[0]) };
+    // scouting knowledge: a count (u16), then one 39-byte entry per nation: 4, nation (u32), ..., knowledge 0-100 at +25.
+    // It sits 115 bytes after the ability block for almost everyone; a few people keep extra data first, so look further on.
+    const KN = { first: 115, from: 66, to: 900, entry: 39, kind: 4, value: 25, maxNat: 300, maxCount: 250 };
+    function knowledgeList(at) {
+      const ok = p => { if (p < 0 || p + 2 > db.length) return 0; const c = u16(db, p); if (c < 1 || c > KN.maxCount || p + 2 + KN.entry * c > db.length) return 0;
+        for (let k = 0; k < c; k++) { const e = p + 2 + KN.entry * k; if (db[e] !== KN.kind || u32(db, e + 1) >= KN.maxNat || db[e + 5] !== 0 || db[e + KN.value] > 100) return 0; }
+        return c; };
+      let p = at + KN.first, c = ok(p);
+      if (!c) for (p = at + KN.from; p < at + KN.to; p++) { if (p === at + KN.first) continue; c = ok(p); if (c) break; }
+      if (!c) return null;
+      const out = []; for (let k = 0; k < c; k++) { const e = p + 2 + KN.entry * k; out.push([u16(db, e + 1), db[e + KN.value]]); }
+      return out;
+    }
+    const kAt = new Int32Array(n + 1), kNat = [], kVal = [];
     out.forEach((r, i) => {
       const o = r.o, p = o.person, b = o.blk;
       ST.name[i] = p && p.name ? p.name : ""; ST.uid[i] = o.uid;
@@ -264,8 +278,11 @@
           ST.rat[i * NR + j] = v >= 1 && v <= top ? v : 0;
         });
         STAFF_PREFS.forEach(([, slot], j) => { ST.pref[i * STAFF_PREFS.length + j] = db[b.at + S.prefs + slot]; });
+        const kl = knowledgeList(b.at); if (kl) kl.forEach(([nat, v]) => { if (v > 0) { kNat.push(nat); kVal.push(v); } });
       } else if (p) ST.rat[i * NR + NR - 1] = db[p.persAt];
+      kAt[i + 1] = kNat.length;
     });
+    ST.knowAt = kAt; ST.knowNat = Uint16Array.from(kNat); ST.knowVal = Uint8Array.from(kVal);
     if (G.__staffDebug) { G.__staffDebug.push({ out, objects, recOff, clubs }); G.__lastDb = db; }
     return ST;
   }

@@ -179,6 +179,7 @@ document.addEventListener("change", e => {
   else if (t.id === "sWho") { S.sWho = t.value; render(); }
   else if (t.id === "sAge") { S.sAge = +t.value; render(); }
   else if (t.id === "sJob") { S.sJob = t.value; render(); }
+  else if (t.id === "sKNat") { S.sKNat = t.value === "" ? null : +t.value; render(); }
   else if (t.id === "sNotMine") { S.sNotMine = t.checked; render(); }
   else if (t.id === "sWords") { S.sWords = t.checked; const y = window.scrollY; render(); window.scrollTo(0, y); }
   else if (t.dataset.band != null) {

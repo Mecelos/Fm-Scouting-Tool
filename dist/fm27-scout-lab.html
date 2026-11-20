@@ -2141,6 +2141,20 @@ button[disabled] { opacity: .6; cursor: progress; }
       clubIdx: new Int32Array(n).fill(-1), listedIdx: new Int32Array(n).fill(-1), teamSlot: new Int8Array(n).fill(-1), job: new Int16Array(n).fill(-1), lists: new Uint8Array(n),
       contract: new Uint8Array(n), free: new Uint8Array(n), usual: new Int16Array(n).fill(-1), wage: new Float64Array(n).fill(NaN), cStart: new Uint32Array(n), cEnd: new Uint32Array(n), ca: new Int16Array(n).fill(-1), pa: new Int16Array(n).fill(-1),
       rat: new Uint8Array(n * NR), pers: new Uint8Array(n * 8), pref: new Uint8Array(n * STAFF_PREFS.length), ratings: STAFF_RATINGS.map(r => [r[0], r[3]]), prefs: STAFF_PREFS.map(p => p[0]) };
+    // scouting knowledge: a count (u16), then one 39-byte entry per nation: 4, nation (u32), ..., knowledge 0-100 at +25.
+    // It sits 115 bytes after the ability block for almost everyone; a few people keep extra data first, so look further on.
+    const KN = { first: 115, from: 66, to: 900, entry: 39, kind: 4, value: 25, maxNat: 300, maxCount: 250 };
+    function knowledgeList(at) {
+      const ok = p => { if (p < 0 || p + 2 > db.length) return 0; const c = u16(db, p); if (c < 1 || c > KN.maxCount || p + 2 + KN.entry * c > db.length) return 0;
+        for (let k = 0; k < c; k++) { const e = p + 2 + KN.entry * k; if (db[e] !== KN.kind || u32(db, e + 1) >= KN.maxNat || db[e + 5] !== 0 || db[e + KN.value] > 100) return 0; }
+        return c; };
+      let p = at + KN.first, c = ok(p);
+      if (!c) for (p = at + KN.from; p < at + KN.to; p++) { if (p === at + KN.first) continue; c = ok(p); if (c) break; }
+      if (!c) return null;
+      const out = []; for (let k = 0; k < c; k++) { const e = p + 2 + KN.entry * k; out.push([u16(db, e + 1), db[e + KN.value]]); }
+      return out;
+    }
+    const kAt = new Int32Array(n + 1), kNat = [], kVal = [];
     out.forEach((r, i) => {
       const o = r.o, p = o.person, b = o.blk;
       ST.name[i] = p && p.name ? p.name : ""; ST.uid[i] = o.uid;
@@ -2162,8 +2176,11 @@ button[disabled] { opacity: .6; cursor: progress; }
           ST.rat[i * NR + j] = v >= 1 && v <= top ? v : 0;
         });
         STAFF_PREFS.forEach(([, slot], j) => { ST.pref[i * STAFF_PREFS.length + j] = db[b.at + S.prefs + slot]; });
+        const kl = knowledgeList(b.at); if (kl) kl.forEach(([nat, v]) => { if (v > 0) { kNat.push(nat); kVal.push(v); } });
       } else if (p) ST.rat[i * NR + NR - 1] = db[p.persAt];
+      kAt[i + 1] = kNat.length;
     });
+    ST.knowAt = kAt; ST.knowNat = Uint16Array.from(kNat); ST.knowVal = Uint8Array.from(kVal);
     if (G.__staffDebug) { G.__staffDebug.push({ out, objects, recOff, clubs }); G.__lastDb = db; }
     return ST;
   }
@@ -5796,6 +5813,20 @@ Yth;John Taylor;4;1;6;8;1;9;4;2;8;4;11;1;5;8;2;13;5;5;8;2;6;6;9;11;2;5;4;5;14;10
       clubIdx: new Int32Array(n).fill(-1), listedIdx: new Int32Array(n).fill(-1), teamSlot: new Int8Array(n).fill(-1), job: new Int16Array(n).fill(-1), lists: new Uint8Array(n),
       contract: new Uint8Array(n), free: new Uint8Array(n), usual: new Int16Array(n).fill(-1), wage: new Float64Array(n).fill(NaN), cStart: new Uint32Array(n), cEnd: new Uint32Array(n), ca: new Int16Array(n).fill(-1), pa: new Int16Array(n).fill(-1),
       rat: new Uint8Array(n * NR), pers: new Uint8Array(n * 8), pref: new Uint8Array(n * STAFF_PREFS.length), ratings: STAFF_RATINGS.map(r => [r[0], r[3]]), prefs: STAFF_PREFS.map(p => p[0]) };
+    // scouting knowledge: a count (u16), then one 39-byte entry per nation: 4, nation (u32), ..., knowledge 0-100 at +25.
+    // It sits 115 bytes after the ability block for almost everyone; a few people keep extra data first, so look further on.
+    const KN = { first: 115, from: 66, to: 900, entry: 39, kind: 4, value: 25, maxNat: 300, maxCount: 250 };
+    function knowledgeList(at) {
+      const ok = p => { if (p < 0 || p + 2 > db.length) return 0; const c = u16(db, p); if (c < 1 || c > KN.maxCount || p + 2 + KN.entry * c > db.length) return 0;
+        for (let k = 0; k < c; k++) { const e = p + 2 + KN.entry * k; if (db[e] !== KN.kind || u32(db, e + 1) >= KN.maxNat || db[e + 5] !== 0 || db[e + KN.value] > 100) return 0; }
+        return c; };
+      let p = at + KN.first, c = ok(p);
+      if (!c) for (p = at + KN.from; p < at + KN.to; p++) { if (p === at + KN.first) continue; c = ok(p); if (c) break; }
+      if (!c) return null;
+      const out = []; for (let k = 0; k < c; k++) { const e = p + 2 + KN.entry * k; out.push([u16(db, e + 1), db[e + KN.value]]); }
+      return out;
+    }
+    const kAt = new Int32Array(n + 1), kNat = [], kVal = [];
     out.forEach((r, i) => {
       const o = r.o, p = o.person, b = o.blk;
       ST.name[i] = p && p.name ? p.name : ""; ST.uid[i] = o.uid;
@@ -5817,8 +5848,11 @@ Yth;John Taylor;4;1;6;8;1;9;4;2;8;4;11;1;5;8;2;13;5;5;8;2;6;6;9;11;2;5;4;5;14;10
           ST.rat[i * NR + j] = v >= 1 && v <= top ? v : 0;
         });
         STAFF_PREFS.forEach(([, slot], j) => { ST.pref[i * STAFF_PREFS.length + j] = db[b.at + S.prefs + slot]; });
+        const kl = knowledgeList(b.at); if (kl) kl.forEach(([nat, v]) => { if (v > 0) { kNat.push(nat); kVal.push(v); } });
       } else if (p) ST.rat[i * NR + NR - 1] = db[p.persAt];
+      kAt[i + 1] = kNat.length;
     });
+    ST.knowAt = kAt; ST.knowNat = Uint16Array.from(kNat); ST.knowVal = Uint8Array.from(kVal);
     if (G.__staffDebug) { G.__staffDebug.push({ out, objects, recOff, clubs }); G.__lastDb = db; }
     return ST;
   }
@@ -10806,7 +10840,7 @@ const STAFF_TABS = [["Mine", "My staff"], ["Review", "Staff review"], ["Assistan
   ["Coaches", "Coaches", ["All-round coach", "Attacking coach", "Defending coach", "Possession coach", "Technical coach", "Tactical coach"]],
   ["Fitness", "Fitness", ["Fitness coach"]], ["GK", "GK coach", ["Goalkeeping coach"]], ["SP", "Set pieces", ["Set piece coach"]],
   ["Youth", "Youth", ["Head of youth development", "Youth coach"]], ["Medical", "Medical", ["Physio", "Head physio", "Sports scientist", "Head of sports science", "Doctor"]],
-  ["Scouts", "Scouts", ["Scout", "Chief scout"]], ["Analysts", "Analysts", ["Performance analyst", "Recruitment analyst", "Head of performance analysis"]],
+  ["Scouts", "Scouts", ["Scout", "Chief scout"]], ["Know", "Scout knowledge", ["Scout", "Chief scout"]], ["Analysts", "Analysts", ["Performance analyst", "Recruitment analyst", "Head of performance analysis"]],
   ["Directors", "Directors", ["Director of football", "Technical director"]], ["Managers", "Managers", ["Manager"]], ["All", "All staff"]];
 const STAFF_TAB = Object.fromEntries(STAFF_TABS.map(t => [t[0], t]));
 // the key jobs My staff checks, best of your people for each
@@ -10919,7 +10953,7 @@ function renderStaff(main) {
   if (SAVE.staff && !SAVE.staff.n) { main.innerHTML = `<section class="panel"><h3>No staff in this save</h3><p class="muted">Scout Lab found no club staff in this save.</p></section>`; renderSaveNote(); return; }
   if (!hasStaff()) { main.innerHTML = `<section class="panel"><h3>Load your save once more</h3><p class="muted">This save was loaded before Scout Lab read staff${SAVE.meta.staffError ? ` (${esc(SAVE.meta.staffError)})` : ""}. Load it again (<button class="linkbtn" data-act="datapage">Data</button>) on the device that has the .fm file and the Staff tabs fill; your cloud copy updates too, so your other devices get them next time they open Scout Lab.</p></section>`; renderSaveNote(); return; }
   const tab = STAFF_TAB[S.stab] ? S.stab : "Mine";
-  main.innerHTML = tab === "Mine" ? renderMyStaff() : tab === "Review" ? renderStaffReview() : tab === "All" ? renderAllStaff() : renderStaffRole(tab);
+  main.innerHTML = tab === "Mine" ? renderMyStaff() : tab === "Review" ? renderStaffReview() : tab === "All" ? renderAllStaff() : tab === "Know" ? renderScoutKnowledge() : renderStaffRole(tab);
   main.insertAdjacentHTML("beforeend", renderBandsPanel());
   renderSaveNote();
   if (S.sSel != null) openStaff(S.sSel, true);
@@ -10967,7 +11001,7 @@ function renderStaffRole(tab) {
   h += `<section class="panel tablepanel">${staffTable(rows, rat, role, wts.map(x => x[0]), rank)}</section>`;
   return h;
 }
-const staffSortDefault = tab => tab === "All" ? { k: "name", d: 1 } : { k: "rating", d: -1 };
+const staffSortDefault = tab => tab === "All" ? { k: "name", d: 1 } : tab === "Know" ? { k: "overall", d: -1 } : { k: "rating", d: -1 };
 function staffSort() { const tab = STAFF_TAB[S.stab] ? S.stab : "Mine", v = (S.sSorts || {})[tab]; return v && v.k ? v : staffSortDefault(tab); }
 function setStaffSort(k) {
   const tab = STAFF_TAB[S.stab] ? S.stab : "Mine", cur = staffSort();
@@ -10985,21 +11019,21 @@ function staffCards(top, rat, role, rank) {
       <span class="cmeta">${isFreeStaff(i) ? `${sAge(i) ?? "?"} · ${esc(staffJobName(i))}` : `${esc(sClub(i))} · ${sAge(i) ?? "?"} · ${esc(staffJobName(i))}`}</span>
       <span class="cscore">${rat[i].toFixed(1)}<small>/20 · ${esc(bandOf(rat[i]).w)}</small></span>
       <span class="cstack" title="Main attribute · related attributes · people skills">${[["main", 1], ["rel", 2], ["ppl", 3]].map(([k, c]) => p[k] > 0 ? `<span class="seg s${c}" style="flex:${(p[k] / t).toFixed(3)}"></span>` : "").join("")}<span class="cgap" style="flex:${Math.max(0, 20 - rat[i]).toFixed(3)}"></span></span>
-      <span class="ctags">${isFreeStaff(i) ? `<span class="tag good">Free agent</span>` : `<span class="tag">${esc(sWage(i))}</span>`}${staffData().mine.has(i) ? `<span class="tag good">Your club</span>` : ""}</span></button>`;
+      <span class="ctags">${isFreeStaff(i) ? `<span class="tag good">Free agent</span>` : `<span class="tag">${esc(sWage(i))}</span>`}${staffData().mine.has(i) ? `<span class="tag good">Your club</span>` : ""}${S.stab === "Scouts" && hasKnow() ? `<span class="tag" title="${esc(knowShort(i, 8))}">${esc(knowTxt(i))}</span>` : ""}</span></button>`;
   }).join("")}</div><div class="legend stackleg"><span><i class="sw s1"></i>Main attribute (×3)</span><span><i class="sw s2"></i>Related attributes</span><span><i class="sw s3"></i>People skills</span></div>`;
 }
 function staffTable(rows, rat, role, attrs, rank) {
-  const ss = staffSort(), k = ss.k, dir = ss.d, words = !!S.sWords;
-  const val = (i, c) => c === "rating" ? rat[i] : c === "name" ? SAVE.staff.name[i] : c === "club" ? sClub(i) : c === "age" ? sAge(i) : c === "wage" ? (isNaN(SAVE.staff.wage[i]) ? null : SAVE.staff.wage[i]) : c === "end" ? SAVE.staff.cEnd[i] || null : c === "job" ? staffJobName(i) : sAttr(i, c);
+  const ss = staffSort(), k = ss.k, dir = ss.d, words = !!S.sWords, kn = S.stab === "Scouts" && hasKnow();
+  const val = (i, c) => c === "know" ? knowData().cnt[i] + knowData().pts[i] / 1000 : c === "rating" ? rat[i] : c === "name" ? SAVE.staff.name[i] : c === "club" ? sClub(i) : c === "age" ? sAge(i) : c === "wage" ? (isNaN(SAVE.staff.wage[i]) ? null : SAVE.staff.wage[i]) : c === "end" ? SAVE.staff.cEnd[i] || null : c === "job" ? staffJobName(i) : sAttr(i, c);
   const sorted = [...rows].sort((a, b) => { const x = val(a, k), y = val(b, k); if (typeof x === "string" || typeof y === "string") return dir * -String(x ?? "").localeCompare(String(y ?? "")); return dir * ((x ?? -1e9) - (y ?? -1e9)); });
   const lim = S.sShowAll ? 1000 : 50, shown = sorted.slice(0, lim);
   const th = (c, l, cls = "", title = "") => `<th class="${cls} ${k === c ? "sorted" : ""}" data-ssort="${c}"${title ? ` data-tip="${esc(title)}"` : ""}><button>${esc(l)}${k === c ? (dir < 0 ? " ↓" : " ↑") : ""}</button></th>`;
-  let s = `<div class="tscroll"><table class="heat stafft"><thead><tr><th class="num">#</th>${th("name", "Name", "left")}${th("job", "Job", "left")}${th("age", "Age", "num")}${th("wage", "Wage", "num")}${th("end", "Contract", "num", "When his contract ends")}${rat ? th("rating", "Rating", "num strong", role + ": rating out of 20") : ""}`;
+  let s = `<div class="tscroll"><table class="heat stafft"><thead><tr><th class="num">#</th>${th("name", "Name", "left")}${th("job", "Job", "left")}${th("age", "Age", "num")}${th("wage", "Wage", "num")}${th("end", "Contract", "num", "When his contract ends")}${rat ? th("rating", "Rating", "num strong", role + ": rating out of 20") : ""}${kn ? th("know", "Nations", "num", "Nations he knows at Average or better (complete in brackets). Click him for the full list.") : ""}`;
   s += attrs.map(a => th(a, SA[a][0], "num cat", `${SA[a][1]}: ${SA[a][2]}`)).join("") + `</tr></thead><tbody>`;
   shown.forEach(i => {
     s += `<tr data-sid="${i}" class="${S.sSel === i ? "rsel" : ""}"><td class="num muted">${rank ? rank.get(i) : ""}</td><td class="left pl"><span class="pn">${esc(SAVE.staff.name[i])}${staffData().mine.has(i) ? `<span class="inf">yours</span>` : ""}${isFreeStaff(i) ? `<span class="inf fa">free</span>` : ""}</span><span class="pc">${esc(sClub(i))}</span></td>
       <td class="left small">${esc(staffJobName(i))}</td><td class="num">${sAge(i) ?? "–"}</td><td class="num">${esc(sWage(i).replace(" p/w", ""))}</td><td class="num small">${SAVE.staff.cEnd[i] ? sDate(SAVE.staff.cEnd[i]).getUTCFullYear() : "–"}</td>
-      ${rat ? `<td class="num strong" title="${esc(bandTxt(rat[i]))}">${rat[i].toFixed(1)}</td>` : ""}${attrs.map(a => { const v = sAttr(i, a); return `<td class="num hc" style="background:${sColor(v)}" title="${esc(SA[a][1])}: ${v ?? "–"}${v ? " · " + esc(bandTxt(v)) : ""}">${sCell(v, words)}</td>`; }).join("")}</tr>`;
+      ${rat ? `<td class="num strong" title="${esc(bandTxt(rat[i]))}">${rat[i].toFixed(1)}</td>` : ""}${kn ? `<td class="num small" title="${esc(knowShort(i, 8))}">${esc(knowTxt(i))}</td>` : ""}${attrs.map(a => { const v = sAttr(i, a); return `<td class="num hc" style="background:${sColor(v)}" title="${esc(SA[a][1])}: ${v ?? "–"}${v ? " · " + esc(bandTxt(v)) : ""}">${sCell(v, words)}</td>`; }).join("")}</tr>`;
   });
   s += `</tbody></table></div>`;
   if (sorted.length > 50) s += `<button class="ghost more" data-act="sshowall">${S.sShowAll ? "Show top 50" : sorted.length > 1000 ? `Show top 1,000 of ${sorted.length.toLocaleString()}` : `Show all ${sorted.length.toLocaleString()}`}</button>`;
@@ -11075,8 +11109,8 @@ function openStaff(i, silent) {
   let h = `<div class="dhead"><div><h2>${esc(ST.name[i] || "?")}</h2><p class="muted">${esc(staffJobName(i))}${isFreeStaff(i) ? "" : " · " + esc(sClub(i))}${ST.listedIdx[i] >= 0 && ST.listedIdx[i] !== ST.clubIdx[i] ? ` (listed by ${esc(SAVE.clubs[ST.listedIdx[i]])})` : ""} · ${sAge(i) ?? "?"} yrs</p>
     <p class="muted small">${isFreeStaff(i) ? "Free agent: no club, so no compensation to pay" : ST.contract[i] ? `Wage ${esc(sWage(i))} · contract ${esc(sDateTxt(ST.cStart[i]))} to ${esc(sDateTxt(ST.cEnd[i]))}` : "No contract stored"}${ST.ca[i] > 0 ? ` · ability ${ST.ca[i]} (potential ${ST.pa[i]}), hidden in FM` : ""}</p></div>
     <button class="ghost close" data-act="close" aria-label="Close">✕</button></div>
-    <div class="drole"><label for="sPanelRole" class="small muted">Rate him as</label><select id="sPanelRole">${STAFF_TABS.filter(t => t[2]).map(t => `<optgroup label="${esc(t[1])}">${t[2].map(r => `<option ${r === pr ? "selected" : ""}>${esc(r)}</option>`).join("")}</optgroup>`).join("")}</select>${pr !== pageR ? `<span class="small muted">this panel only${role ? " · page stays on " + esc(role) : ""}</span><button class="ghost small" data-act="sprolereset">Back to ${esc(pageR)}</button>` : `<span class="small muted">changes this panel only</span>`}</div>`;
-  if (!d.has[i]) { h += `<p class="muted">The save holds no staff attributes for him.</p>`; dr.innerHTML = h; dr.hidden = false; $("#scrim").hidden = false; return; }
+    <div class="drole"><label for="sPanelRole" class="small muted">Rate him as</label><select id="sPanelRole">${STAFF_TABS.filter(t => t[2] && t[0] !== "Know").map(t => `<optgroup label="${esc(t[1])}">${t[2].map(r => `<option ${r === pr ? "selected" : ""}>${esc(r)}</option>`).join("")}</optgroup>`).join("")}</select>${pr !== pageR ? `<span class="small muted">this panel only${role ? " · page stays on " + esc(role) : ""}</span><button class="ghost small" data-act="sprolereset">Back to ${esc(pageR)}</button>` : `<span class="small muted">changes this panel only</span>`}</div>`;
+  if (!d.has[i]) { h += `<p class="muted">The save holds no staff attributes for him.</p>` + knowPanelHtml(i); dr.innerHTML = h; dr.hidden = false; $("#scrim").hidden = false; return; }
   if (pr) {
     const rat = staffRating(pr), pool = staffPool(pr, "emp").filter(x => !isNaN(rat[x])).sort((a, b) => rat[b] - rat[a]), rk = pool.indexOf(i), pc = rk < 0 ? staffPct(pr, i) : null;
     h += `<div class="dtiles"><div class="tile"><span class="tv acc">${rat[i].toFixed(1)}<small>/20</small></span><span class="tl">${esc(pr)} · ${esc(bandOf(rat[i]).w)}</span></div>
@@ -11088,7 +11122,8 @@ function openStaff(i, silent) {
     h += `<h4>Why he rates ${rat[i].toFixed(1)} as ${esc(pr.toLowerCase())}</h4><div class="whyst">${w.map(([a, x]) => { const v = sAttr(i, a); return `<div class="mrow"><span class="mlab">${esc(SA[a][1])} <small class="muted">×${x}</small></span><span class="mval">${v ?? "–"}${v ? ` <small class="mtot">${esc(bandOf(v).w)}</small>` : ""}</span><span class="mtrack"><span style="width:${v ? (v / 20 * 100).toFixed(1) : 0}%;background:${sColor(v)}"></span></span><span class="mpct">${v && tw ? Math.round(v * x / tw * 10) / 10 : "–"}</span></div>`; }).join("")}</div>
       <p class="small muted">Right-hand number = what each attribute adds to the ${rat[i].toFixed(1)} (value × weight ÷ ${tw}). The main attribute counts ×3; for coaches Motivating, Determination and Authority count ×2 because they drive how well a coach coaches whatever his speciality. An all-rounder beats a one-attribute specialist.</p>`;
   }
-  const tabOf = r => Object.values(STAFF_TAB).find(t => t[2] && t[2].includes(r))[0];
+  const tabOf = r => Object.values(STAFF_TAB).find(t => t[2] && t[2].includes(r))[0], scoutish = /scout|recruit/i.test(pr || "") || /^(Scouts|Know)$/.test(S.stab);
+  if (scoutish) h += knowPanelHtml(i);
   h += `<h4>Best jobs for him</h4><div class="fits">${ranks.map(([r, v, p], k) => `<button class="fit ${k === 0 ? "first" : ""} ${r === pr ? "cur" : ""}" data-sprole="${esc(r)}" title="${r === pr ? "Rated as this now" : "Rate him as " + esc(r) + " in this panel"} · ${esc(pctTxt(p))} of the people doing that job">${esc(r)} <b>${v.toFixed(1)}</b> <small>${esc(pctTxt(p))}</small></button>`).join("")}</div><p class="small muted">Judged against the people doing each job in the save, so jobs compare fairly. Tap one to rate him as that in this panel${pr ? `; <button class="linkbtn" data-sgo="${esc(tabOf(pr) + "|" + pr)}">open the ${esc(rolePlural(pr))} list</button>` : ""}.</p>`;
   h += `<h4>Attributes</h4><div class="agrid sagrid">${SA_GROUPS.map(([g, l]) => `<div><h5>${g}</h5>${l.map(a => { const v = sAttr(i, a); return `<div class="arow ${pr && STAFF_ROLES[pr].w[a] >= 2 ? "key" : ""}" data-tip="${esc(SA[a][1] + ": " + SA[a][2])}"><span>${esc(SA[a][1])}</span><b style="color:${v ? attrColor(v) : "var(--muted)"}">${v == null ? "–" : words ? esc(bandOf(v).w) : v}</b>${!words && v ? `<small class="muted aword">${esc(bandOf(v).w)}</small>` : ""}</div>`; }).join("")}</div>`).join("")}</div>
     <p class="muted small">Underlined: the main and related attributes for ${esc(pr || "his job")}. Numbers out of 20; the word is what FM shows (set the words under In-game words).</p>`;
@@ -11097,6 +11132,7 @@ function openStaff(i, silent) {
   const tend = [["attacking", "Attacking football"], ["directness", "Direct passing"], ["trigger_press", "Pressing"], ["tempo", "Tempo"], ["width", "Width"], ["flexibility", "Flexibility"], ["hardness_of_training", "Hard training"], ["squad_rotation", "Squad rotation"], ["buying_players", "Buying players"], ["patience", "Patience"]];
   h += `<h4>How he likes a team run</h4><p class="small muted">His preferences on 1–20, not how good he is: they show the style he'll push for (useful for an assistant or a manager).</p><div class="agrid"><div>${tend.map(([k, l]) => { const v = pv(k); return `<div class="arow"><span>${esc(l)}</span><b>${v >= 1 && v <= 20 ? v : "–"}</b></div>`; }).join("")}</div>
     <div>${["Adaptability", "Ambition", "Loyalty", "Pressure", "Professionalism", "Sportsmanship", "Temperament", "Controversy"].map((l, k) => `<div class="arow"><span>${l}</span><b>${ST.pers[i * 8 + k] || "–"}</b></div>`).join("")}</div></div>`;
+  if (!scoutish) h += knowPanelHtml(i);
   dr.innerHTML = h; dr.hidden = false; $("#scrim").hidden = false;
   if (!silent) dr.scrollTop = 0;
   document.querySelectorAll("tr[data-sid]").forEach(tr => tr.classList.toggle("rsel", +tr.dataset.sid === i));
@@ -11295,6 +11331,7 @@ document.addEventListener("change", e => {
   else if (t.id === "sWho") { S.sWho = t.value; render(); }
   else if (t.id === "sAge") { S.sAge = +t.value; render(); }
   else if (t.id === "sJob") { S.sJob = t.value; render(); }
+  else if (t.id === "sKNat") { S.sKNat = t.value === "" ? null : +t.value; render(); }
   else if (t.id === "sNotMine") { S.sNotMine = t.checked; render(); }
   else if (t.id === "sWords") { S.sWords = t.checked; const y = window.scrollY; render(); window.scrollTo(0, y); }
   else if (t.dataset.band != null) {
@@ -14882,6 +14919,113 @@ function gpHtml(B, t, brief) {
       <li><b>About 50':</b> fresh legs in central midfield, and <b>move your opposition instructions onto their subs</b>: instructions stay on the player who went off.${subs.length ? ` They usually bring on ${subs.map(([n, c]) => `<b>${esc(n)}</b> <span class="small muted">(${c}×)</span>`).join(", ")}.` : ""}</li>
       <li><b>Half-time, leading:</b> team talk "Don't get complacent" or "Demand more", not praise. Praise makes a winning team sloppy straight after the break.</li></ul>
   </section>`;
+}
+// ---------- Scouting knowledge: the nations each staff member knows, read from the save (0-100 per nation) ----------
+// FM shows the number as a word. Only two are confirmed from FM27 screens: 100 = Complete, 30 = Very Good.
+// The other bands are a best guess until checked against a scout with varied levels: change them here.
+const KNOW_WORDS = [[100, "Complete"], [30, "Very Good"], [20, "Good"], [10, "Average"], [5, "Basic"], [1, "Minimal"]];
+const KNOW_MIN = 10; // Average or better counts as a nation he knows
+const KNOW_WEIGHT = { "Complete": 1, "Very Good": 0.8, "Good": 0.6, "Average": 0.4 }; // knowledge points per nation
+const KNOW_MIX = { rating: 0.6, know: 0.4 }; // overall score on the Scout knowledge tab
+const hasKnow = () => !!(SAVE && SAVE.staff && SAVE.staff.knowAt);
+const knowWord = v => { for (const [lo, w] of KNOW_WORDS) if (v >= lo) return w; return "None"; };
+const knowNation = k => nationName(k) || "Nation " + k;
+function sKnow(i) { // [[nation, 0-100]] best first
+  if (!hasKnow()) return [];
+  const ST = SAVE.staff, out = [];
+  for (let k = ST.knowAt[i]; k < ST.knowAt[i + 1]; k++) out.push([ST.knowNat[k], ST.knowVal[k]]);
+  return out.sort((a, b) => b[1] - a[1] || knowNation(a[0]).localeCompare(knowNation(b[0])));
+}
+function knowData() { // per person: nations at Average or better, complete nations, knowledge points
+  if (SAVE._know) return SAVE._know;
+  const ST = SAVE.staff, n = ST.n, cnt = new Uint16Array(n), comp = new Uint16Array(n), pts = new Float32Array(n);
+  if (hasKnow()) for (let i = 0; i < n; i++) for (let k = ST.knowAt[i]; k < ST.knowAt[i + 1]; k++) {
+    const v = ST.knowVal[k]; if (v < KNOW_MIN) continue;
+    cnt[i]++; if (v >= 100) comp[i]++; pts[i] += KNOW_WEIGHT[knowWord(v)] || 0;
+  }
+  return (SAVE._know = { cnt, comp, pts });
+}
+function knowLevel(i, nat) { const ST = SAVE.staff; for (let k = ST.knowAt[i]; k < ST.knowAt[i + 1]; k++) if (ST.knowNat[k] === nat) return ST.knowVal[k]; return 0; }
+const knowTxt = i => { const d = knowData(); return `${d.cnt[i]} nation${d.cnt[i] === 1 ? "" : "s"}` + (d.comp[i] ? ` · ${d.comp[i]} complete` : ""); };
+const knowShort = (i, m) => sKnow(i).filter(x => x[1] >= KNOW_MIN).slice(0, m).map(([n, v]) => knowNation(n) + (v >= 100 ? " ✓" : "")).join(", ");
+// percentile (0-100) of each person's value within the pool; ties share the middle
+function poolPct(pool, f) {
+  const v = pool.map(f).sort((a, b) => a - b), n = v.length, out = new Map();
+  const lowerBound = x => { let lo = 0, hi = n; while (lo < hi) { const m = (lo + hi) >> 1; if (v[m] < x) lo = m + 1; else hi = m; } return lo; };
+  const upperBound = x => { let lo = 0, hi = n; while (lo < hi) { const m = (lo + hi) >> 1; if (v[m] <= x) lo = m + 1; else hi = m; } return lo; };
+  pool.forEach(i => { const x = f(i), a = lowerBound(x), b = upperBound(x); out.set(i, n ? (a + (b - a) / 2) / n * 100 : 0); });
+  return out;
+}
+
+// the side panel's box: every nation he knows, any level
+function knowPanelHtml(i) {
+  if (!hasKnow()) return `<h4>Scouting knowledge</h4><p class="small muted">Load your save again (Data) to see which nations he knows.</p>`;
+  const l = sKnow(i), d = knowData();
+  if (!l.length) return `<h4>Scouting knowledge</h4><p class="small muted">The save lists no nations for him.</p>`;
+  return `<h4>Scouting knowledge <small class="muted">${d.cnt[i]} at Average or better${d.comp[i] ? ` · ${d.comp[i]} complete` : ""} · ${l.length} in all</small></h4>
+    <div class="whyst">${l.map(([n, v]) => `<div class="mrow"><span class="mlab">${esc(knowNation(n))}</span><span class="mval">${esc(knowWord(v))}</span><span class="mtrack"><span style="width:${v}%;background:${v >= KNOW_MIN ? heat(v) : "var(--line2)"}"></span></span><span class="mpct">${v}</span></div>`).join("")}</div>
+    <p class="small muted">Knowledge out of 100 as the save keeps it (FM shows it as a word). Nations at Average or better count towards his total.</p>`;
+}
+
+// ---------- Staff > Scout knowledge: scouts ranked by scouting ability and nation knowledge together ----------
+function renderScoutKnowledge() {
+  const tab = "Know", role = staffRoleOf(tab), roles = STAFF_TAB[tab][2], who = staffWho(), d = staffData(), kd = knowData();
+  let h = `<div class="setsbar"><span class="setctl"><label for="sRoleSel" class="small muted">Rate them as</label><select id="sRoleSel">${roles.map(r => `<option ${r === role ? "selected" : ""}>${esc(r)}</option>`).join("")}</select>
+    <label for="sWho" class="small muted">Who</label><select id="sWho">${Object.entries(STAFF_WHO).map(([k, l]) => `<option value="${k}" ${who === k ? "selected" : ""}>${esc(l)}</option>`).join("")}</select></span></div>`;
+  if (!hasKnow()) return h + `<section class="panel"><h3>Load your save once more</h3><p class="muted">This save was loaded before Scout Lab read scouting knowledge. Load it again (<button class="linkbtn" data-act="datapage">Data</button>) and every scout's nations appear here.</p></section>`;
+  const rat = staffRating(role), pool = staffPool(role, who).filter(i => !isNaN(rat[i]));
+  const pr = poolPct(pool, i => rat[i]), pk = poolPct(pool, i => kd.pts[i]);
+  const over = new Map(pool.map(i => [i, KNOW_MIX.rating * pr.get(i) + KNOW_MIX.know * pk.get(i)]));
+  pool.sort((a, b) => over.get(b) - over.get(a) || rat[b] - rat[a]);
+  const rank = new Map(pool.map((i, k) => [i, k + 1]));
+  // nations anyone here knows, for the "must know" filter
+  const natN = new Map(); pool.forEach(i => sKnow(i).forEach(([n, v]) => { if (v >= KNOW_MIN) natN.set(n, (natN.get(n) || 0) + 1); }));
+  const nat = S.sKNat != null && natN.has(S.sKNat) ? S.sKNat : null;
+  let rows = staffFilter(pool); if (nat != null) rows = rows.filter(i => knowLevel(i, nat) >= KNOW_MIN);
+  h += `<p class="small muted rolehow"><b>Overall</b> (out of 100) = ${KNOW_MIX.rating * 100}% his ${esc(role.toLowerCase())} rating + ${KNOW_MIX.know * 100}% his nation knowledge, each judged against the ${pool.length.toLocaleString()} people here. Knowledge points: each nation at Average or better counts (Complete 1, Very Good 0.8, Good 0.6, Average 0.4). This score is only used on this tab; the Scouts tab still rates scouting ability alone.</p>`;
+  const extra = `<label class="fl"><span class="small muted">Must know (Average or better)</span><select id="sKNat"><option value="">Any nation</option>${[...natN].sort((a, b) => knowNation(a[0]).localeCompare(knowNation(b[0]))).map(([n, c]) => `<option value="${n}" ${n === nat ? "selected" : ""}>${esc(knowNation(n))} (${c.toLocaleString()})</option>`).join("")}</select></label>`;
+  h += staffFiltersHtml(extra);
+  const mineIn = pool.filter(i => d.mine.has(i)), myBest = mineIn[0], best = rows[0];
+  const most = [...rows].sort((a, b) => kd.cnt[b] - kd.cnt[a] || kd.pts[b] - kd.pts[a] || rat[b] - rat[a]);
+  h += `<section class="tiles">${[["People shown", rows.length.toLocaleString()], ["Best overall", best != null ? `${Math.round(over.get(best))} · ${SAVE.staff.name[best]}` : "–"],
+    ["Most nations", most[0] != null ? `${kd.cnt[most[0]]} · ${SAVE.staff.name[most[0]]}` : "–"], ["Your best", myBest != null ? `${Math.round(over.get(myBest))} · #${rank.get(myBest)}` : "Nobody in this job"]]
+    .map(([l, v]) => `<div class="tile"><span class="tv">${esc(v)}</span><span class="tl">${esc(l)}</span></div>`).join("")}</section>`;
+  if (mineIn.length) h += `<section><div class="sh"><h3>Your ${esc(rolePlural(role))}</h3><span class="muted small">overall rank among ${pool.length.toLocaleString()}</span></div><div class="mylist">${mineIn.slice(0, 8).map(i => knowRow(i, rat, over, rank)).join("")}</div></section>`;
+  h += `<section><div class="sh"><h3>Best ${esc(rolePlural(role))}: ability and knowledge${nat != null ? " · know " + esc(knowNation(nat)) : ""}</h3><span class="muted small">overall out of 100</span></div><div class="cards">${rows.slice(0, 5).map(i => `<button class="card" data-sid="${i}"><span class="rank">#${rank.get(i)}</span><span class="cname">${esc(SAVE.staff.name[i])}</span>
+      <span class="cmeta">${esc(isFreeStaff(i) ? staffJobName(i) : sClub(i))} · ${sAge(i) ?? "?"} · ${esc(staffJobName(i))}</span>
+      <span class="cscore">${Math.round(over.get(i))}<small>/100 · rating ${rat[i].toFixed(1)}</small></span>
+      <span class="cmeta">${esc(knowTxt(i))}: ${esc(knowShort(i, 4)) || "none"}</span>
+      <span class="ctags">${isFreeStaff(i) ? `<span class="tag good">Free agent</span>` : `<span class="tag">${esc(sWage(i))}</span>`}${d.mine.has(i) ? `<span class="tag good">Your club</span>` : ""}</span></button>`).join("") || `<p class="muted">Nobody matches the filters.</p>`}</div></section>`;
+  h += `<section><div class="sh"><h3>Quick picks</h3><span class="muted small">from the people shown</span></div><div class="tiers">
+    <div class="tier"><h4>Most nations known</h4>${most.slice(0, 5).map(i => knowRow(i, rat, over, rank)).join("") || `<p class="muted small">Nobody.</p>`}</div>
+    <div class="tier"><h4>Most complete nations</h4>${[...rows].sort((a, b) => kd.comp[b] - kd.comp[a] || kd.cnt[b] - kd.cnt[a] || rat[b] - rat[a]).slice(0, 5).map(i => knowRow(i, rat, over, rank)).join("") || `<p class="muted small">Nobody.</p>`}</div>
+    <div class="tier"><h4>Best overall aged 40 or under</h4>${rows.filter(i => sAge(i) != null && sAge(i) <= 40).slice(0, 5).map(i => knowRow(i, rat, over, rank)).join("") || `<p class="muted small">Nobody.</p>`}</div>
+    <div class="tier"><h4>Free agents (no club to pay)</h4>${rows.filter(isFreeStaff).slice(0, 5).map(i => knowRow(i, rat, over, rank)).join("") || `<p class="muted small">${who === "emp" ? "Free agents are hidden: set Who to include them." : "No free agent here."}</p>`}</div></div></section>`;
+  h += `<section class="panel tablepanel">${knowTable(rows, rat, over, rank, nat)}</section>`;
+  return h;
+}
+function knowRow(i, rat, over, rank) {
+  return `<button class="trow" data-sid="${i}"><span class="tn">${esc(SAVE.staff.name[i])}${isFreeStaff(i) ? `<span class="inf fa">free</span>` : ""}</span><span class="tm">${esc(isFreeStaff(i) ? staffJobName(i) : sClub(i))} · ${sAge(i) ?? "?"} · #${rank.get(i)} · ${esc(knowTxt(i))} · rating ${rat[i].toFixed(1)}</span><b>${Math.round(over.get(i))}</b></button>`;
+}
+function knowTable(rows, rat, over, rank, nat) {
+  const ss = staffSort(), k = ss.k, dir = ss.d, kd = knowData();
+  const val = (i, c) => c === "overall" ? over.get(i) : c === "rating" ? rat[i] : c === "know" ? kd.cnt[i] + kd.pts[i] / 1000 : c === "comp" ? kd.comp[i] : c === "nat" ? (nat != null ? knowLevel(i, nat) : 0)
+    : c === "name" ? SAVE.staff.name[i] : c === "club" ? sClub(i) : c === "age" ? sAge(i) : c === "wage" ? (isNaN(SAVE.staff.wage[i]) ? null : SAVE.staff.wage[i]) : c === "end" ? SAVE.staff.cEnd[i] || null : c === "job" ? staffJobName(i) : sAttr(i, c);
+  const sorted = [...rows].sort((a, b) => { const x = val(a, k), y = val(b, k); if (typeof x === "string" || typeof y === "string") return dir * -String(x ?? "").localeCompare(String(y ?? "")); return dir * ((x ?? -1e9) - (y ?? -1e9)); });
+  const lim = S.sShowAll ? 1000 : 50, shown = sorted.slice(0, lim);
+  const th = (c, l, cls = "", title = "") => `<th class="${cls} ${k === c ? "sorted" : ""}" data-ssort="${c}"${title ? ` data-tip="${esc(title)}"` : ""}><button>${esc(l)}${k === c ? (dir < 0 ? " ↓" : " ↑") : ""}</button></th>`;
+  let s = `<div class="tscroll"><table class="heat stafft"><thead><tr><th class="num">#</th>${th("name", "Name", "left")}${th("job", "Job", "left")}${th("age", "Age", "num")}${th("wage", "Wage", "num")}${th("end", "Contract", "num", "When his contract ends")}`
+    + th("overall", "Overall", "num strong", "Scouting rating and nation knowledge together, out of 100") + th("rating", "Rating", "num", "Scouting rating out of 20") + th("know", "Nations", "num", "Nations he knows at Average or better")
+    + th("comp", "Complete", "num", "Nations he knows completely") + (nat != null ? th("nat", knowNation(nat), "num", "His knowledge of " + knowNation(nat) + " (0-100)") : "") + `<th class="left">Knows best</th></tr></thead><tbody>`;
+  shown.forEach(i => {
+    s += `<tr data-sid="${i}" class="${S.sSel === i ? "rsel" : ""}"><td class="num muted">${rank.get(i)}</td><td class="left pl"><span class="pn">${esc(SAVE.staff.name[i])}${staffData().mine.has(i) ? `<span class="inf">yours</span>` : ""}${isFreeStaff(i) ? `<span class="inf fa">free</span>` : ""}</span><span class="pc">${esc(sClub(i))}</span></td>
+      <td class="left small">${esc(staffJobName(i))}</td><td class="num">${sAge(i) ?? "–"}</td><td class="num">${esc(sWage(i).replace(" p/w", ""))}</td><td class="num small">${SAVE.staff.cEnd[i] ? sDate(SAVE.staff.cEnd[i]).getUTCFullYear() : "–"}</td>
+      <td class="num strong hc" style="background:${heat(over.get(i))}">${Math.round(over.get(i))}</td><td class="num" title="${esc(bandTxt(rat[i]))}">${rat[i].toFixed(1)}</td><td class="num">${kd.cnt[i]}</td><td class="num">${kd.comp[i] || "–"}</td>
+      ${nat != null ? `<td class="num" title="${esc(knowWord(knowLevel(i, nat)))}">${knowLevel(i, nat)}</td>` : ""}<td class="left small">${esc(knowShort(i, 5)) || "–"}</td></tr>`;
+  });
+  s += `</tbody></table></div>`;
+  if (sorted.length > 50) s += `<button class="ghost more" data-act="sshowall">${S.sShowAll ? "Show top 50" : sorted.length > 1000 ? `Show top 1,000 of ${sorted.length.toLocaleString()}` : `Show all ${sorted.length.toLocaleString()}`}</button>`;
+  return s;
 }
 
 </script>

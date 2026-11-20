@@ -26,7 +26,7 @@ Start here when a request names a tab or a part of the screen. All paths are und
 | Scouting (wonderkids, targets, contracts, shortlist) | `app/34-scouting.js` | `css/05-scouting-review-learn.css` |
 | Scouting: Compare (any players side by side) | `app/47-compare.js` | `css/05-scouting-review-learn.css` |
 | Scouting: Upgrades (better players for each slot of your tactic) | `app/48-upgrades.js` | `css/05-scouting-review-learn.css` |
-| Staff | `app/30-staff.js`, staff review in `app/37-staff-review-similar.js` | `css/03-sections-tiles.css` |
+| Staff (incl. Scout knowledge tab: scouts by ability + nations known) | `app/30-staff.js`, staff review in `app/37-staff-review-similar.js`, scouting knowledge in `app/52-staff-knowledge.js` | `css/03-sections-tiles.css` |
 | All data | `app/26-all-data.js`, `app/27-stat-type-scores.js` | `css/09-all-data.css` |
 | Stats and Attr views: position tabs, main table, top 5, scatter | `app/18-render.js`, `app/17-charts.js` | `css/01-layout-topbar.css`, `css/02-table-scatter-drawer.css` |
 | Player side panel (opens when a player is clicked) | `app/24-player-drawer.js` | `css/02-table-scatter-drawer.css` |
@@ -104,6 +104,7 @@ Everything the tool does, one feature per file. All files share one scope, so a 
 | `src/app/49-nations.js` | Nation names for the save's nation numbers (FM27 order), `saveNat(i)`: used by the profile, All data and Contract watch | 40 | 4 KB |
 | `src/app/50-opp-lineups.js` | Opponent line-ups from the save's team sheets (`SAVE.matches.lu`): shape in and out of possession, likely XI with IP/OOP roles, game by game, and line-up-based changes (max 2, advice that keeps your roles first) and OIs for Next opponent and the Brief | 105 | 12 KB |
 | `src/app/51-opp-gameplan.js` | Game plan for Next opponent and the Brief: back 3, 2 or 4 in possession and what to do, mentality guide, opposition instructions by role, where the space is, weaknesses to check in FM, in-match checklist with their usual subs | 108 | 11 KB |
+| `src/app/52-staff-knowledge.js` | Scouting knowledge (nations each staff member knows, 0-100, words in `KNOW_WORDS`): the Staff › Scout knowledge tab (overall = scout rating + knowledge, must-know-nation filter, quick picks), the Nations column on Scouts, and the panel's full nation list | 107 | 12 KB |
 
 ## FM save reader (src/save-reader)
 
@@ -118,7 +119,7 @@ Reads .fm save files. These files are one block of code split into pieces: 02 op
 | `src/save-reader/05-players.js` | Player records | 162 | 10 KB |
 | `src/save-reader/06-team-totals-matches.js` | Team totals, the season's matches (for Data Hub), team sheets of every match FM keeps in full (both teams: who played where, IP/OOP roles and out-of-possession positions), and your upcoming games from the inbox | 174 | 13 KB |
 | `src/save-reader/07-season-stats.js` | Season statistics and archived past seasons | 191 | 10 KB |
-| `src/save-reader/08-staff.js` | Staff: coaches, medical, recruitment, directors | 272 | 22 KB |
+| `src/save-reader/08-staff.js` | Staff: coaches, medical, recruitment, directors; each person's scouting knowledge (nation + 0-100, `knowAt`/`knowNat`/`knowVal`) | 289 | 24 KB |
 | `src/save-reader/09-public-api.js` | What the reader hands to the app (keeps only CA 100+ players and your whole club: `compactPlayers`, `MIN_CA`), and the Scout Lab table format | 219 | 19 KB |
 
 ## Built-in example data (src/data)
