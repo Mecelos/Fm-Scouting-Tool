@@ -294,7 +294,7 @@ function renderMatches(main) {
   const tab = MX_TABS.some(x => x[0] === S.mxTab) ? S.mxTab : "brief";
   if (!TSNAPS && DB.db) tsnapList().then(() => { if (S.mode === "matches") render(); });
   main.innerHTML = `<section class="homehead"><div><h2>Matches</h2><p class="muted">${esc(B.D.comp ? B.D.comp.name : "")} · ${B.comp.length} competitive games</p></div>${learnToggle()}</section>` +
-    (tab === "brief" ? mxBrief(B) : tab === "diag" ? mxDiagnose(B) : tab === "last" ? mxLast(B) : tab === "results" ? mxResults(B) : tab === "opp" ? mxOpp(B) : mxChanges(B));
+    (tab === "brief" ? mxBrief(B) : tab === "diag" ? mxDiagnose(B) : tab === "last" ? mxLast(B) : tab === "results" ? mxResults(B) : tab === "opp" ? mxOpp(B) : mxChanges(B)) + ((tab === "last" || tab === "results") && typeof planReviewHtml === "function" ? planReviewHtml(B) : "");
   renderSaveNote();
   if (S.sel != null && S.adCtx) inAdCtx(() => openPlayer(panelScore(), S.sel, true));
 }

@@ -205,6 +205,7 @@ async function loadSaveFile(opts) {
     if (!opts.keepPage) { S.dataPage = false; S.guide = false; S.mode = "home"; S.adCtx = null; window.scrollTo(0, 0); }   // straight to the one-page report (a save loaded by the folder watcher keeps your page)
     render();
     if (DB.db) { await keepSave(); await saveClubLeagues(); try { await snapTake(); } catch (e) { } try { await tsnapTake(); } catch (e) { } }
+    try { if (typeof planTake === "function") planTake(); } catch (e) { }   // keep the game plan for the next game (56-plan-review)
     await saveDatasets();
     render();
     if (CLOUD.db && CLOUD.assets && S.cloudAuto !== false) cloudUpload();

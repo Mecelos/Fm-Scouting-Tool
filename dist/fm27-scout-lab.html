@@ -9712,6 +9712,7 @@ async function loadSaveFile(opts) {
     if (!opts.keepPage) { S.dataPage = false; S.guide = false; S.mode = "home"; S.adCtx = null; window.scrollTo(0, 0); }   // straight to the one-page report (a save loaded by the folder watcher keeps your page)
     render();
     if (DB.db) { await keepSave(); await saveClubLeagues(); try { await snapTake(); } catch (e) { } try { await tsnapTake(); } catch (e) { } }
+    try { if (typeof planTake === "function") planTake(); } catch (e) { }   // keep the game plan for the next game (56-plan-review)
     await saveDatasets();
     render();
     if (CLOUD.db && CLOUD.assets && S.cloudAuto !== false) cloudUpload();
@@ -13667,7 +13668,7 @@ function renderMatches(main) {
   const tab = MX_TABS.some(x => x[0] === S.mxTab) ? S.mxTab : "brief";
   if (!TSNAPS && DB.db) tsnapList().then(() => { if (S.mode === "matches") render(); });
   main.innerHTML = `<section class="homehead"><div><h2>Matches</h2><p class="muted">${esc(B.D.comp ? B.D.comp.name : "")} · ${B.comp.length} competitive games</p></div>${learnToggle()}</section>` +
-    (tab === "brief" ? mxBrief(B) : tab === "diag" ? mxDiagnose(B) : tab === "last" ? mxLast(B) : tab === "results" ? mxResults(B) : tab === "opp" ? mxOpp(B) : mxChanges(B));
+    (tab === "brief" ? mxBrief(B) : tab === "diag" ? mxDiagnose(B) : tab === "last" ? mxLast(B) : tab === "results" ? mxResults(B) : tab === "opp" ? mxOpp(B) : mxChanges(B)) + ((tab === "last" || tab === "results") && typeof planReviewHtml === "function" ? planReviewHtml(B) : "");
   renderSaveNote();
   if (S.sel != null && S.adCtx) inAdCtx(() => openPlayer(panelScore(), S.sel, true));
 }
@@ -15099,6 +15100,8 @@ function knowCoverageHtml() {
   const ix = []; for (let i = 0; i < SAVE.n; i++) if (SAVE.ca[i] > 0 && SAVE.nation[i] >= 0) ix.push(i);
   ix.sort((a, b) => SAVE.ca[b] - SAVE.ca[a]);
   const tally = new Map(); ix.slice(0, KNOW_TOP_PLAYERS).forEach(i => tally.set(SAVE.nation[i], (tally.get(SAVE.nation[i]) || 0) + 1));
+  // nations of your shortlisted players count extra: you want reliable reports on them
+  const slNat = new Map(); if (typeof SL !== "undefined") { const ux = saveUidIndex(); SL.forEach(x => { const i = ux.get(x.uid); if (i != null && SAVE.nation[i] >= 0) slNat.set(SAVE.nation[i], (slNat.get(SAVE.nation[i]) || 0) + 1); }); }
   const key = [...tally.entries()].sort((a, b) => b[1] - a[1]).slice(0, KNOW_KEY_NATIONS);
   const gaps = key.filter(([n]) => (best.get(n) || 0) < KNOW_GOOD);
   const covered = [...best.entries()].filter(([, v]) => v >= KNOW_GOOD).sort((a, b) => b[1] - a[1]);
@@ -15114,6 +15117,7 @@ function knowCoverageHtml() {
   return `<section><div class="sh"><h3>Scouting coverage</h3><span class="muted small">your ${scouts.length} scout${scouts.length > 1 ? "s" : ""} against the ${key.length} nations most of the save's best ${KNOW_TOP_PLAYERS.toLocaleString()} players come from</span></div>
     <div class="panel"><p class="readbox ${gaps.length ? "warn" : "good"}">${verdict}</p>
     <p class="small"><b>Key nations</b> <span class="muted">(green Very Good or better, amber Average to Good, red nobody)</span><br>${key.map(([n]) => chip([n, best.get(n) || 0])).join(" ")}</p>
+    ${knowAssignHtml(scouts, key, gaps, slNat, best)}
     ${gaps.length ? `<h4>Who would fill the gaps</h4>${fills.length ? `<ul class="why">${clubFill.concat(freeFill).map(who).join("")}</ul>` : `<p class="small muted">No scout in the save knows these nations well.</p>`}` : ""}
     <p class="small muted">All nations your scouts know well (${covered.length}): ${covered.map(([n]) => esc(knowNation(n))).join(", ") || "none"}. Click a scout for his full list.</p></div></section>`;
 }
@@ -15136,6 +15140,23 @@ function staffTiersHtml(lists, row, none) {
   const full = lists.filter(([, ix]) => ix.length);
   if (!full.length) return `<p class="muted small">${none}</p>`;
   return `<div class="tiers">${full.map(([h, ix]) => `<div class="tier"><h4>${esc(h)}</h4>${ix.slice(0, 5).map(row).join("")}</div>`).join("")}</div>`;
+}
+
+// where to send each of your scouts: the gaps first (scouts who settle abroad best), then nations your shortlist comes from
+function knowAssignHtml(scouts, key, gaps, slNat, best) {
+  const ada = i => sAttr(i, "adaptability") || 0, used = new Set(), out = [];
+  const want = gaps.map(([n, c]) => [n, c + 5 * (slNat.get(n) || 0)]).sort((a, b) => b[1] - a[1]);
+  want.forEach(([n]) => { const s = scouts.filter(i => !used.has(i)).sort((a, b) => ada(b) - ada(a) || knowLevel(b, n) - knowLevel(a, n))[0]; if (s == null) return; used.add(s);
+    out.push([s, n, `nobody at your club knows it well${slNat.get(n) ? `, and ${slNat.get(n)} of your shortlist ${slNat.get(n) > 1 ? "are" : "is"} from there` : ""}; his Adaptability ${ada(s) || "?"} helps him settle`]); });
+  // the rest: watch a key nation he already knows, shortlist nations first
+  const keyN = key.map(([n, c]) => [n, c + 5 * (slNat.get(n) || 0)]).sort((a, b) => b[1] - a[1]).map(x => x[0]), watched = new Set(out.map(x => x[1]));
+  scouts.filter(i => !used.has(i)).sort((a, b) => ada(b) - ada(a)).forEach(i => {
+    const n = keyN.find(x => !watched.has(x) && knowLevel(i, x) >= KNOW_GOOD) ?? keyN.find(x => !watched.has(x)); if (n == null) return; watched.add(n);
+    out.push([i, n, knowLevel(i, n) >= KNOW_GOOD ? `he already knows it (${knowWord(knowLevel(i, n))}), so his reports there are reliable${slNat.get(n) ? `; ${slNat.get(n)} of your shortlist ${slNat.get(n) > 1 ? "are" : "is"} from there` : ""}` : "a key nation nobody else is covering"]);
+  });
+  if (!out.length) return "";
+  return `<h4>Where to send each scout</h4><ul class="why">${out.map(([i, n, why]) => `<li><button class="linkbtn" data-sid="${i}">${esc(SAVE.staff.name[i])}</button> → <b>${esc(knowNation(n))}</b> <span class="small muted">${why}</span></li>`).join("")}</ul>
+    <p class="small muted">In FM, set each scout's assignment to that country (Recruitment, Scouting). His knowledge of a country grows while he works there.</p>`;
 }
 // ---------- Home > Since your last save: your squad now against the snapshot of your previous save (35-development-planner) ----------
 // who improved, who dropped off (ability and attributes), who arrived, who left, and the squad's value
@@ -15292,6 +15313,43 @@ function scOut() {
       : `<p class="muted small">No young player needs a loan: your prospects are either playing or already out on loan.</p>`}
     <p class="small muted">A young player develops through match minutes: a loan where he starts beats sitting on your bench. In FM, ask for a loan with regular first-team football.</p></section>`;
   return h;
+}
+// ---------- Matches > Did the game plan work? ----------
+// Each time a save is loaded before a game, the game plan for it (how they build, our approach, opposition instructions)
+// is kept in this browser. When a later save holds that match, it is checked: the result, and whether the players
+// we were told to mark or press still scored or set up a goal.
+const PLAN_KEY = "scoutlab-plans", PLAN_MAX = 40;
+function planAll() { try { const v = JSON.parse(localStorage.getItem(PLAN_KEY) || "[]"); return Array.isArray(v) ? v : []; } catch (e) { return []; } }
+function planSave(l) { try { localStorage.setItem(PLAN_KEY, JSON.stringify(l.slice(-PLAN_MAX))); } catch (e) { } }
+function planTake() {
+  if (!SAVE || typeof mxNextGame !== "function") return;
+  const B = mxBase(), n = mxNextGame(); if (!B || !n) return;
+  const O = typeof olData === "function" ? olData(B, n.team) : null; if (!O || O.xi.length < 10) return;
+  const m = SAVE.meta.managed && SAVE.meta.managed[0], club = m ? m.club : "";
+  const b = gpBuild(O.xi), ois = gpOIs(O.xi).map(([x, w]) => [x.n, w]);
+  const after = B.rows.length ? Math.max(...B.rows.map(x => B.M.id[x.r])) : 0;
+  const plan = { club, opp: n.team, oppName: n.club >= 0 && SAVE.clubs[n.club] ? SAVE.clubs[n.club] : mxName(B, n.team), date: n.date, after,
+    build: b.three ? "Back 3" : b.two ? "Back 2" : "Back 4", approach: b.three ? "Mid block and counter" : "Press high", ois };
+  planSave(planAll().filter(x => !(x.club === club && x.opp === plan.opp && x.date === plan.date)).concat([plan]));
+}
+function planReviewHtml(B) {
+  const m = SAVE.meta.managed && SAVE.meta.managed[0], club = m ? m.club : "", M = B.M;
+  const done = planAll().filter(p => p.club === club).map(p => {
+    const g = B.rows.filter(x => x.opp === p.opp && M.id[x.r] > p.after).sort((a, b) => M.id[a.r] - M.id[b.r])[0];
+    if (!g) return null;
+    const names = new Set(p.ois.map(o => o[0])), hurt = [];
+    g.goals.filter(x => !x.ours).forEach(x => { if (names.has(x.by)) hurt.push(`${x.by} scored`); if (x.as && names.has(x.as)) hurt.push(`${x.as} set one up`); });
+    const verdict = g.res === "W" && !hurt.length ? ["Worked", "good"] : g.res === "L" ? ["Didn't work", "bad"] : hurt.length ? ["Partly", "warn"] : ["Held up", ""];
+    return { p, g, hurt, verdict };
+  }).filter(Boolean).reverse();
+  const head = `<section class="panel"><div class="ph"><h3>Did the game plan work?</h3><span class="small muted">games after Scout Lab gave you a plan (kept in this browser)</span></div>`;
+  if (!done.length) return head + `<p class="small muted">Nothing to check yet. Load your save before a game (the plan is kept), play it, then load the later save: the result and whether the players you marked or pressed still hurt you appear here.</p></section>`;
+  const W = done.filter(x => x.g.res === "W").length, D = done.filter(x => x.g.res === "D").length, L = done.filter(x => x.g.res === "L").length, hurtN = done.filter(x => x.hurt.length).length;
+  const sum = `<p class="readbox">After ${done.length} plan${done.length > 1 ? "s" : ""}: <b>W${W} D${D} L${L}</b>. The players given opposition instructions scored or set up a goal in ${hurtN} of ${done.length} game${done.length > 1 ? "s" : ""}.${done.length >= 3 && hurtN / done.length >= 0.5 ? " The instructions aren't stopping them often enough: check they were set, and try Tight marking instead of pressing on their best attacker." : ""}</p>`;
+  return head + sum + `<div class="tscroll"><table class="gtable"><thead><tr><th>Game</th><th>Result</th><th>The plan</th><th>Players targeted</th><th>Verdict</th></tr></thead><tbody>${done.slice(0, 12).map(({ p, g, hurt, verdict }) =>
+    `<tr><td>${g.home ? "v" : "at"} ${esc(p.oppName)} <span class="small muted">${esc(g.comp)}</span></td><td><b class="${mxResCls(g.res)}">${g.res} ${g.gf}–${g.ga}</b></td><td class="small">${esc(p.build)} → ${esc(p.approach.toLowerCase())}</td>
+     <td class="small">${p.ois.length ? p.ois.map(([n, w]) => `${esc(n)} <span class="muted">(${esc(w.toLowerCase())})</span>`).join(", ") : "–"}${hurt.length ? `<br><span class="bad">${hurt.map(esc).join("; ")}</span>` : ""}</td><td><span class="tag ${verdict[1]}">${verdict[0]}</span></td></tr>`).join("")}</tbody></table></div>
+    <p class="small muted">Scout Lab can't see whether you actually set the instructions in FM, so read this as "games where you had the plan".</p></section>`;
 }
 
 </script>

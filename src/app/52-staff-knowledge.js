@@ -117,6 +117,8 @@ function knowCoverageHtml() {
   const ix = []; for (let i = 0; i < SAVE.n; i++) if (SAVE.ca[i] > 0 && SAVE.nation[i] >= 0) ix.push(i);
   ix.sort((a, b) => SAVE.ca[b] - SAVE.ca[a]);
   const tally = new Map(); ix.slice(0, KNOW_TOP_PLAYERS).forEach(i => tally.set(SAVE.nation[i], (tally.get(SAVE.nation[i]) || 0) + 1));
+  // nations of your shortlisted players count extra: you want reliable reports on them
+  const slNat = new Map(); if (typeof SL !== "undefined") { const ux = saveUidIndex(); SL.forEach(x => { const i = ux.get(x.uid); if (i != null && SAVE.nation[i] >= 0) slNat.set(SAVE.nation[i], (slNat.get(SAVE.nation[i]) || 0) + 1); }); }
   const key = [...tally.entries()].sort((a, b) => b[1] - a[1]).slice(0, KNOW_KEY_NATIONS);
   const gaps = key.filter(([n]) => (best.get(n) || 0) < KNOW_GOOD);
   const covered = [...best.entries()].filter(([, v]) => v >= KNOW_GOOD).sort((a, b) => b[1] - a[1]);
@@ -132,6 +134,7 @@ function knowCoverageHtml() {
   return `<section><div class="sh"><h3>Scouting coverage</h3><span class="muted small">your ${scouts.length} scout${scouts.length > 1 ? "s" : ""} against the ${key.length} nations most of the save's best ${KNOW_TOP_PLAYERS.toLocaleString()} players come from</span></div>
     <div class="panel"><p class="readbox ${gaps.length ? "warn" : "good"}">${verdict}</p>
     <p class="small"><b>Key nations</b> <span class="muted">(green Very Good or better, amber Average to Good, red nobody)</span><br>${key.map(([n]) => chip([n, best.get(n) || 0])).join(" ")}</p>
+    ${knowAssignHtml(scouts, key, gaps, slNat, best)}
     ${gaps.length ? `<h4>Who would fill the gaps</h4>${fills.length ? `<ul class="why">${clubFill.concat(freeFill).map(who).join("")}</ul>` : `<p class="small muted">No scout in the save knows these nations well.</p>`}` : ""}
     <p class="small muted">All nations your scouts know well (${covered.length}): ${covered.map(([n]) => esc(knowNation(n))).join(", ") || "none"}. Click a scout for his full list.</p></div></section>`;
 }
@@ -154,4 +157,21 @@ function staffTiersHtml(lists, row, none) {
   const full = lists.filter(([, ix]) => ix.length);
   if (!full.length) return `<p class="muted small">${none}</p>`;
   return `<div class="tiers">${full.map(([h, ix]) => `<div class="tier"><h4>${esc(h)}</h4>${ix.slice(0, 5).map(row).join("")}</div>`).join("")}</div>`;
+}
+
+// where to send each of your scouts: the gaps first (scouts who settle abroad best), then nations your shortlist comes from
+function knowAssignHtml(scouts, key, gaps, slNat, best) {
+  const ada = i => sAttr(i, "adaptability") || 0, used = new Set(), out = [];
+  const want = gaps.map(([n, c]) => [n, c + 5 * (slNat.get(n) || 0)]).sort((a, b) => b[1] - a[1]);
+  want.forEach(([n]) => { const s = scouts.filter(i => !used.has(i)).sort((a, b) => ada(b) - ada(a) || knowLevel(b, n) - knowLevel(a, n))[0]; if (s == null) return; used.add(s);
+    out.push([s, n, `nobody at your club knows it well${slNat.get(n) ? `, and ${slNat.get(n)} of your shortlist ${slNat.get(n) > 1 ? "are" : "is"} from there` : ""}; his Adaptability ${ada(s) || "?"} helps him settle`]); });
+  // the rest: watch a key nation he already knows, shortlist nations first
+  const keyN = key.map(([n, c]) => [n, c + 5 * (slNat.get(n) || 0)]).sort((a, b) => b[1] - a[1]).map(x => x[0]), watched = new Set(out.map(x => x[1]));
+  scouts.filter(i => !used.has(i)).sort((a, b) => ada(b) - ada(a)).forEach(i => {
+    const n = keyN.find(x => !watched.has(x) && knowLevel(i, x) >= KNOW_GOOD) ?? keyN.find(x => !watched.has(x)); if (n == null) return; watched.add(n);
+    out.push([i, n, knowLevel(i, n) >= KNOW_GOOD ? `he already knows it (${knowWord(knowLevel(i, n))}), so his reports there are reliable${slNat.get(n) ? `; ${slNat.get(n)} of your shortlist ${slNat.get(n) > 1 ? "are" : "is"} from there` : ""}` : "a key nation nobody else is covering"]);
+  });
+  if (!out.length) return "";
+  return `<h4>Where to send each scout</h4><ul class="why">${out.map(([i, n, why]) => `<li><button class="linkbtn" data-sid="${i}">${esc(SAVE.staff.name[i])}</button> → <b>${esc(knowNation(n))}</b> <span class="small muted">${why}</span></li>`).join("")}</ul>
+    <p class="small muted">In FM, set each scout's assignment to that country (Recruitment, Scouting). His knowledge of a country grows while he works there.</p>`;
 }

@@ -76,14 +76,14 @@ Everything the tool does, one feature per file. All files share one scope, so a 
 | `src/app/21-suggested-tactic.js` | Suggested tactic (My squad > Tactic) | 487 | 52 KB |
 | `src/app/22-defensive-shape.js` | Out-of-possession shape: every formation scored as a defensive shape | 343 | 42 KB |
 | `src/app/23-guide.js` | Guide page | 212 | 35 KB |
-| `src/app/24-player-drawer.js` | Player panel: full-window profile (FM-style banner, three columns), back button, attribute grid | 209 | 21 KB |
-| `src/app/25-save-loading.js` | Loading an FM save (.fm) into every tab; each club's league from the save (`saveLeague`: country from the club's nation, division from its league matches) | 268 | 22 KB |
+| `src/app/24-player-drawer.js` | Player panel: full-window profile (FM-style banner, three columns), back button, attribute grid | 221 | 22 KB |
+| `src/app/25-save-loading.js` | Loading an FM save (.fm) into every tab; each club's league from the save (`saveLeague`: country from the club's nation, division from its league matches) | 287 | 24 KB |
 | `src/app/26-all-data.js` | All data: every player in one filterable table | 407 | 38 KB |
 | `src/app/27-stat-type-scores.js` | Stat-type scores (percentile ranks, 0-100) | 278 | 24 KB |
 | `src/app/28-past-seasons.js` | Past seasons | 138 | 12 KB |
 | `src/app/29-cloud-copy.js` | Cloud copy of the loaded save on claude.ai | 170 | 12 KB |
-| `src/app/30-staff.js` | Staff pages | 400 | 51 KB |
-| `src/app/31-import-events-boot.js` | File import, click/keyboard events, app start-up | 245 | 21 KB |
+| `src/app/30-staff.js` | Staff pages | 396 | 51 KB |
+| `src/app/31-import-events-boot.js` | File import, click/keyboard events, app start-up | 251 | 22 KB |
 | `src/app/32-my-tactic-reading.js` | My tactic: reading an FM tactic file, shape helpers, player fit | 275 | 36 KB |
 | `src/app/33-my-tactic-analysis.js` | My tactic: analysis, scores, page and events | 328 | 50 KB |
 | `src/app/34-scouting.js` | Scouting: wonderkids, transfer targets, contract watch (other clubs' contracts ending this summer / next / the one after, with CA, age, position, nationality, value filters), shortlist | 258 | 27 KB |
@@ -104,10 +104,11 @@ Everything the tool does, one feature per file. All files share one scope, so a 
 | `src/app/49-nations.js` | Nation names for the save's nation numbers (FM27 order), `saveNat(i)`: used by the profile, All data and Contract watch | 35 | 4 KB |
 | `src/app/50-opp-lineups.js` | Opponent line-ups from the save's team sheets (`SAVE.matches.lu`): shape in and out of possession, likely XI with IP/OOP roles, game by game, and line-up-based changes (max 2, advice that keeps your roles first) and OIs for Next opponent and the Brief | 105 | 12 KB |
 | `src/app/51-opp-gameplan.js` | Game plan for Next opponent and the Brief: back 3, 2 or 4 in possession and what to do, mentality guide, opposition instructions by role, where the space is, weaknesses to check in FM, in-match checklist with their usual subs | 120 | 11 KB |
-| `src/app/52-staff-knowledge.js` | Scouting knowledge (nations each staff member knows, 0-100, words in `KNOW_WORDS`): Staff › Scout knowledge tab (overall = scout rating + knowledge, must-know-nation filter, quick picks), Nations column on Scouts, the staff panel's nation list, My staff › Scouting coverage (key nations, gaps, who fills them) and the player panel's "your scouts know his nation" tag; `staffTiersHtml` (short lists that hide when empty) | 153 | 18 KB |
-| `src/app/53-home-changes.js` | Home › Since your last save (improved, dropped off, arrived, left, squad value) and Shortlist alerts (contract running out, free agent, value down, ability up or down) | 36 | 4 KB |
+| `src/app/52-staff-knowledge.js` | Scouting knowledge (nations each staff member knows, 0-100, words in `KNOW_WORDS`): Staff › Scout knowledge tab (overall = scout rating + knowledge, must-know-nation filter, quick picks), Nations column on Scouts, the staff panel's nation list, My staff › Scouting coverage (key nations, gaps, where to send each scout, who fills them) and the player panel's "your scouts know his nation" tag; `staffTiersHtml` (short lists that hide when empty) | 177 | 21 KB |
+| `src/app/53-home-changes.js` | Home › Since your last save (improved, dropped off, arrived, left, squad value) and Shortlist alerts (contract running out, free agent, value down, ability up or down) | 62 | 7 KB |
 | `src/app/54-verdicts.js` | "In one line" answer at the top of My squad › Overview, Data Hub › Overview, Matches › Brief/Results, Scouting › Wonderkids/Targets and Staff › My staff (added by `render()` in 18-render.js) | 44 | 5 KB |
 | `src/app/55-sell-loan.js` | Scouting › Sell & loan: who to sell (declining, ageing, fringe, under-performing, contract running out, each with its reasons) and young players to loan out (with the level of club) | 50 | 7 KB |
+| `src/app/56-plan-review.js` | Matches › Last game / Results: "Did the game plan work?" (the plan for your next game is kept in this browser when a save loads, `planTake`; a later save checks the result and whether the targeted players scored or assisted) | 37 | 5 KB |
 
 ## FM save reader (src/save-reader)
 
