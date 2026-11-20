@@ -9,8 +9,8 @@ function openPlayer(sc, pid, silent) {
   const st = strengths(sc, r);
   const fmtS = v => scoreFmt(sc, v);
   const gap = [], g = v => isS ? v.toFixed(1) : v.toFixed(2);
-  if (r.below) gap.push(`${g(r.overall - r.below.overall)} ahead of #${r.rank + 1}`);
-  if (r.above) gap.push(`${g(r.above.overall - r.overall)} behind #${r.rank - 1}`);
+  if (r.below && +g(r.overall - r.below.overall) > 0) gap.push(`${g(r.overall - r.below.overall)} ahead of #${r.rank + 1}`);   // a 0.0 gap says nothing
+  if (r.above && +g(r.above.overall - r.overall) > 0) gap.push(`${g(r.above.overall - r.overall)} behind #${r.rank - 1}`);
   const info = [p.position && p.position !== p.bestPos ? "Positions " + p.position : "", p.pers ? "Personality " + p.pers : "", p.foot ? "Foot " + p.foot : "", p.height ? p.height : "", p.wage ? "Wage " + p.wage : "", p.apps ? p.apps + " apps" : ""].filter(Boolean);
   // FM-style profile banner: name, position, age and club on the left; key numbers and actions; the panel fills the window
   const si = SAVE && p.uid ? saveUidIndex().get(String(p.uid).startsWith("s") ? String(p.uid) : "s" + p.uid) : null;

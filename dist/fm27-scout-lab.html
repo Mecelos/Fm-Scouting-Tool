@@ -9272,8 +9272,8 @@ function openPlayer(sc, pid, silent) {
   const st = strengths(sc, r);
   const fmtS = v => scoreFmt(sc, v);
   const gap = [], g = v => isS ? v.toFixed(1) : v.toFixed(2);
-  if (r.below) gap.push(`${g(r.overall - r.below.overall)} ahead of #${r.rank + 1}`);
-  if (r.above) gap.push(`${g(r.above.overall - r.overall)} behind #${r.rank - 1}`);
+  if (r.below && +g(r.overall - r.below.overall) > 0) gap.push(`${g(r.overall - r.below.overall)} ahead of #${r.rank + 1}`);   // a 0.0 gap says nothing
+  if (r.above && +g(r.above.overall - r.overall) > 0) gap.push(`${g(r.above.overall - r.overall)} behind #${r.rank - 1}`);
   const info = [p.position && p.position !== p.bestPos ? "Positions " + p.position : "", p.pers ? "Personality " + p.pers : "", p.foot ? "Foot " + p.foot : "", p.height ? p.height : "", p.wage ? "Wage " + p.wage : "", p.apps ? p.apps + " apps" : ""].filter(Boolean);
   // FM-style profile banner: name, position, age and club on the left; key numbers and actions; the panel fills the window
   const si = SAVE && p.uid ? saveUidIndex().get(String(p.uid).startsWith("s") ? String(p.uid) : "s" + p.uid) : null;
@@ -11070,11 +11070,11 @@ function renderMyStaff() {
   K.forEach(k => {
     const [v, cls] = staffVerdict(k.pct), b = k.best;
     h += `<tr><td class="left pl"><button class="linkbtn" data-sgo="${esc(k.tab + "|" + k.role)}">${esc(k.role)}</button>${k.n > 1 ? `<span class="pc">${k.n} at the club</span>` : ""}</td>
-      <td class="left">${b != null ? `<button class="linkbtn" data-sid="${b}">${esc(SAVE.staff.name[b])}</button><span class="pc ponly">${k.rat[b].toFixed(1)} ${esc(bandOf(k.rat[b]).w)} · <span class="${cls}">${v}</span></span>` : `<span class="muted">Nobody</span>`}</td>
+      <td class="left">${b != null ? `<button class="linkbtn" data-sid="${b}">${esc(SAVE.staff.name[b])}</button> <span class="small muted">${sAge(b) ?? "?"}</span><span class="pc ponly">${k.rat[b].toFixed(1)} ${esc(bandOf(k.rat[b]).w)} · <span class="${cls}">${v}</span></span>` : `<span class="muted">Nobody</span>`}</td>
       <td class="num hc" style="background:${b != null ? sColor(k.rat[b]) : "transparent"}" title="${b != null ? esc(bandTxt(k.rat[b])) : ""}">${b != null ? `<b>${k.rat[b].toFixed(1)}</b> <small>${esc(bandOf(k.rat[b]).w)}</small>` : "–"}</td><td class="left"><span class="tag ${cls}">${v}</span></td>
       <td class="num small">${b != null ? `#${k.pool.indexOf(b) + 1} of ${k.pool.length.toLocaleString()}` : "–"}</td>
-      <td class="left small">${k.up != null ? `<button class="linkbtn" data-sid="${k.up}">${esc(SAVE.staff.name[k.up])}</button> ${k.rat[k.up].toFixed(1)} · ${esc(sClub(k.up))} · ${esc(sWage(k.up))}` : b != null ? `<span class="muted">Nobody</span>` : ""}</td>
-      <td class="left small">${k.fa != null ? `<button class="linkbtn" data-sid="${k.fa}">${esc(SAVE.staff.name[k.fa])}</button> ${k.rat[k.fa].toFixed(1)} · ${sAge(k.fa) ?? "?"} yrs` : `<span class="muted">Nobody</span>`}</td></tr>`;
+      <td class="left small">${k.up != null ? `<button class="linkbtn" data-sid="${k.up}">${esc(SAVE.staff.name[k.up])}</button> ${k.rat[k.up].toFixed(1)} · ${esc(sClub(k.up))} · ${sAge(k.up) ?? "?"} yrs · ${esc(sWage(k.up))}` : b != null ? `<span class="muted">Nobody</span>` : ""}</td>
+      <td class="left small">${k.fa != null ? `<button class="linkbtn" data-sid="${k.fa}">${esc(SAVE.staff.name[k.fa])}</button> ${k.rat[k.fa].toFixed(1)} · free agent · ${sAge(k.fa) ?? "?"} yrs` : `<span class="muted">Nobody</span>`}</td></tr>`;
   });
   h += `</tbody></table></div></div><p class="small muted">Verdict from his rank among everyone in that job: top 10% Strong, top 30% Solid, top 60% Could upgrade, below that Priority upgrade. Tap a job for the full list.</p></section>`;
   // everyone at the club
@@ -14854,6 +14854,7 @@ function gpOIs(X) {
     .forEach(x => add(x, "Tight marking", `${esc(x.ip)} attacking your ${gpYourSide(x.code)} side; mark him so his overlaps and crosses don't come free`));
   X.filter(x => x.code === "ST").forEach(x => {
     if (x.ip === "Target Forward") add(x, "Tight marking", "Target Forward: long balls go to him, so don't let him win them unchallenged");
+    else if (x.ip === "Poacher") add(x, "Tight marking", "Poacher: he waits on your last defender, so marking him doesn't drag a centre-back out of your line");
     else if (["Deep-Lying Forward", "False Nine"].includes(x.ip)) add(x, "Trigger press only", `${esc(x.ip)}: he drops deep to link play. Press him there, but don't tight mark: it drags a centre-back out of your line`);
   });
   return out;
@@ -14871,6 +14872,16 @@ function gpSpace(X) {
   return [...new Set(out)].slice(0, 3);
 }
 
+// a manager who took over recently: [name, start date] (his team sheets may be mixed with his predecessor's)
+const GP_NEW_DAYS = 60;
+function gpNewManager(club) {
+  if (club == null || club < 0 || !hasStaff() || !SAVE.meta || !SAVE.meta.gameDate) return null;
+  const ST = SAVE.staff, now = new Date(SAVE.meta.gameDate + "T00:00:00Z"); let best = null;
+  for (let i = 0; i < ST.n; i++) if (ST.clubIdx[i] === club && ST.job[i] === 16 && ST.cStart[i] && (best == null || ST.cStart[i] > ST.cStart[best])) best = i;
+  if (best == null) return null;
+  const d = sDate(ST.cStart[best]); if (!d || (now - d) / 864e5 > GP_NEW_DAYS || d > now) return null;
+  return [ST.name[best], sDateTxt(ST.cStart[best])];
+}
 // who they usually bring on
 function gpSubs(G) {
   const c = new Map(); G.forEach(g => (g.subs || []).forEach(n => c.set(n, (c.get(n) || 0) + 1)));
@@ -14896,12 +14907,13 @@ function gpHtml(B, t, brief) {
     : `<p><b>Back 4 in possession</b> <span class="small muted">(${n4} of ${nG} games)</span>: ${b.why}.</p>
        <ul class="why"><li>Two centre-backs and a DM are easy to trap: <b>press high</b> and push your line up.</li>
        <li>Watch the gap between their full-back and centre-back for your runners.</li></ul>`;
-  const ois = gpOIs(X), space = gpSpace(X), subs = gpSubs(G);
+  const ois = gpOIs(X), space = gpSpace(X), subs = gpSubs(G), nm8 = gpNewManager(O.club);
   const oiRows = ois.length ? `<div class="tscroll"><table class="gtable narrow"><thead><tr><th>Player</th><th>Instruction</th><th>Why</th></tr></thead><tbody>
     ${ois.map(([x, w, y]) => `<tr><td>${nm(x)} <span class="small muted">${esc(x.slot)}</span></td><td><b>${w}</b></td><td class="small">${y}</td></tr>`).join("")}</tbody></table></div>
-    <p class="small muted">Leave inverted full-backs and wing-backs alone (they come inside, not forward) and leave a running striker to your centre-backs.</p>`
+    <p class="small muted">Leave inverted full-backs and wing-backs alone (they come inside, not forward) and leave Channel and Centre Forwards to your centre-backs.</p>`
     : `<p class="small muted">No obvious targets in their roles: use the opposition instructions FM's report suggests.</p>`;
   return `<section class="panel${brief ? " mxbrief" : ""}"><div class="ph"><h3>Game plan against ${esc(name)}</h3><span class="small muted">6 checks, from their last ${G.length} team sheets</span></div>
+    ${nm8 ? `<p class="readbox warn small"><b>New manager:</b> ${esc(nm8[0])} took over on ${esc(nm8[1])}. Some of these ${G.length} team sheets may be from the previous manager, so trust the most recent games most and check his tactic in FM's report.</p>` : ""}
     <h4>1. How they build</h4>${build}
     <h4>2. Their mentality <span class="small muted">(check the manager card in FM's report)</span></h4>
     <ul class="why"><li><b>Cautious / Defensive:</b> they won't come at you. Mid block, keep the ball, be patient; a deep block just hands them a 0–0.</li>

@@ -39,6 +39,7 @@ function gpOIs(X) {
     .forEach(x => add(x, "Tight marking", `${esc(x.ip)} attacking your ${gpYourSide(x.code)} side; mark him so his overlaps and crosses don't come free`));
   X.filter(x => x.code === "ST").forEach(x => {
     if (x.ip === "Target Forward") add(x, "Tight marking", "Target Forward: long balls go to him, so don't let him win them unchallenged");
+    else if (x.ip === "Poacher") add(x, "Tight marking", "Poacher: he waits on your last defender, so marking him doesn't drag a centre-back out of your line");
     else if (["Deep-Lying Forward", "False Nine"].includes(x.ip)) add(x, "Trigger press only", `${esc(x.ip)}: he drops deep to link play. Press him there, but don't tight mark: it drags a centre-back out of your line`);
   });
   return out;
@@ -56,6 +57,16 @@ function gpSpace(X) {
   return [...new Set(out)].slice(0, 3);
 }
 
+// a manager who took over recently: [name, start date] (his team sheets may be mixed with his predecessor's)
+const GP_NEW_DAYS = 60;
+function gpNewManager(club) {
+  if (club == null || club < 0 || !hasStaff() || !SAVE.meta || !SAVE.meta.gameDate) return null;
+  const ST = SAVE.staff, now = new Date(SAVE.meta.gameDate + "T00:00:00Z"); let best = null;
+  for (let i = 0; i < ST.n; i++) if (ST.clubIdx[i] === club && ST.job[i] === 16 && ST.cStart[i] && (best == null || ST.cStart[i] > ST.cStart[best])) best = i;
+  if (best == null) return null;
+  const d = sDate(ST.cStart[best]); if (!d || (now - d) / 864e5 > GP_NEW_DAYS || d > now) return null;
+  return [ST.name[best], sDateTxt(ST.cStart[best])];
+}
 // who they usually bring on
 function gpSubs(G) {
   const c = new Map(); G.forEach(g => (g.subs || []).forEach(n => c.set(n, (c.get(n) || 0) + 1)));
@@ -81,12 +92,13 @@ function gpHtml(B, t, brief) {
     : `<p><b>Back 4 in possession</b> <span class="small muted">(${n4} of ${nG} games)</span>: ${b.why}.</p>
        <ul class="why"><li>Two centre-backs and a DM are easy to trap: <b>press high</b> and push your line up.</li>
        <li>Watch the gap between their full-back and centre-back for your runners.</li></ul>`;
-  const ois = gpOIs(X), space = gpSpace(X), subs = gpSubs(G);
+  const ois = gpOIs(X), space = gpSpace(X), subs = gpSubs(G), nm8 = gpNewManager(O.club);
   const oiRows = ois.length ? `<div class="tscroll"><table class="gtable narrow"><thead><tr><th>Player</th><th>Instruction</th><th>Why</th></tr></thead><tbody>
     ${ois.map(([x, w, y]) => `<tr><td>${nm(x)} <span class="small muted">${esc(x.slot)}</span></td><td><b>${w}</b></td><td class="small">${y}</td></tr>`).join("")}</tbody></table></div>
-    <p class="small muted">Leave inverted full-backs and wing-backs alone (they come inside, not forward) and leave a running striker to your centre-backs.</p>`
+    <p class="small muted">Leave inverted full-backs and wing-backs alone (they come inside, not forward) and leave Channel and Centre Forwards to your centre-backs.</p>`
     : `<p class="small muted">No obvious targets in their roles: use the opposition instructions FM's report suggests.</p>`;
   return `<section class="panel${brief ? " mxbrief" : ""}"><div class="ph"><h3>Game plan against ${esc(name)}</h3><span class="small muted">6 checks, from their last ${G.length} team sheets</span></div>
+    ${nm8 ? `<p class="readbox warn small"><b>New manager:</b> ${esc(nm8[0])} took over on ${esc(nm8[1])}. Some of these ${G.length} team sheets may be from the previous manager, so trust the most recent games most and check his tactic in FM's report.</p>` : ""}
     <h4>1. How they build</h4>${build}
     <h4>2. Their mentality <span class="small muted">(check the manager card in FM's report)</span></h4>
     <ul class="why"><li><b>Cautious / Defensive:</b> they won't come at you. Mid block, keep the ball, be patient; a deep block just hands them a 0–0.</li>

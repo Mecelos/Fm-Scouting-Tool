@@ -318,11 +318,11 @@ function renderMyStaff() {
   K.forEach(k => {
     const [v, cls] = staffVerdict(k.pct), b = k.best;
     h += `<tr><td class="left pl"><button class="linkbtn" data-sgo="${esc(k.tab + "|" + k.role)}">${esc(k.role)}</button>${k.n > 1 ? `<span class="pc">${k.n} at the club</span>` : ""}</td>
-      <td class="left">${b != null ? `<button class="linkbtn" data-sid="${b}">${esc(SAVE.staff.name[b])}</button><span class="pc ponly">${k.rat[b].toFixed(1)} ${esc(bandOf(k.rat[b]).w)} · <span class="${cls}">${v}</span></span>` : `<span class="muted">Nobody</span>`}</td>
+      <td class="left">${b != null ? `<button class="linkbtn" data-sid="${b}">${esc(SAVE.staff.name[b])}</button> <span class="small muted">${sAge(b) ?? "?"}</span><span class="pc ponly">${k.rat[b].toFixed(1)} ${esc(bandOf(k.rat[b]).w)} · <span class="${cls}">${v}</span></span>` : `<span class="muted">Nobody</span>`}</td>
       <td class="num hc" style="background:${b != null ? sColor(k.rat[b]) : "transparent"}" title="${b != null ? esc(bandTxt(k.rat[b])) : ""}">${b != null ? `<b>${k.rat[b].toFixed(1)}</b> <small>${esc(bandOf(k.rat[b]).w)}</small>` : "–"}</td><td class="left"><span class="tag ${cls}">${v}</span></td>
       <td class="num small">${b != null ? `#${k.pool.indexOf(b) + 1} of ${k.pool.length.toLocaleString()}` : "–"}</td>
-      <td class="left small">${k.up != null ? `<button class="linkbtn" data-sid="${k.up}">${esc(SAVE.staff.name[k.up])}</button> ${k.rat[k.up].toFixed(1)} · ${esc(sClub(k.up))} · ${esc(sWage(k.up))}` : b != null ? `<span class="muted">Nobody</span>` : ""}</td>
-      <td class="left small">${k.fa != null ? `<button class="linkbtn" data-sid="${k.fa}">${esc(SAVE.staff.name[k.fa])}</button> ${k.rat[k.fa].toFixed(1)} · ${sAge(k.fa) ?? "?"} yrs` : `<span class="muted">Nobody</span>`}</td></tr>`;
+      <td class="left small">${k.up != null ? `<button class="linkbtn" data-sid="${k.up}">${esc(SAVE.staff.name[k.up])}</button> ${k.rat[k.up].toFixed(1)} · ${esc(sClub(k.up))} · ${sAge(k.up) ?? "?"} yrs · ${esc(sWage(k.up))}` : b != null ? `<span class="muted">Nobody</span>` : ""}</td>
+      <td class="left small">${k.fa != null ? `<button class="linkbtn" data-sid="${k.fa}">${esc(SAVE.staff.name[k.fa])}</button> ${k.rat[k.fa].toFixed(1)} · free agent · ${sAge(k.fa) ?? "?"} yrs` : `<span class="muted">Nobody</span>`}</td></tr>`;
   });
   h += `</tbody></table></div></div><p class="small muted">Verdict from his rank among everyone in that job: top 10% Strong, top 30% Solid, top 60% Could upgrade, below that Priority upgrade. Tap a job for the full list.</p></section>`;
   // everyone at the club
