@@ -141,6 +141,7 @@ function renderHome(main) {
   const acts = homeActions(H, Q, Cn);
   if (acts.length) h += `<section class="panel homeplan"><div class="ph"><h3>Your action plan</h3><span class="small muted">the ${acts.length === 1 ? "thing" : acts.length + " things"} most worth doing now</span></div><ol class="planlist">${acts.map(a => `<li><div><b>${esc(a.what)}</b><span class="small">${esc(a.why)}</span></div>${a.btn}</li>`).join("")}</ol></section>`;
   h += homeChangesHtml();
+  h += homeSlAlertsHtml();
   // 1 how are we doing
   if (H) {
     const best = H.secs.filter(s => s.s != null).sort((a, b) => b.s - a.s), top = best[0], bot = best[best.length - 1];

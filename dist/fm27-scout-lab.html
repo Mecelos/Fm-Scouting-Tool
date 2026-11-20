@@ -162,6 +162,8 @@ table.heat { border-collapse: separate; border-spacing: 0; width: 100%; font-siz
 .heat th.cat { max-width: 90px; }
 .heat th.cat button { white-space: normal; line-height: 1.15; }
 .heat td { padding: 3px 6px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+body.compact .heat td { padding-block: 1px; font-size: 12.5px; } body.compact .heat th button { padding-block: 3px; } body.compact .heat td.pl .pc { display: none; }
+body.compact .adtable td { height: 22px; line-height: 22px; font-size: 12.5px; }
 .heat .num { text-align: right; } .heat .left { text-align: left; }
 .heat td.strong { font-weight: 700; color: var(--accent); }
 .heat td.hc { color: #f2f4f7; border-bottom-color: var(--bg); border-right: 2px solid var(--panel); min-width: 54px; }
@@ -276,6 +278,9 @@ table.heat { border-collapse: separate; border-spacing: 0; width: 100%; font-siz
   #drawer.pfull .pclub { grid-column: 1 / -1; grid-row: 2; align-items: flex-start; text-align: left; border-left: 0; padding: 0; }
   .pgrid { grid-template-columns: minmax(0, 1fr); padding: 12px 12px 0; } .pgrid > .pcol:nth-child(3) { grid-column: auto; } .pwide { margin: 12px 12px 0; }
 }
+.pjump { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; margin-top: 8px; padding-top: 6px; border-top: 1px solid var(--line); }
+.pjb { flex: 0 0 auto; border: 1px solid var(--line); background: var(--bg); color: var(--ink2); border-radius: 999px; padding: 2px 10px; font-size: 12px; white-space: nowrap; } .pjb:hover, .pjb:focus-visible { border-color: var(--accent); color: var(--ink); }
+@media print { .pjump { display: none; } }
 /* ---- v3: sections, tiles, tags, needs, tiers, stacked bars, waterfall, h2h, spread ---- */
 :root { --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s0: #4a5466; --good: #4fc27a; --bad: #e66767; }
 .sh { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; margin-bottom: 8px; }
@@ -909,6 +914,7 @@ details.rolehow > p { margin: 6px 0 0; }
     <button class="guidebtn learnbtn" data-mode="learn" aria-pressed="false">Learn the basics</button>
     <button class="guidebtn" id="guideBtn" data-act="guide" aria-pressed="false">Guide to Scout Lab</button>
     <label class="uiscale" title="Interface scale, like FM27's: smaller fits more on screen"><span class="small muted">Scale</span><select id="uiScale"><option value="80">80%</option><option value="90">90%</option><option value="100">100%</option><option value="110">110%</option><option value="125">125%</option></select></label>
+    <label class="uiscale" title="Tighter table rows: more players on screen"><input type="checkbox" id="uiCompact"><span class="small">Compact rows</span></label>
   </div></details>
   <span id="savenote"></span>
 </div></header>
@@ -6972,7 +6978,7 @@ const S = {
   spos: "Overview", squadRole: {}, formation: "4-4-2", lineups: {}, pickBy: "both", tStyle: "auto", tBack: "any", tForm: "best", pRole: null, saveRoles: {}, saveKind: "league", saveWho: "played", adPos: "all", adQ: "", adF: {}, adSort: null, adGroups: ["info", "tot", "p90", "pct"], adTypes: null, adColor: true, dataPage: false, saveBusy: null, saveErr: "",
   stab: "Mine", sRole: {}, sWho: "job", sAge: 0, sQ: "", sF: {}, sWords: false, sNotMine: false, sBands: null, sSorts: {}, sSel: null, attrF: {},
 };
-const PREF_KEYS = ["mode", "pos", "minMins", "maxAge", "league", "active", "spos", "squadRole", "formation", "lineups", "pickBy", "tStyle", "tBack", "tForm", "tOop", "saveRoles", "saveKind", "saveWho", "adPos", "adQ", "adF", "adSort", "adGroups", "adTypes", "adColor", "adSeason", "cloudAuto", "stab", "sRole", "sWho", "sAge", "sF", "sWords", "sNotMine", "sBands", "sSorts", "attrF", "faOnly", "adFA", "uiScale", "scTab", "scF", "hubTab", "hubF", "learn", "mxTab"];
+const PREF_KEYS = ["mode", "pos", "minMins", "maxAge", "league", "active", "spos", "squadRole", "formation", "lineups", "pickBy", "tStyle", "tBack", "tForm", "tOop", "saveRoles", "saveKind", "saveWho", "adPos", "adQ", "adF", "adSort", "adGroups", "adTypes", "adColor", "adSeason", "cloudAuto", "stab", "sRole", "sWho", "sAge", "sF", "sWords", "sNotMine", "sBands", "sSorts", "attrF", "faOnly", "adFA", "uiScale", "compact", "scTab", "scF", "hubTab", "hubF", "learn", "mxTab"];
 function loadPrefs() { try { const p = JSON.parse(localStorage.getItem("scoutlab-prefs") || "{}"); PREF_KEYS.forEach(k => { if (k in p) S[k] = p[k]; }); } catch (e) { } }
 function savePrefs() { try { const p = {}; PREF_KEYS.forEach(k => p[k] = S[k]); localStorage.setItem("scoutlab-prefs", JSON.stringify(p)); } catch (e) { } }
 const DB = {
@@ -9399,6 +9405,7 @@ function openPlayer(sc, pid, silent) {
   dr.innerHTML = head0 + `<div class="pgrid"><div class="pcol">${c1}</div><div class="pcol">${c2}</div><div class="pcol">${c3}</div></div>${sim ? `<div class="pwide">${sim}</div>` : ""}`;
   dr.classList.add("pfull");
   dr.hidden = false; $("#scrim").hidden = false;
+  pJumpBar(dr);
   if (!silent) dr.scrollTop = 0;
   document.querySelectorAll("tr[data-pid]").forEach(tr => tr.classList.toggle("rsel", +tr.dataset.pid === pid));
 }
@@ -9487,6 +9494,17 @@ function positionMapHtml(p) {
     <div class="legend pfleg">${POS_FIT.map(([lo, w, k], j) => `<span><i class="pdot ${k} static"></i>${w}${j ? ` ${Math.max(1, lo)}–${POS_FIT[j - 1][0] - 1}` : " 18–20"}</span>`).join("")}</div></div>`;
 }
 
+
+// jump links in the panel's sticky header: one per section heading, so you can go straight to Stats, Seasons, Similar…
+function pJumpBar(dr) {
+  const hero = dr.querySelector(".phero"); if (!hero) return;
+  const hs = [...dr.querySelectorAll(".pgrid h4, .pwide h3, .pwide h4")].filter(h => h.textContent.trim()); if (hs.length < 4) return;
+  const nav = document.createElement("nav"); nav.className = "pjump"; nav.setAttribute("aria-label", "Jump to a section");
+  hs.forEach((h, k) => { const b = document.createElement("button"); b.type = "button"; b.className = "pjb"; b.textContent = h.textContent.trim().replace(/\s+/g, " ").slice(0, 32); b.dataset.pj = k; nav.appendChild(b); });
+  nav.addEventListener("click", e => { const b = e.target.closest(".pjb"); if (!b) return; const h = hs[+b.dataset.pj];
+    dr.scrollTo({ top: dr.scrollTop + h.getBoundingClientRect().top - dr.getBoundingClientRect().top - hero.offsetHeight - 8, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" }); });
+  hero.appendChild(nav);
+}
 // ---------- FM save (.fm): every player of the save, into every tab ----------
 // The save is read in this browser (a Web Worker when allowed) by the bundled reader, a JavaScript port of
 // fmsave (MIT). It becomes one compact table (typed arrays by column, 200,000+ players); each position tab
@@ -11036,7 +11054,7 @@ function staffCards(top, rat, role, rank) {
   }).join("")}</div><div class="legend stackleg"><span><i class="sw s1"></i>Main attribute (×3)</span><span><i class="sw s2"></i>Related attributes</span><span><i class="sw s3"></i>People skills</span></div>`;
 }
 function staffTable(rows, rat, role, attrs, rank) {
-  const ss = staffSort(), k = ss.k, dir = ss.d, words = !!S.sWords, kn = S.stab === "Scouts" && hasKnow();
+  const ss = staffSort(), k = ss.k, dir = ss.d, words = !!S.sWords, kn = S.stab === "Scouts" && hasKnow(); if (wideScreen()) attrs = attrs.concat(SA_ORDER.filter(a => !attrs.includes(a)));
   const val = (i, c) => c === "know" ? knowData().cnt[i] + knowData().pts[i] / 1000 : c === "rating" ? rat[i] : c === "name" ? SAVE.staff.name[i] : c === "club" ? sClub(i) : c === "age" ? sAge(i) : c === "wage" ? (isNaN(SAVE.staff.wage[i]) ? null : SAVE.staff.wage[i]) : c === "end" ? SAVE.staff.cEnd[i] || null : c === "job" ? staffJobName(i) : sAttr(i, c);
   const sorted = [...rows].sort((a, b) => { const x = val(a, k), y = val(b, k); if (typeof x === "string" || typeof y === "string") return dir * -String(x ?? "").localeCompare(String(y ?? "")); return dir * ((x ?? -1e9) - (y ?? -1e9)); });
   const lim = S.sShowAll ? 1000 : 50, shown = sorted.slice(0, lim);
@@ -11320,10 +11338,14 @@ const fitSoon = ms => { clearTimeout(fitTimer); fitTimer = setTimeout(fitLayout,
 addEventListener("resize", () => fitSoon(150));
 // tables are sometimes drawn a moment after the page: re-measure whenever the page's content changes
 try { new MutationObserver(muts => { if (muts.some(m => m.type === "childList" && (m.target.id === "main" || (m.target.closest && m.target.closest(".tscroll, .adwrap, .tsec, .panel")) || m.addedNodes.length > 2))) fitSoon(60); }).observe(document.getElementById("main") || document.body, { childList: true, subtree: true }); } catch (e) { }
-function applyScale() { requestAnimationFrame(() => fitLayout()); const v = +(S.uiScale || 100); try { document.body.style.zoom = v === 100 ? "" : v / 100; } catch (e) { } const sel = document.getElementById("uiScale"); if (sel) sel.value = String(v); }
+function applyScale() { requestAnimationFrame(() => fitLayout()); const v = +(S.uiScale || 100); try { document.body.style.zoom = v === 100 ? "" : v / 100; } catch (e) { } const sel = document.getElementById("uiScale"); if (sel) sel.value = String(v);
+  document.body.classList.toggle("compact", !!S.compact); const cb = document.getElementById("uiCompact"); if (cb) cb.checked = !!S.compact; }
+// very wide windows (after the interface scale) can show every column a table has
+const wideScreen = () => innerWidth / (+(S.uiScale || 100) / 100) >= 2000;
 document.addEventListener("change", e => {
   const t = e.target;
   if (t.id === "uiScale") { S.uiScale = +t.value; savePrefs(); applyScale(); return; }
+  if (t.id === "uiCompact") { S.compact = t.checked; savePrefs(); applyScale(); return; }
   if (t.id === "myClubIn" && SAVE) { const v = t.value.trim(); if (v && saveClubChoices().includes(v)) setMyClub(v).then(() => render()); return; }
   if (t.id === "roleSel") { const a = activeDs(); a.role = t.value; S.pRole = null; saveDatasets(); render(); }
   else if (t.id === "drawerRole") { setPanelRole(t.value); }
@@ -12014,7 +12036,7 @@ document.addEventListener("drop", e => { const l = e.target.closest && e.target.
 tacLoadStore();
 
 // ---------- Scouting: wonderkids, transfer targets for your weak spots, contract watch, shortlist ----------
-const SC_TABS = [["kids", "Wonderkids"], ["targets", "Transfer targets"], ["contracts", "Contract watch"], ["dev", "Development"], ["short", "Shortlist"], ["up", "Upgrades"], ["cmp", "Compare"]];
+const SC_TABS = [["kids", "Wonderkids"], ["targets", "Transfer targets"], ["out", "Sell & loan"], ["contracts", "Contract watch"], ["dev", "Development"], ["short", "Shortlist"], ["up", "Upgrades"], ["cmp", "Compare"]];
 const SC_NEED = { GK: 1, FB: 2, CB: 2, DM: 1, CM: 2, AM: 1, Wingers: 2, ST: 1 };
 const scF = () => (S.scF = S.scF || {});
 const scGameDate = () => new Date(((SAVE && SAVE.meta.gameDate) || "2026-08-01") + "T12:00:00Z");
@@ -12250,7 +12272,7 @@ function renderScout(main) {
   closeDrawer(true);
   if (!SAVE) { main.innerHTML = `<section class="panel addpanel"><h3>Scouting needs your save</h3><p class="muted">Wonderkids, transfer targets and contracts are read from your FM27 save (ability, potential, values and contracts are all in it).</p><button class="primary" data-act="datapage">Load your save</button></section>`; return; }
   const t = SC_TABS.some(x => x[0] === S.scTab) ? S.scTab : "kids";
-  main.innerHTML = t === "kids" ? scKids() : t === "targets" ? scTargets() : t === "contracts" ? scContracts() : t === "dev" ? scDev() : t === "cmp" ? scCompare() : t === "up" ? scUpgrades() : scShort();
+  main.innerHTML = t === "kids" ? scKids() : t === "targets" ? scTargets() : t === "contracts" ? scContracts() : t === "dev" ? scDev() : t === "cmp" ? scCompare() : t === "up" ? scUpgrades() : t === "out" ? scOut() : scShort();
   renderSaveNote();
   if (S.sel != null && S.adCtx) inAdCtx(() => openPlayer(panelScore(), S.sel, true));
 }
@@ -13309,6 +13331,7 @@ function renderHome(main) {
   const acts = homeActions(H, Q, Cn);
   if (acts.length) h += `<section class="panel homeplan"><div class="ph"><h3>Your action plan</h3><span class="small muted">the ${acts.length === 1 ? "thing" : acts.length + " things"} most worth doing now</span></div><ol class="planlist">${acts.map(a => `<li><div><b>${esc(a.what)}</b><span class="small">${esc(a.why)}</span></div>${a.btn}</li>`).join("")}</ol></section>`;
   h += homeChangesHtml();
+  h += homeSlAlertsHtml();
   // 1 how are we doing
   if (H) {
     const best = H.secs.filter(s => s.s != null).sort((a, b) => b.s - a.s), top = best[0], bot = best[best.length - 1];
@@ -15150,6 +15173,32 @@ function homeChangesHtml() {
       <div><h4>Left</h4>${list(left, x => x.i != null ? `<li>${pl(x.i)} <span class="small muted">now ${esc(SAVE.clubIdx[x.i] >= 0 ? SAVE.clubs[SAVE.clubIdx[x.i]] : "without a club")}</span></li>` : `<li class="small muted">A player no longer in the save</li>`, "Nobody.")}</div>
     </div><p class="small muted">CA = current ability (hidden in FM). Attribute changes are your players' visible attributes, biggest first.</p></section>`;
 }
+
+// ---------- Home > Shortlist alerts: what changed for the players you're watching ----------
+const SLA = { months: 12, valueDrop: 0.2, caUp: 3 };
+function homeSlAlertsHtml() {
+  if (typeof SL === "undefined" || !SL.length || !SAVE || !SAVE.meta) return "";
+  const ux = saveUidIndex(), cur = SAVE.meta.gameDate, m = SAVE.meta.managed && SAVE.meta.managed[0], club = m ? m.club : "";
+  const base = SNAPS ? SNAPS.filter(x => x.club === club && x.gameDate < cur).pop() : null;
+  const bmap = new Map(); if (base) for (let k = 0; k < base.uid.length; k++) bmap.set(base.uid[k], k);
+  const out = [];
+  SL.forEach(x => {
+    const i = ux.get(x.uid);
+    if (i == null) { out.push([x, null, "bad", "no longer in the save (retired or the save's database dropped him)"]); return; }
+    const k = bmap.get(SAVE.uid[i]), why = [];
+    if (SAVE.clubIdx[i] < 0) why.push(["good", "now a <b>free agent</b>: no transfer fee"]);
+    else if (scHasC() && SAVE.cEnd[i]) { const mo = scMonths(SAVE.cEnd[i]); if (mo != null && mo >= 0 && mo <= SLA.months) why.push(["good", `contract ends ${esc(sDateTxt(SAVE.cEnd[i]))}: cheaper now, free soon`]); }
+    if (k != null) {
+      const v0 = base.val[k], v1 = SAVE.value[i];
+      if (v0 === v0 && v1 === v1 && v0 > 0 && v1 < v0 * (1 - SLA.valueDrop)) why.push(["good", `value down ${Math.round((1 - v1 / v0) * 100)}% to ${esc(saveMoney(v1))}`]);
+      if (base.ca[k] > 0 && SAVE.ca[i] > 0) { const d = SAVE.ca[i] - base.ca[k]; if (d >= SLA.caUp) why.push(["good", `improving: <b>+${d} CA</b>`]); else if (d <= -SLA.caUp) why.push(["bad", `getting worse: <b>${d} CA</b>`]); }
+    }
+    if (why.length) out.push([x, i, why.some(w => w[0] === "bad") ? "bad" : "good", why.map(w => w[1]).join("; ")]);
+  });
+  if (!out.length) return "";
+  return `<section class="panel"><div class="ph"><h3>Shortlist alerts</h3><span class="small muted">${out.length} of your ${SL.length} shortlisted player${SL.length > 1 ? "s" : ""}${base ? " · changes since your last save" : ""} · <button class="linkbtn" data-sctab="short">open shortlist</button></span></div>
+    <ul class="why">${out.map(([x, i, cls, t]) => `<li>${i != null ? `<button class="linkbtn" data-sci="${i}">${esc(SAVE.name[i])}</button> <span class="small muted">${esc(SAVE.clubIdx[i] >= 0 ? SAVE.clubs[SAVE.clubIdx[i]] : "no club")}</span>` : `<b>${esc(x.name || "?")}</b>`}: <span class="${cls === "bad" ? "bad" : ""}">${t}</span></li>`).join("")}</ul></section>`;
+}
 // ---------- the answer first: one sentence at the top of the main pages, from what Home and each page already work out ----------
 // My squad › Overview, Data Hub › Overview, Matches › Brief/Results, Scouting › Wonderkids/Targets, Staff › My staff
 function verdictHtml() {
@@ -15193,6 +15242,56 @@ function verdictText() {
     return `Biggest staff gap: <b>${esc(k.role)}</b> (${k.best != null ? `${esc(SAVE.staff.name[k.best])}, ${esc(vw.toLowerCase())}` : "nobody in the job"}).${fix != null ? ` Best fix: <b>${esc(SAVE.staff.name[fix])}</b> (${k.rat[fix].toFixed(1)}, ${esc(isFreeStaff(fix) ? "free agent" : sClub(fix))}).` : ""}`;
   }
   return null;
+}
+// ---------- Scouting > Sell & loan: who to move on (with the reason) and which young players need a loan ----------
+const SELL = { drop: 3, old: 31, fringeShare: 0.2, fringeAge: 24, months: 12 };
+const LOAN = { maxAge: 21, room: 15, minPA: 110, share: 0.25 };
+function scMinsOf(i) { const st = SAVE.stats && SAVE.stats.overall; if (!st) return 0; const r = st.row[i]; const m = r >= 0 ? st.cols.minutes[r] : 0; return m === m ? m : 0; }
+const scGroupName = g => (typeof POS_MANY !== "undefined" && POS_MANY[g]) || g || "?";
+// a player's main group: where he plays this season (Home's squad check), else his best position
+function scMainGroup(i) {
+  const Q = typeof homeSquad === "function" ? homeSquad() : null;
+  if (Q) { if (!Q._byUid) { Q._byUid = new Map(); Q.players.forEach(x => { if (!Q._byUid.has(x.r.p.uid)) Q._byUid.set(x.r.p.uid, x.pos); }); } const g = Q._byUid.get("s" + SAVE.uid[i]); if (g) return g; }
+  return posGroups(savePos().best[i])[0] || scGroupsOf(i)[0];
+}
+// your squad by position group, strongest (CA) first
+function scSquadGroups(mine) { const G = new Map(); mine.forEach(i => { const g = scMainGroup(i); if (!G.has(g)) G.set(g, []); G.get(g).push(i); }); G.forEach(l => l.sort((a, b) => (SAVE.ca[b] || 0) - (SAVE.ca[a] || 0))); return G; }
+function scOut() {
+  const mine = saveManagedIdx(); if (!mine.length) return `<section class="panel"><h3>Sell & loan</h3><p class="muted">Your club wasn't found in this save.</p></section>`;
+  const G = scSquadGroups(mine), maxM = Math.max(1, ...mine.map(scMinsOf));
+  const m = SAVE.meta.managed[0], base = typeof SNAPS !== "undefined" && SNAPS ? SNAPS.filter(x => x.club === m.club && x.gameDate < SAVE.meta.gameDate).pop() : null;
+  if (typeof SNAPS !== "undefined" && !SNAPS && typeof snapList === "function") snapList().then(() => { if (S.mode === "scout" && S.scTab === "out") render(); });
+  const bmap = new Map(); if (base) for (let k = 0; k < base.uid.length; k++) bmap.set(base.uid[k], k);
+  const Q = typeof homeSquad === "function" ? homeSquad() : null, low = new Map((Q ? Q.low : []).map(x => [saveUidIndex().get(x.r.p.uid), x.ov]));
+  const rankIn = i => { const g = scMainGroup(i), l = G.get(g) || []; return [g, l.indexOf(i), l]; };
+  // sell: every reason that applies, weighted
+  const sell = [];
+  mine.forEach(i => {
+    const why = [], age = SAVE.age[i], mins = scMinsOf(i), [g, pos, l] = rankIn(i), need = (SC_NEED[g] || 1);
+    const k = bmap.get(SAVE.uid[i]); if (k != null && base.ca[k] > 0 && SAVE.ca[i] > 0 && SAVE.ca[i] - base.ca[k] <= -SELL.drop) why.push([3, `declining: ${SAVE.ca[i] - base.ca[k]} CA since your last save`]);
+    if (low.has(i)) why.push([3, `rated ${Math.round(low.get(i))}/100 for his position this season`]);
+    if (age >= SELL.old && SAVE.value[i] > 0) why.push([2, `aged ${age}: his value (${saveMoney(SAVE.value[i])}) will only fall`]);
+    if (age >= SELL.fringeAge && mins < maxM * SELL.fringeShare && pos >= need) why.push([2, `fringe player: ${Math.round(mins)} minute${Math.round(mins) === 1 ? "" : "s"}, ${pos} ahead of him in his position`]);
+    if (scHasC() && SAVE.cEnd[i] && age >= SELL.fringeAge) { const mo = scMonths(SAVE.cEnd[i]); if (mo != null && mo >= 0 && mo <= SELL.months && (pos >= need || age >= SELL.old)) why.push([2, `contract ends ${sDateTxt(SAVE.cEnd[i])}: sell now or he leaves for free`]); }
+    const w = why.reduce((s, x) => s + x[0], 0); if (w >= 2) sell.push({ i, g, w, why: why.sort((a, b) => b[0] - a[0]).map(x => x[1]) });
+  });
+  sell.sort((a, b) => b.w - a.w || (SAVE.value[b.i] || 0) - (SAVE.value[a.i] || 0));
+  // loan: young, room to grow, not playing, and someone better ahead of him
+  const loan = mine.filter(i => SAVE.age[i] >= 0 && SAVE.age[i] <= LOAN.maxAge && SAVE.pa[i] >= LOAN.minPA && SAVE.pa[i] - SAVE.ca[i] >= LOAN.room && scMinsOf(i) < maxM * LOAN.share)
+    .map(i => { const [g, pos, l] = rankIn(i); return { i, g, ahead: l.slice(0, Math.max(0, pos)).slice(0, 2) }; }).filter(x => x.ahead.length)
+    .sort((a, b) => (SAVE.pa[b.i] || 0) - (SAVE.pa[a.i] || 0));
+  const level = ca => ca >= 135 ? "a top-flight club where he'd start" : ca >= 110 ? "a second-tier side, or a weaker top-flight club" : ca >= 90 ? "a third-tier side where he plays every week" : "a lower-league or reserve side, for now";
+  const nm = i => `<button class="linkbtn" data-sci="${i}">${esc(SAVE.name[i])}</button>${typeof scStar === "function" ? "" : ""}`;
+  const meta = i => `${SAVE.age[i]} · CA ${SAVE.ca[i] || "–"}${SAVE.pa[i] > 0 ? "/" + SAVE.pa[i] : ""} · ${esc(saveMoney(SAVE.value[i]))} · ${Math.round(scMinsOf(i))} min`;
+  let h = `<section class="panel"><div class="ph"><h3>Who to sell</h3><span class="small muted">${sell.length} player${sell.length === 1 ? "" : "s"} · most reasons first${base ? "" : " · load a later save too and players whose ability is falling are added"}</span></div>
+    ${sell.length ? `<div class="tscroll"><table class="gtable"><thead><tr><th>Player</th><th>Position</th><th>Age · ability · value · minutes</th><th>Why sell</th></tr></thead><tbody>${sell.slice(0, 15).map(x => `<tr><td>${nm(x.i)}</td><td class="small">${esc(scGroupName(x.g))}</td><td class="small muted">${meta(x.i)}</td><td class="small">${x.why.map(esc).join("; ")}</td></tr>`).join("")}</tbody></table></div>`
+      : `<p class="muted small">Nobody stands out: no declining, ageing, fringe or under-performing players.</p>`}
+    <p class="small muted">Check the player's morale and your squad depth in FM before selling. Transfer targets shows who could replace him.</p></section>`;
+  h += `<section class="panel"><div class="ph"><h3>Who to loan out</h3><span class="small muted">aged ${LOAN.maxAge} or under, ${LOAN.room}+ potential still to reach, under ${Math.round(LOAN.share * 100)}% of the minutes your busiest player has had</span></div>
+    ${loan.length ? `<div class="tscroll"><table class="gtable"><thead><tr><th>Player</th><th>Position</th><th>Age · ability · value · minutes</th><th>Ahead of him</th><th>Loan him to</th></tr></thead><tbody>${loan.slice(0, 15).map(x => `<tr><td>${nm(x.i)}</td><td class="small">${esc(scGroupName(x.g))}</td><td class="small muted">${meta(x.i)}</td><td class="small">${x.ahead.map(j => esc(SAVE.name[j])).join(", ")}</td><td class="small">${esc(level(SAVE.ca[x.i]))}</td></tr>`).join("")}</tbody></table></div>`
+      : `<p class="muted small">No young player needs a loan: your prospects are either playing or already out on loan.</p>`}
+    <p class="small muted">A young player develops through match minutes: a loan where he starts beats sitting on your bench. In FM, ask for a loan with regular first-team football.</p></section>`;
+  return h;
 }
 
 </script>

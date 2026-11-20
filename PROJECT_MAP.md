@@ -12,7 +12,7 @@ Start here when a request names a tab or a part of the screen. All paths are und
 | --- | --- | --- |
 | Top bar, navigation buttons, Help menu (Learn, Guide, Scale) | `index.html`, clicks in `app/31-import-events-boot.js` | `css/01-layout-topbar.css` |
 | Search box, and the two page menus on narrow screens | `app/46-search.js` | `css/01-layout-topbar.css` |
-| Home (incl. weekly action plan, ask a question, since your last save) | `app/40-home.js`, since-your-last-save box in `app/53-home-changes.js` | `css/06-home-player-card.css` |
+| Home (incl. weekly action plan, ask a question, since your last save, shortlist alerts) | `app/40-home.js`, since-your-last-save and shortlist alerts in `app/53-home-changes.js` | `css/06-home-player-card.css` |
 | My squad: Overview and position tabs | `app/19-my-squad.js` | `css/04-my-squad.css` |
 | My squad: My tactic | `app/32-my-tactic-reading.js`, `app/33-my-tactic-analysis.js` | `css/08-planner-my-tactic.css` |
 | My squad: Suggested tactic | `app/21-suggested-tactic.js`, `app/22-defensive-shape.js` | `css/04-my-squad.css` |
@@ -23,13 +23,13 @@ Start here when a request names a tab or a part of the screen. All paths are und
 | Matches (results, last game, next opponent, tactic changes) | `app/41-matches.js`, opponent line-ups in `app/50-opp-lineups.js`, 6-step game plan in `app/51-opp-gameplan.js`; next game read from the inbox in `save-reader/06-team-totals-matches.js` (only opponents from your competitions count: `mxNextGame`) | `css/07-data-hub.css` (the `mx…` classes) |
 | Matches: Brief (matchday one-pager) | `app/45-matchday-brief.js` | `css/07-data-hub.css` |
 | Matches: Diagnose and opposition instructions | `app/44-diagnose.js` | `css/03-sections-tiles.css` |
-| Scouting (wonderkids, targets, contracts, shortlist) | `app/34-scouting.js` | `css/05-scouting-review-learn.css` |
+| Scouting (wonderkids, targets, contracts, shortlist, sell & loan) | `app/34-scouting.js`, Sell & loan in `app/55-sell-loan.js` | `css/05-scouting-review-learn.css` |
 | Scouting: Compare (any players side by side) | `app/47-compare.js` | `css/05-scouting-review-learn.css` |
 | Scouting: Upgrades (better players for each slot of your tactic) | `app/48-upgrades.js` | `css/05-scouting-review-learn.css` |
 | Staff (incl. Scout knowledge tab: scouts by ability + nations known) | `app/30-staff.js`, staff review in `app/37-staff-review-similar.js`, scouting knowledge in `app/52-staff-knowledge.js` | `css/03-sections-tiles.css` |
 | All data | `app/26-all-data.js`, `app/27-stat-type-scores.js` | `css/09-all-data.css` |
 | Stats and Attr views: position tabs, main table, top 5, scatter | `app/18-render.js`, `app/17-charts.js` | `css/01-layout-topbar.css`, `css/02-table-scatter-drawer.css` |
-| Player side panel (opens when a player is clicked) | `app/24-player-drawer.js` | `css/02-table-scatter-drawer.css` |
+| Player side panel (opens when a player is clicked; jump bar `pJumpBar`) | `app/24-player-drawer.js` | `css/02-table-scatter-drawer.css` |
 | Player card, traits, similar players (inside the panel) | `app/39-learn-player-card.js`, `app/43-player-traits.js`, `app/37-staff-review-similar.js` | `css/06-home-player-card.css` |
 | Learn | `app/39-learn-player-card.js` | `css/05-scouting-review-learn.css` |
 | Guide | `app/23-guide.js` | `css/03-sections-tiles.css` |
@@ -105,8 +105,9 @@ Everything the tool does, one feature per file. All files share one scope, so a 
 | `src/app/50-opp-lineups.js` | Opponent line-ups from the save's team sheets (`SAVE.matches.lu`): shape in and out of possession, likely XI with IP/OOP roles, game by game, and line-up-based changes (max 2, advice that keeps your roles first) and OIs for Next opponent and the Brief | 105 | 12 KB |
 | `src/app/51-opp-gameplan.js` | Game plan for Next opponent and the Brief: back 3, 2 or 4 in possession and what to do, mentality guide, opposition instructions by role, where the space is, weaknesses to check in FM, in-match checklist with their usual subs | 120 | 11 KB |
 | `src/app/52-staff-knowledge.js` | Scouting knowledge (nations each staff member knows, 0-100, words in `KNOW_WORDS`): Staff › Scout knowledge tab (overall = scout rating + knowledge, must-know-nation filter, quick picks), Nations column on Scouts, the staff panel's nation list, My staff › Scouting coverage (key nations, gaps, who fills them) and the player panel's "your scouts know his nation" tag; `staffTiersHtml` (short lists that hide when empty) | 153 | 18 KB |
-| `src/app/53-home-changes.js` | Home › Since your last save: your squad against the snapshot of your previous save (improved, dropped off, arrived, left, squad value) | 36 | 4 KB |
+| `src/app/53-home-changes.js` | Home › Since your last save (improved, dropped off, arrived, left, squad value) and Shortlist alerts (contract running out, free agent, value down, ability up or down) | 36 | 4 KB |
 | `src/app/54-verdicts.js` | "In one line" answer at the top of My squad › Overview, Data Hub › Overview, Matches › Brief/Results, Scouting › Wonderkids/Targets and Staff › My staff (added by `render()` in 18-render.js) | 44 | 5 KB |
+| `src/app/55-sell-loan.js` | Scouting › Sell & loan: who to sell (declining, ageing, fringe, under-performing, contract running out, each with its reasons) and young players to loan out (with the level of club) | 50 | 7 KB |
 
 ## FM save reader (src/save-reader)
 

@@ -34,3 +34,29 @@ function homeChangesHtml() {
       <div><h4>Left</h4>${list(left, x => x.i != null ? `<li>${pl(x.i)} <span class="small muted">now ${esc(SAVE.clubIdx[x.i] >= 0 ? SAVE.clubs[SAVE.clubIdx[x.i]] : "without a club")}</span></li>` : `<li class="small muted">A player no longer in the save</li>`, "Nobody.")}</div>
     </div><p class="small muted">CA = current ability (hidden in FM). Attribute changes are your players' visible attributes, biggest first.</p></section>`;
 }
+
+// ---------- Home > Shortlist alerts: what changed for the players you're watching ----------
+const SLA = { months: 12, valueDrop: 0.2, caUp: 3 };
+function homeSlAlertsHtml() {
+  if (typeof SL === "undefined" || !SL.length || !SAVE || !SAVE.meta) return "";
+  const ux = saveUidIndex(), cur = SAVE.meta.gameDate, m = SAVE.meta.managed && SAVE.meta.managed[0], club = m ? m.club : "";
+  const base = SNAPS ? SNAPS.filter(x => x.club === club && x.gameDate < cur).pop() : null;
+  const bmap = new Map(); if (base) for (let k = 0; k < base.uid.length; k++) bmap.set(base.uid[k], k);
+  const out = [];
+  SL.forEach(x => {
+    const i = ux.get(x.uid);
+    if (i == null) { out.push([x, null, "bad", "no longer in the save (retired or the save's database dropped him)"]); return; }
+    const k = bmap.get(SAVE.uid[i]), why = [];
+    if (SAVE.clubIdx[i] < 0) why.push(["good", "now a <b>free agent</b>: no transfer fee"]);
+    else if (scHasC() && SAVE.cEnd[i]) { const mo = scMonths(SAVE.cEnd[i]); if (mo != null && mo >= 0 && mo <= SLA.months) why.push(["good", `contract ends ${esc(sDateTxt(SAVE.cEnd[i]))}: cheaper now, free soon`]); }
+    if (k != null) {
+      const v0 = base.val[k], v1 = SAVE.value[i];
+      if (v0 === v0 && v1 === v1 && v0 > 0 && v1 < v0 * (1 - SLA.valueDrop)) why.push(["good", `value down ${Math.round((1 - v1 / v0) * 100)}% to ${esc(saveMoney(v1))}`]);
+      if (base.ca[k] > 0 && SAVE.ca[i] > 0) { const d = SAVE.ca[i] - base.ca[k]; if (d >= SLA.caUp) why.push(["good", `improving: <b>+${d} CA</b>`]); else if (d <= -SLA.caUp) why.push(["bad", `getting worse: <b>${d} CA</b>`]); }
+    }
+    if (why.length) out.push([x, i, why.some(w => w[0] === "bad") ? "bad" : "good", why.map(w => w[1]).join("; ")]);
+  });
+  if (!out.length) return "";
+  return `<section class="panel"><div class="ph"><h3>Shortlist alerts</h3><span class="small muted">${out.length} of your ${SL.length} shortlisted player${SL.length > 1 ? "s" : ""}${base ? " · changes since your last save" : ""} · <button class="linkbtn" data-sctab="short">open shortlist</button></span></div>
+    <ul class="why">${out.map(([x, i, cls, t]) => `<li>${i != null ? `<button class="linkbtn" data-sci="${i}">${esc(SAVE.name[i])}</button> <span class="small muted">${esc(SAVE.clubIdx[i] >= 0 ? SAVE.clubs[SAVE.clubIdx[i]] : "no club")}</span>` : `<b>${esc(x.name || "?")}</b>`}: <span class="${cls === "bad" ? "bad" : ""}">${t}</span></li>`).join("")}</ul></section>`;
+}

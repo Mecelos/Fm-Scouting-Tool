@@ -119,6 +119,7 @@ function openPlayer(sc, pid, silent) {
   dr.innerHTML = head0 + `<div class="pgrid"><div class="pcol">${c1}</div><div class="pcol">${c2}</div><div class="pcol">${c3}</div></div>${sim ? `<div class="pwide">${sim}</div>` : ""}`;
   dr.classList.add("pfull");
   dr.hidden = false; $("#scrim").hidden = false;
+  pJumpBar(dr);
   if (!silent) dr.scrollTop = 0;
   document.querySelectorAll("tr[data-pid]").forEach(tr => tr.classList.toggle("rsel", +tr.dataset.pid === pid));
 }
@@ -207,3 +208,14 @@ function positionMapHtml(p) {
     <div class="legend pfleg">${POS_FIT.map(([lo, w, k], j) => `<span><i class="pdot ${k} static"></i>${w}${j ? ` ${Math.max(1, lo)}–${POS_FIT[j - 1][0] - 1}` : " 18–20"}</span>`).join("")}</div></div>`;
 }
 
+
+// jump links in the panel's sticky header: one per section heading, so you can go straight to Stats, Seasons, Similar…
+function pJumpBar(dr) {
+  const hero = dr.querySelector(".phero"); if (!hero) return;
+  const hs = [...dr.querySelectorAll(".pgrid h4, .pwide h3, .pwide h4")].filter(h => h.textContent.trim()); if (hs.length < 4) return;
+  const nav = document.createElement("nav"); nav.className = "pjump"; nav.setAttribute("aria-label", "Jump to a section");
+  hs.forEach((h, k) => { const b = document.createElement("button"); b.type = "button"; b.className = "pjb"; b.textContent = h.textContent.trim().replace(/\s+/g, " ").slice(0, 32); b.dataset.pj = k; nav.appendChild(b); });
+  nav.addEventListener("click", e => { const b = e.target.closest(".pjb"); if (!b) return; const h = hs[+b.dataset.pj];
+    dr.scrollTo({ top: dr.scrollTop + h.getBoundingClientRect().top - dr.getBoundingClientRect().top - hero.offsetHeight - 8, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" }); });
+  hero.appendChild(nav);
+}

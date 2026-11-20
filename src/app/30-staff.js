@@ -267,7 +267,7 @@ function staffCards(top, rat, role, rank) {
   }).join("")}</div><div class="legend stackleg"><span><i class="sw s1"></i>Main attribute (×3)</span><span><i class="sw s2"></i>Related attributes</span><span><i class="sw s3"></i>People skills</span></div>`;
 }
 function staffTable(rows, rat, role, attrs, rank) {
-  const ss = staffSort(), k = ss.k, dir = ss.d, words = !!S.sWords, kn = S.stab === "Scouts" && hasKnow();
+  const ss = staffSort(), k = ss.k, dir = ss.d, words = !!S.sWords, kn = S.stab === "Scouts" && hasKnow(); if (wideScreen()) attrs = attrs.concat(SA_ORDER.filter(a => !attrs.includes(a)));
   const val = (i, c) => c === "know" ? knowData().cnt[i] + knowData().pts[i] / 1000 : c === "rating" ? rat[i] : c === "name" ? SAVE.staff.name[i] : c === "club" ? sClub(i) : c === "age" ? sAge(i) : c === "wage" ? (isNaN(SAVE.staff.wage[i]) ? null : SAVE.staff.wage[i]) : c === "end" ? SAVE.staff.cEnd[i] || null : c === "job" ? staffJobName(i) : sAttr(i, c);
   const sorted = [...rows].sort((a, b) => { const x = val(a, k), y = val(b, k); if (typeof x === "string" || typeof y === "string") return dir * -String(x ?? "").localeCompare(String(y ?? "")); return dir * ((x ?? -1e9) - (y ?? -1e9)); });
   const lim = S.sShowAll ? 1000 : 50, shown = sorted.slice(0, lim);

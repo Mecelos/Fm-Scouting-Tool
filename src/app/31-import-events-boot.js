@@ -155,10 +155,14 @@ const fitSoon = ms => { clearTimeout(fitTimer); fitTimer = setTimeout(fitLayout,
 addEventListener("resize", () => fitSoon(150));
 // tables are sometimes drawn a moment after the page: re-measure whenever the page's content changes
 try { new MutationObserver(muts => { if (muts.some(m => m.type === "childList" && (m.target.id === "main" || (m.target.closest && m.target.closest(".tscroll, .adwrap, .tsec, .panel")) || m.addedNodes.length > 2))) fitSoon(60); }).observe(document.getElementById("main") || document.body, { childList: true, subtree: true }); } catch (e) { }
-function applyScale() { requestAnimationFrame(() => fitLayout()); const v = +(S.uiScale || 100); try { document.body.style.zoom = v === 100 ? "" : v / 100; } catch (e) { } const sel = document.getElementById("uiScale"); if (sel) sel.value = String(v); }
+function applyScale() { requestAnimationFrame(() => fitLayout()); const v = +(S.uiScale || 100); try { document.body.style.zoom = v === 100 ? "" : v / 100; } catch (e) { } const sel = document.getElementById("uiScale"); if (sel) sel.value = String(v);
+  document.body.classList.toggle("compact", !!S.compact); const cb = document.getElementById("uiCompact"); if (cb) cb.checked = !!S.compact; }
+// very wide windows (after the interface scale) can show every column a table has
+const wideScreen = () => innerWidth / (+(S.uiScale || 100) / 100) >= 2000;
 document.addEventListener("change", e => {
   const t = e.target;
   if (t.id === "uiScale") { S.uiScale = +t.value; savePrefs(); applyScale(); return; }
+  if (t.id === "uiCompact") { S.compact = t.checked; savePrefs(); applyScale(); return; }
   if (t.id === "myClubIn" && SAVE) { const v = t.value.trim(); if (v && saveClubChoices().includes(v)) setMyClub(v).then(() => render()); return; }
   if (t.id === "roleSel") { const a = activeDs(); a.role = t.value; S.pRole = null; saveDatasets(); render(); }
   else if (t.id === "drawerRole") { setPanelRole(t.value); }
