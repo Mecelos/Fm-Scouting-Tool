@@ -6,11 +6,12 @@ function render() {
   const main = $("#main");
   if (S.guide) { closeDrawer(true); main.innerHTML = renderGuide(); window.scrollTo(0, 0); return; }
   if (S.dataPage) { closeDrawer(true); main.innerHTML = renderDataPage(); bindSaveInput(); return; }
-  if (S.mode === "squad") { renderSquad(main); return; }
-  if (S.mode === "staff") { renderStaff(main); return; }
-  if (S.mode === "scout") { renderScout(main); return; }
-  if (S.mode === "hub") { renderHub(main); return; }
-  if (S.mode === "matches") { renderMatches(main); return; }
+  const lead = () => { if (typeof verdictHtml === "function") main.insertAdjacentHTML("afterbegin", verdictHtml()); };   // one-line answer first (54-verdicts)
+  if (S.mode === "squad") { renderSquad(main); lead(); return; }
+  if (S.mode === "staff") { renderStaff(main); lead(); return; }
+  if (S.mode === "scout") { renderScout(main); lead(); return; }
+  if (S.mode === "hub") { renderHub(main); lead(); return; }
+  if (S.mode === "matches") { renderMatches(main); lead(); return; }
   if (S.mode === "home") { renderHome(main); return; }
   if (S.mode === "learn") { renderLearn(main); return; }
   if (S.mode === "all") { closeDrawer(true); main.innerHTML = renderAllData(); bindAllData(); renderSaveNote(); if (S.sel != null && S.adCtx) inAdCtx(() => openPlayer(panelScore(), S.sel, true)); return; }

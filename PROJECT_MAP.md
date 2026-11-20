@@ -20,7 +20,7 @@ Start here when a request names a tab or a part of the screen. All paths are und
 | My squad: Planner | `app/35-development-planner.js` | `css/08-planner-my-tactic.css` |
 | My squad: Season review | `app/36-effectiveness-season-review.js` | `css/05-scouting-review-learn.css` |
 | Data Hub | `app/38-data-hub.js` | `css/07-data-hub.css` |
-| Matches (results, last game, next opponent, tactic changes) | `app/41-matches.js`, opponent line-ups in `app/50-opp-lineups.js`, 6-step game plan in `app/51-opp-gameplan.js`; next game read from the inbox in `save-reader/06-team-totals-matches.js` | `css/07-data-hub.css` (the `mx…` classes) |
+| Matches (results, last game, next opponent, tactic changes) | `app/41-matches.js`, opponent line-ups in `app/50-opp-lineups.js`, 6-step game plan in `app/51-opp-gameplan.js`; next game read from the inbox in `save-reader/06-team-totals-matches.js` (only opponents from your competitions count: `mxNextGame`) | `css/07-data-hub.css` (the `mx…` classes) |
 | Matches: Brief (matchday one-pager) | `app/45-matchday-brief.js` | `css/07-data-hub.css` |
 | Matches: Diagnose and opposition instructions | `app/44-diagnose.js` | `css/03-sections-tiles.css` |
 | Scouting (wonderkids, targets, contracts, shortlist) | `app/34-scouting.js` | `css/05-scouting-review-learn.css` |
@@ -70,7 +70,7 @@ Everything the tool does, one feature per file. All files share one scope, so a 
 | `src/app/15-analytics-state.js` | Shared analytics, app state and browser storage | 130 | 9 KB |
 | `src/app/16-view-helpers-colour.js` | Helpers for the current view, colour scales | 159 | 11 KB |
 | `src/app/17-charts.js` | Charts | 205 | 16 KB |
-| `src/app/18-render.js` | Main page rendering | 261 | 25 KB |
+| `src/app/18-render.js` | Main page rendering | 262 | 25 KB |
 | `src/app/19-my-squad.js` | My squad | 416 | 35 KB |
 | `src/app/20-best-xi.js` | Formation and roles: best XI | 190 | 20 KB |
 | `src/app/21-suggested-tactic.js` | Suggested tactic (My squad > Tactic) | 487 | 52 KB |
@@ -82,7 +82,7 @@ Everything the tool does, one feature per file. All files share one scope, so a 
 | `src/app/27-stat-type-scores.js` | Stat-type scores (percentile ranks, 0-100) | 278 | 24 KB |
 | `src/app/28-past-seasons.js` | Past seasons | 138 | 12 KB |
 | `src/app/29-cloud-copy.js` | Cloud copy of the loaded save on claude.ai | 170 | 12 KB |
-| `src/app/30-staff.js` | Staff pages | 398 | 50 KB |
+| `src/app/30-staff.js` | Staff pages | 400 | 51 KB |
 | `src/app/31-import-events-boot.js` | File import, click/keyboard events, app start-up | 245 | 21 KB |
 | `src/app/32-my-tactic-reading.js` | My tactic: reading an FM tactic file, shape helpers, player fit | 275 | 36 KB |
 | `src/app/33-my-tactic-analysis.js` | My tactic: analysis, scores, page and events | 328 | 50 KB |
@@ -92,8 +92,8 @@ Everything the tool does, one feature per file. All files share one scope, so a 
 | `src/app/37-staff-review-similar.js` | Staff review and Similar players | 194 | 77 KB |
 | `src/app/38-data-hub.js` | Data Hub: team performance against the league | 249 | 33 KB |
 | `src/app/39-learn-player-card.js` | Learn pages, info tips, player card | 138 | 22 KB |
-| `src/app/40-home.js` | Home page, weekly action plan, ask-a-question | 180 | 22 KB |
-| `src/app/41-matches.js` | Matches: results, last-game review, next opponent (opens on your next game, any competition), tactic-change log; shared helpers for the Brief | 303 | 41 KB |
+| `src/app/40-home.js` | Home page, weekly action plan, ask-a-question | 181 | 22 KB |
+| `src/app/41-matches.js` | Matches: results, last-game review, next opponent (opens on your next game, any competition), tactic-change log; shared helpers for the Brief | 311 | 42 KB |
 | `src/app/42-save-folder-export-tactic.js` | Linked save folder (auto-loads the newest save, backups included) and exporting a tactic to FM (.fmf) | 234 | 22 KB |
 | `src/app/43-player-traits.js` | Player traits and their effect on roles | 199 | 25 KB |
 | `src/app/44-diagnose.js` | Diagnose (player, role or system?) and opposition instructions | 179 | 22 KB |
@@ -101,11 +101,12 @@ Everything the tool does, one feature per file. All files share one scope, so a 
 | `src/app/46-search.js` | Search box (players and clubs), Help menu closing, narrow-screen page menus, opening a player from the link (#player=ID&name=…, used by the FM profile button), opening a club's Matches › Brief from #club=<name> (FM report pop-up button) | 102 | 9 KB |
 | `src/app/47-compare.js` | Scouting > Compare: any players side by side (profile, attributes, radar, stats per 90), and the Compare buttons in the player panel | 105 | 14 KB |
 | `src/app/48-upgrades.js` | Scouting > Upgrades: for each slot of your uploaded tactic, everyone in the save who performs better in that role, with filters; who started where (team sheets) and the panel's "Played this season" box | 179 | 21 KB |
-| `src/app/49-nations.js` | Nation names for the save's nation numbers (FM27 order), `saveNat(i)`: used by the profile, All data and Contract watch | 40 | 4 KB |
+| `src/app/49-nations.js` | Nation names for the save's nation numbers (FM27 order), `saveNat(i)`: used by the profile, All data and Contract watch | 35 | 4 KB |
 | `src/app/50-opp-lineups.js` | Opponent line-ups from the save's team sheets (`SAVE.matches.lu`): shape in and out of possession, likely XI with IP/OOP roles, game by game, and line-up-based changes (max 2, advice that keeps your roles first) and OIs for Next opponent and the Brief | 105 | 12 KB |
-| `src/app/51-opp-gameplan.js` | Game plan for Next opponent and the Brief: back 3, 2 or 4 in possession and what to do, mentality guide, opposition instructions by role, where the space is, weaknesses to check in FM, in-match checklist with their usual subs | 108 | 11 KB |
+| `src/app/51-opp-gameplan.js` | Game plan for Next opponent and the Brief: back 3, 2 or 4 in possession and what to do, mentality guide, opposition instructions by role, where the space is, weaknesses to check in FM, in-match checklist with their usual subs | 120 | 11 KB |
 | `src/app/52-staff-knowledge.js` | Scouting knowledge (nations each staff member knows, 0-100, words in `KNOW_WORDS`): Staff › Scout knowledge tab (overall = scout rating + knowledge, must-know-nation filter, quick picks), Nations column on Scouts, the staff panel's nation list, My staff › Scouting coverage (key nations, gaps, who fills them) and the player panel's "your scouts know his nation" tag | 153 | 18 KB |
 | `src/app/53-home-changes.js` | Home › Since your last save: your squad against the snapshot of your previous save (improved, dropped off, arrived, left, squad value) | 36 | 4 KB |
+| `src/app/54-verdicts.js` | "In one line" answer at the top of My squad › Overview, Data Hub › Overview, Matches › Brief/Results, Scouting › Wonderkids/Targets and Staff › My staff (added by `render()` in 18-render.js) | 44 | 5 KB |
 
 ## FM save reader (src/save-reader)
 

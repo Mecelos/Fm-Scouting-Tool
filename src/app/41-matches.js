@@ -156,7 +156,13 @@ function mxOppTips(D, i, t) { // what to try against them, from where they rank
   return out;
 }
 // your next game: the earliest upcoming game the save's inbox names (match previews, opposition reports), any competition
-function mxNextGame() { return (SAVE.upcoming || []).find(x => x.date >= SAVE.meta.gameDate) || null; }
+// the inbox also names other clubs' games (news), so a game counts only if the opponent plays in one of your competitions this season
+function mxNextGame() {
+  const up = (SAVE.upcoming || []).filter(x => x.date >= SAVE.meta.gameDate); if (!up.length) return null;
+  const B = mxBase(), M = SAVE.matches; if (!B || !M) return up[0];
+  if (!B._myComps) { const c = new Set(B.rows.map(x => M.comp[x.r])), t = new Set(); for (let r = 0; r < M.n; r++) if (c.has(M.comp[r])) { t.add(M.home[r]); t.add(M.away[r]); } B._myComps = t; }
+  return up.find(x => B._myComps.has(x.team)) || null;
+}
 const mxDay = iso => new Date(iso + "T12:00:00Z").toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
 const mxClubName = (B, t, club) => B.byTeam.has(t) ? mxName(B, t) : club >= 0 ? (SAVE.clubShort && SAVE.clubShort[club]) || SAVE.clubs[club] : "Team " + t;
 function mxOppData(B, t) { // league data, plus this team if it isn't in your league: its own numbers ranked against your league's teams
