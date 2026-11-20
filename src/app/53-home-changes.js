@@ -6,7 +6,7 @@ function homeChangesHtml() {
   const m = SAVE.meta.managed && SAVE.meta.managed[0], club = m ? m.club : "", cur = SAVE.meta.gameDate;
   const base = SNAPS.filter(x => x.club === club && x.gameDate < cur).pop();
   const head = `<div class="ph"><h3>Since your last save</h3>`;
-  if (!base) return `<section class="panel">${head}</div><p class="small muted">Nothing to compare yet. Next time you load a later save, this shows who improved, who dropped off, who arrived and who left.</p></section>`;
+  if (!base) return "";   // nothing to compare yet: the box appears once a later save is loaded
   const map = new Map(); for (let k = 0; k < base.uid.length; k++) map.set(base.uid[k], k);
   const amap = new Map(); for (let k = 0; k < base.mu.length; k++) amap.set(base.mu[k], k);
   const mine = saveManagedIdx(), nowU = new Set(mine.map(i => SAVE.uid[i])), ux = saveUidIndex();

@@ -208,5 +208,5 @@ function renderGuide() {
   <p><button class="primary" data-act="guide">Back to the tool</button></p>
 </article>`;
 }
-function renderSaveNote() { const n = $("#savenote"); if (!n) return; n.textContent = typeof CLOUD !== "undefined" && CLOUD.state === "busy" ? CLOUD.msg + " (" + Math.round(CLOUD.pct) + "%)" : SAVE && SAVE.fromCloud ? "Save opened from your cloud" : S.saved ? "Exports are saved in this browser" : "Couldn't save in this browser; exports last until you close the page"; }
+function renderSaveNote() { const n = $("#savenote"); if (!n) return; n.textContent = typeof CLOUD !== "undefined" && CLOUD.state === "busy" ? CLOUD.msg + " (" + Math.round(CLOUD.pct) + "%)" : SAVE && SAVE.fromCloud ? "Save opened from your cloud" : S.saved ? "" : "Couldn't save in this browser; exports last until you close the page"; }
 

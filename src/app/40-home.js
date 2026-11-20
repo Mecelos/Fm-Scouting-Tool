@@ -95,6 +95,7 @@ async function askAvail() {
 }
 function askHtml() {
   const off = ASK.avail === false;
+  if (off) return `<p class="small muted homeaskoff">Ask a question about your save: open the claude.ai link of Scout Lab (the downloaded copy can't reach Claude).</p>`;
   return `<section class="panel askpanel"><div class="ph"><h3>Ask a question</h3><span class="small muted">answered by Claude from your save's numbers</span></div>
     ${off ? `<p class="small muted">This works on the claude.ai link of Scout Lab (it uses your Claude account). The downloaded copy can't reach Claude: open the link to ask.</p>` : `
     <div class="askrow"><textarea id="askQ" rows="2" maxlength="600" placeholder="e.g. Why do we concede so many late goals? Which role should my left winger play? Who should I sell?">${esc(ASK.q)}</textarea>

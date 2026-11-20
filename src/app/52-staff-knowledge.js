@@ -61,7 +61,7 @@ function renderScoutKnowledge() {
   const natN = new Map(); pool.forEach(i => sKnow(i).forEach(([n, v]) => { if (v >= KNOW_MIN) natN.set(n, (natN.get(n) || 0) + 1); }));
   const nat = S.sKNat != null && natN.has(S.sKNat) ? S.sKNat : null;
   let rows = staffFilter(pool); if (nat != null) rows = rows.filter(i => knowLevel(i, nat) >= KNOW_MIN);
-  h += `<p class="small muted rolehow"><b>Overall</b> (out of 100) = ${KNOW_MIX.rating * 100}% his ${esc(role.toLowerCase())} rating + ${KNOW_MIX.know * 100}% his nation knowledge, each judged against the ${pool.length.toLocaleString()} people here. Knowledge points: each nation at Average or better counts (${Object.entries(KNOW_WEIGHT).map(([w, x]) => w + " " + x).join(", ")}). This score is only used on this tab; the Scouts tab still rates scouting ability alone.</p>`;
+  h += `<details class="rolehow"><summary class="small muted"><b>Overall</b> (out of 100) mixes his scouting rating and the nations he knows. <span class="howlink">How the score works</span></summary><p class="small muted"><b>Overall</b> (out of 100) = ${KNOW_MIX.rating * 100}% his ${esc(role.toLowerCase())} rating + ${KNOW_MIX.know * 100}% his nation knowledge, each judged against the ${pool.length.toLocaleString()} people here. Knowledge points: each nation at Average or better counts (${Object.entries(KNOW_WEIGHT).map(([w, x]) => w + " " + x).join(", ")}). This score is only used on this tab; the Scouts tab still rates scouting ability alone.</p></details>`;
   const extra = `<label class="fl"><span class="small muted">Must know (Average or better)</span><select id="sKNat"><option value="">Any nation</option>${[...natN].sort((a, b) => knowNation(a[0]).localeCompare(knowNation(b[0]))).map(([n, c]) => `<option value="${n}" ${n === nat ? "selected" : ""}>${esc(knowNation(n))} (${c.toLocaleString()})</option>`).join("")}</select></label>`;
   h += staffFiltersHtml(extra);
   const mineIn = pool.filter(i => d.mine.has(i)), myBest = mineIn[0], best = rows[0];
@@ -75,11 +75,8 @@ function renderScoutKnowledge() {
       <span class="cscore">${Math.round(over.get(i))}<small>/100 · rating ${rat[i].toFixed(1)}</small></span>
       <span class="cmeta">${esc(knowTxt(i))}: ${esc(knowShort(i, 4)) || "none"}</span>
       <span class="ctags">${isFreeStaff(i) ? `<span class="tag good">Free agent</span>` : `<span class="tag">${esc(sWage(i))}</span>`}${d.mine.has(i) ? `<span class="tag good">Your club</span>` : ""}</span></button>`).join("") || `<p class="muted">Nobody matches the filters.</p>`}</div></section>`;
-  h += `<section><div class="sh"><h3>Quick picks</h3><span class="muted small">from the people shown</span></div><div class="tiers">
-    <div class="tier"><h4>Most nations known</h4>${most.slice(0, 5).map(i => knowRow(i, rat, over, rank)).join("") || `<p class="muted small">Nobody.</p>`}</div>
-    <div class="tier"><h4>Most complete nations</h4>${[...rows].sort((a, b) => kd.comp[b] - kd.comp[a] || kd.cnt[b] - kd.cnt[a] || rat[b] - rat[a]).slice(0, 5).map(i => knowRow(i, rat, over, rank)).join("") || `<p class="muted small">Nobody.</p>`}</div>
-    <div class="tier"><h4>Best overall aged 40 or under</h4>${rows.filter(i => sAge(i) != null && sAge(i) <= 40).slice(0, 5).map(i => knowRow(i, rat, over, rank)).join("") || `<p class="muted small">Nobody.</p>`}</div>
-    <div class="tier"><h4>Free agents (no club to pay)</h4>${rows.filter(isFreeStaff).slice(0, 5).map(i => knowRow(i, rat, over, rank)).join("") || `<p class="muted small">${who === "emp" ? "Free agents are hidden: set Who to include them." : "No free agent here."}</p>`}</div></div></section>`;
+  h += `<section><div class="sh"><h3>Quick picks</h3><span class="muted small">from the people shown</span></div>${staffTiersHtml([["Most nations known", most], ["Most complete nations", [...rows].sort((a, b) => kd.comp[b] - kd.comp[a] || kd.cnt[b] - kd.cnt[a] || rat[b] - rat[a])],
+    ["Best overall aged 40 or under", rows.filter(i => sAge(i) != null && sAge(i) <= 40)], ["Free agents (no club to pay)", rows.filter(isFreeStaff)]], i => knowRow(i, rat, over, rank), "Nobody matches the filters.")}</section>`;
   h += `<section class="panel tablepanel">${knowTable(rows, rat, over, rank, nat)}</section>`;
   return h;
 }
@@ -150,4 +147,11 @@ function knowPlayerTag(p) {
   return v >= KNOW_GOOD ? `<span class="tag good" title="${esc(SAVE.staff.name[who])} knows ${nn}: ${esc(knowWord(v))}">Your scouts know ${nn}</span>`
     : v >= KNOW_MIN ? `<span class="tag warn" title="Best at your club: ${esc(SAVE.staff.name[who])}, ${esc(knowWord(v))}. His attributes in FM may be rough estimates.">Your scouts know ${nn} a little</span>`
     : `<span class="tag bad" title="His attributes in FM may be hidden or rough until a scout who knows ${nn} watches him. Staff › Scout knowledge finds one.">Nobody at your club knows ${nn}</span>`;
+}
+
+// a row of short lists; lists with nobody in them are left out, and if all are empty one line says so (used by Staff pages)
+function staffTiersHtml(lists, row, none) {
+  const full = lists.filter(([, ix]) => ix.length);
+  if (!full.length) return `<p class="muted small">${none}</p>`;
+  return `<div class="tiers">${full.map(([h, ix]) => `<div class="tier"><h4>${esc(h)}</h4>${ix.slice(0, 5).map(row).join("")}</div>`).join("")}</div>`;
 }

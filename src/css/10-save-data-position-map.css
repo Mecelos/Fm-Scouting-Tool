@@ -15,6 +15,9 @@ button[disabled] { opacity: .6; cursor: progress; }
 .afchip { border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink); border-radius: 999px; padding: 4px 11px; font-size: 13px; font-weight: 600; }
 .afchip.off { background: none; color: var(--muted); border-color: var(--line2); text-decoration: line-through; }
 .rolehow { margin: 8px 0 12px; max-width: 980px; }
+details.rolehow > summary { list-style: none; cursor: pointer; } details.rolehow > summary::-webkit-details-marker { display: none; }
+.howlink { margin-left: 6px; color: var(--ink2); text-decoration: underline; text-underline-offset: 2px; } details.rolehow[open] .howlink { color: var(--accent); }
+details.rolehow > p { margin: 6px 0 0; }
 .stafft td.small { white-space: nowrap; }
 .stafft th.cat button { min-width: 2.6em; }
 .aword { margin-left: 6px; font-size: 11px; }

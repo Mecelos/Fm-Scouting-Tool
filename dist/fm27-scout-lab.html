@@ -68,9 +68,9 @@ main > * { min-width: 0; }
 section > .chips { max-width: 100%; }
 .panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 9px 11px; min-width: 0; }
 .ph { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 10px; margin-bottom: 6px; }
-h3 { font-family: var(--f-display); font-weight: 600; font-size: 16.5px; letter-spacing: .03em; text-transform: uppercase; margin: 0; }
-h4 { font-family: var(--f-display); font-weight: 600; font-size: 14.5px; letter-spacing: .05em; text-transform: uppercase; margin: 10px 0 5px; color: var(--ink2); }
-h5 { margin: 0 0 4px; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+h3 { font-family: var(--f-display); font-weight: 600; font-size: 19px; letter-spacing: .01em; margin: 0; }
+h4 { font-family: var(--f-display); font-weight: 600; font-size: 16px; letter-spacing: .01em; margin: 10px 0 5px; color: var(--ink2); }
+h5 { margin: 0 0 4px; font-size: 12.5px; font-weight: 600; color: var(--muted); }
 
 /* loaded files */
 .setsbar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
@@ -146,6 +146,12 @@ svg text { font-family: var(--f-body); }
 .bar-row { cursor: pointer; }
 .bar-row:hover .hit { fill: var(--panel2); }
 
+/* wide screens: one fixed order. Row 1 = brand, pages, search, (save note), Data and Help on the right; row 2 = the page's tabs */
+@media (min-width: 701px) {
+  .top .gsearch { order: 1; } #savenote { order: 2; } #savenote:empty { display: none; }
+  .top .databtn { order: 3; margin-left: auto; } .top .helpmenu { order: 4; }
+  .top .ptabs { order: 5; flex-basis: 100%; } .top .ptabs:empty { display: none; }
+}
 /* table */
 .tablepanel { padding: 0; overflow: hidden; }
 .tscroll { overflow: auto; max-height: max(560px, calc(100vh - 170px)); }
@@ -529,7 +535,7 @@ button.fit { background: none; font: inherit; font-size: 12.5px; cursor: pointer
 .rvt td.rvsum { white-space: normal; min-width: 280px; max-width: 520px; } .rvt tr.rvstart td:first-child { box-shadow: inset 3px 0 var(--accent); }
 .rvexp td { background: var(--panel2); white-space: normal; text-align: left; }
 .rvt th { padding: 5px 8px; white-space: nowrap; font-size: 11.5px; } .rvt td { padding: 3px 8px; }
-.rvups { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 6px; } .rvsec h5 { margin: 0 0 4px; font-size: 12.5px; text-transform: uppercase; letter-spacing: .04em; color: var(--ink2); }
+.rvups { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 6px; } .rvsec h5 { margin: 0 0 4px; font-size: 13px; letter-spacing: .04em; color: var(--ink2); }
 /* navigation groups */
 .modes .navlab { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); padding: 0 4px 0 8px; align-self: center; white-space: nowrap; }
 .modes .navsep { width: 1px; align-self: stretch; background: var(--line2); margin: 4px 4px; }
@@ -537,8 +543,9 @@ button.fit { background: none; font: inherit; font-size: 12.5px; cursor: pointer
 /* learn */
 .itip { display: inline-flex; align-items: center; justify-content: center; width: 15px; height: 15px; margin-left: 5px; border-radius: 50%; border: 1px solid var(--line2); color: var(--ink2); font: italic 700 10px/1 Georgia, serif; cursor: help; vertical-align: 1px; }
 .itip:hover, .itip:focus-visible { border-color: var(--accent); color: var(--accent); outline: none; }
-.learnbox { display: flex; gap: 10px; align-items: flex-start; margin: 10px 0; padding: 9px 12px; border-radius: 8px; background: color-mix(in srgb, var(--accent) 9%, var(--panel)); border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--line)); font-size: 13px; line-height: 1.45; }
-.learnbox .lbi { flex: 0 0 auto; width: 18px; height: 18px; border-radius: 50%; background: var(--accent); color: #111; display: flex; align-items: center; justify-content: center; font: italic 700 12px/1 Georgia, serif; margin-top: 1px; }
+/* explanations: a quiet grey note under what they explain, not a box */
+.learnbox { display: flex; gap: 7px; align-items: flex-start; margin: 6px 0 8px; padding: 0; background: none; border: 0; color: var(--muted); font-size: 12.5px; line-height: 1.45; max-width: 110ch; }
+.learnbox .lbi { flex: 0 0 auto; width: 14px; height: 14px; border-radius: 50%; border: 1px solid var(--muted); color: var(--muted); display: flex; align-items: center; justify-content: center; font: italic 700 10px/1 Georgia, serif; margin-top: 2px; }
 .learntg { display: inline-flex; gap: 4px; align-items: center; }
 #glosspop { position: fixed; z-index: 90; background: var(--panel2); border: 1px solid var(--line2); border-radius: 10px; padding: 12px 14px; box-shadow: 0 12px 32px rgba(0,0,0,.45); font-size: 13px; line-height: 1.45; }
 #glosspop h4 { margin: 0 24px 6px 0; } #glosspop p { margin: 6px 0; } #glosspop .gpx { position: absolute; top: 6px; right: 6px; }
@@ -616,7 +623,7 @@ button.fit { background: none; font: inherit; font-size: 12.5px; cursor: pointer
 .hubgrid2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; margin: 8px 0; }
 .hubcharts { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 8px; margin: 8px 0; }
 .hubcard { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 8px 10px; min-width: 0; }
-.hubcard h4 { margin: 0 0 4px; font-size: 12.5px; text-transform: uppercase; letter-spacing: .04em; }
+.hubcard h4 { margin: 0 0 4px; font-size: 14px; }
 .hubsc, .hubrad { width: 100%; height: auto; display: block; }
 .hubrad { max-width: 420px; margin: 0 auto; }
 .hubavg { stroke: var(--line2); stroke-width: 1; }
@@ -653,6 +660,12 @@ button.fit { background: none; font: inherit; font-size: 12.5px; cursor: pointer
 .mxgoals { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 8px; } .mxgoals p { margin: 2px 0; }
 .mxtip { background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; font-size: 13.5px; margin-top: 8px; }
 .mxbrief { max-width: 620px; width: 100%; justify-self: center; }
+.mxbgrid { display: grid; gap: 14px; justify-items: center; } .mxbcol { display: grid; gap: 14px; align-content: start; width: 100%; justify-items: center; }
+@media screen and (min-width: 1300px) {
+  .mxbgrid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; max-width: 1560px; margin: 0 auto; }
+  .mxbgrid .mxbrief { max-width: none; }
+  .mxbgrid .gtable { width: 100%; max-width: none; }
+}
 .mxbhead { display: flex; flex-direction: column; gap: 2px; margin-bottom: 6px; } .mxbbtns { display: inline-flex; gap: 6px; }
 .mxbform { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 6px 0; } .mxbform > div { display: flex; align-items: center; gap: 4px; } .mxbform .muted { margin-right: 4px; }
 .mxbrief .gtable.mxbtab { width: 100%; } .mxblist { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
@@ -843,6 +856,9 @@ button[disabled] { opacity: .6; cursor: progress; }
 .afchip { border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink); border-radius: 999px; padding: 4px 11px; font-size: 13px; font-weight: 600; }
 .afchip.off { background: none; color: var(--muted); border-color: var(--line2); text-decoration: line-through; }
 .rolehow { margin: 8px 0 12px; max-width: 980px; }
+details.rolehow > summary { list-style: none; cursor: pointer; } details.rolehow > summary::-webkit-details-marker { display: none; }
+.howlink { margin-left: 6px; color: var(--ink2); text-decoration: underline; text-underline-offset: 2px; } details.rolehow[open] .howlink { color: var(--accent); }
+details.rolehow > p { margin: 6px 0 0; }
 .stafft td.small { white-space: nowrap; }
 .stafft th.cat button { min-width: 2.6em; }
 .aword { margin-left: 6px; font-size: 11px; }
@@ -9260,7 +9276,7 @@ function renderGuide() {
   <p><button class="primary" data-act="guide">Back to the tool</button></p>
 </article>`;
 }
-function renderSaveNote() { const n = $("#savenote"); if (!n) return; n.textContent = typeof CLOUD !== "undefined" && CLOUD.state === "busy" ? CLOUD.msg + " (" + Math.round(CLOUD.pct) + "%)" : SAVE && SAVE.fromCloud ? "Save opened from your cloud" : S.saved ? "Exports are saved in this browser" : "Couldn't save in this browser; exports last until you close the page"; }
+function renderSaveNote() { const n = $("#savenote"); if (!n) return; n.textContent = typeof CLOUD !== "undefined" && CLOUD.state === "busy" ? CLOUD.msg + " (" + Math.round(CLOUD.pct) + "%)" : SAVE && SAVE.fromCloud ? "Save opened from your cloud" : S.saved ? "" : "Couldn't save in this browser; exports last until you close the page"; }
 
 // ---------- player drawer ----------
 function openPlayer(sc, pid, silent) {
@@ -10970,7 +10986,7 @@ function renderStaffRole(tab) {
   const wts = Object.entries(R.w).sort((a, b) => b[1] - a[1]);
   let h = `<div class="setsbar"><span class="setctl"><label for="sRoleSel" class="small muted">Rate them as</label><select id="sRoleSel">${roles.map(r => `<option ${r === role ? "selected" : ""}>${esc(r)}</option>`).join("")}</select>
     <label for="sWho" class="small muted">Who</label><select id="sWho">${Object.entries(STAFF_WHO).map(([k, l]) => `<option value="${k}" ${who === k ? "selected" : ""}>${esc(l)}</option>`).join("")}</select></span></div>`;
-  h += `<p class="small muted rolehow"><b>${esc(role)}</b>: ${esc(R.d)} Rating out of 20 = ${wts.map(([a, x]) => `${esc(SA[a][1])} ×${x}`).join(" + ")}, divided by ${wts.reduce((s, x) => s + x[1], 0)}. ${(() => { const jl = esc(R.jobs.map(j => j === DOCTOR ? "Doctor" : STAFF_JOBS[j]).join(", ")), fa = "free agents whose usual job that is (or, with none stored, whose best 2 jobs by attributes include it)"; return who === "all" ? "Rated: every staff member in the save, free agents included (not the board)." : who === "emp" ? `Rated: everyone at a club working as ${jl}.` : who === "free" ? `Rated: ${fa.replace("that is", "is " + jl)}.` : `Rated: everyone at a club working as ${jl}, plus ${fa.replace("that is", "is one of those")}.`; })()}</p>`;
+  h += `<details class="rolehow"><summary class="small muted"><b>${esc(role)}</b>: ${esc(R.d)} <span class="howlink">How the rating works</span></summary><p class="small muted">Rating out of 20 = ${wts.map(([a, x]) => `${esc(SA[a][1])} ×${x}`).join(" + ")}, divided by ${wts.reduce((s, x) => s + x[1], 0)}. ${(() => { const jl = esc(R.jobs.map(j => j === DOCTOR ? "Doctor" : STAFF_JOBS[j]).join(", ")), fa = "free agents whose usual job that is (or, with none stored, whose best 2 jobs by attributes include it)"; return who === "all" ? "Rated: every staff member in the save, free agents included (not the board)." : who === "emp" ? `Rated: everyone at a club working as ${jl}.` : who === "free" ? `Rated: ${fa.replace("that is", "is " + jl)}.` : `Rated: everyone at a club working as ${jl}, plus ${fa.replace("that is", "is one of those")}.`; })()}</p></details>`;
   h += staffFiltersHtml();
   const ages = rows.map(sAge).filter(x => x != null), wages = rows.map(i => SAVE.staff.wage[i]).filter(x => !isNaN(x));
   const best = rows[0], nFree = rows.filter(isFreeStaff).length;
@@ -10985,11 +11001,7 @@ function renderStaffRole(tab) {
   if (myBest != null) {
     const up = rows.filter(i => !d.mine.has(i) && rat[i] > rat[myBest] + 0.05);
     const cheap = up.filter(i => !isNaN(SAVE.staff.wage[i]) && !isNaN(SAVE.staff.wage[myBest]) && SAVE.staff.wage[i] <= SAVE.staff.wage[myBest]);
-    h += `<section><div class="sh"><h3>Better than your best (${esc(SAVE.staff.name[myBest])}, ${rat[myBest].toFixed(1)})</h3><span class="muted small">${up.length.toLocaleString()} people</span></div><div class="tiers">
-      <div class="tier"><h4>Best upgrades</h4>${up.slice(0, 5).map(i => staffTRow(i, rat)).join("") || `<p class="muted small">Nobody: yours is the best here.</p>`}</div>
-      <div class="tier"><h4>Upgrades on the same wage or less</h4>${cheap.slice(0, 5).map(i => staffTRow(i, rat)).join("") || `<p class="muted small">Nobody earning ${esc(sWage(myBest))} or less beats him.</p>`}</div>
-      <div class="tier"><h4>Upgrades aged 40 or under</h4>${up.filter(i => sAge(i) != null && sAge(i) <= 40).slice(0, 5).map(i => staffTRow(i, rat)).join("") || `<p class="muted small">Nobody.</p>`}</div>
-      <div class="tier"><h4>Free agents (no club to pay)</h4>${up.filter(isFreeStaff).slice(0, 5).map(i => staffTRow(i, rat)).join("") || `<p class="muted small">${who === "emp" ? "Free agents are hidden: set Who to include them." : "No free agent beats him."}</p>`}</div></div></section>`;
+    h += `<section><div class="sh"><h3>Better than your best (${esc(SAVE.staff.name[myBest])}, ${rat[myBest].toFixed(1)})</h3><span class="muted small">${up.length.toLocaleString()} people</span></div>${staffTiersHtml([["Best upgrades", up], ["Upgrades on the same wage or less", cheap], ["Upgrades aged 40 or under", up.filter(i => sAge(i) != null && sAge(i) <= 40)], ["Free agents (no club to pay)", up.filter(isFreeStaff)]], i => staffTRow(i, rat), up.length ? `Nobody earning ${esc(sWage(myBest))} or less, aged 40 or under, or free beats him.` : "Nobody: yours is the best here.")}</section>`;
   }
   // best for each area of the job: FM27's own job categories first (coaching / scouting / medical), then the role's other attributes
   const wk = wts.map(x => x[0]);
@@ -13251,6 +13263,7 @@ async function askAvail() {
 }
 function askHtml() {
   const off = ASK.avail === false;
+  if (off) return `<p class="small muted homeaskoff">Ask a question about your save: open the claude.ai link of Scout Lab (the downloaded copy can't reach Claude).</p>`;
   return `<section class="panel askpanel"><div class="ph"><h3>Ask a question</h3><span class="small muted">answered by Claude from your save's numbers</span></div>
     ${off ? `<p class="small muted">This works on the claude.ai link of Scout Lab (it uses your Claude account). The downloaded copy can't reach Claude: open the link to ask.</p>` : `
     <div class="askrow"><textarea id="askQ" rows="2" maxlength="600" placeholder="e.g. Why do we concede so many late goals? Which role should my left winger play? Who should I sell?">${esc(ASK.q)}</textarea>
@@ -14276,7 +14289,7 @@ function mxBrief(B) {
     const gap = Math.abs(a - b) / (Math.abs(a) + Math.abs(b) || 1), edge = gap < 0.03 ? 0 : (hi ? a > b : a < b) ? 1 : -1;
     return `<tr><td>${esc(HUB_M[m][0])}</td><td class="num"><b class="${edge > 0 ? "okc" : ""}">${hubFmt(m, a)}</b></td><td class="num"><b class="${edge < 0 ? "bad" : ""}">${hubFmt(m, b)}</b></td><td class="small ${edge > 0 ? "okc" : edge < 0 ? "bad" : "muted"}">${edge > 0 ? "You" : edge < 0 ? "Them" : "Even"}</td></tr>`;
   }).join("");
-  return `<section class="panel mxbrief">
+  const brief = `<section class="panel mxbrief">
     <div class="ph"><h3>Matchday brief</h3><span class="mxbbtns"><button class="ghost small" data-mxtab="opp">Full report</button><button class="ghost small" data-mxact="print">Print</button></span></div>
     <div class="mxbhead"><b class="mxsc">${esc(name)}</b><span class="small muted">${isNext ? `Your next game · ${esc(mxDay(next.date))}` : next ? `Not your next game (that's ${esc(mxClubName(B, next.team, next.club))}, ${esc(mxDay(next.date))})` : "Picked in Next opponent"}</span></div>
     ${od.outside ? `<p class="small mxnote">Not in ${esc(lg)}: their numbers come from their own league, so they flatter them against a stronger side.</p>` : ""}
@@ -14287,7 +14300,10 @@ function mxBrief(B) {
     ${ois.length ? `<h4>Opposition instructions</h4><ol class="mxblist">${ois.map(x => `<li>${x.w}<div class="small muted">${x.why}</div></li>`).join("")}</ol>` : ""}
     ${danger.length ? `<h4>Danger men</h4><ul class="mxblist">${danger.slice(0, 3).map(d => `<li><button class="linkbtn" data-sci="${d.p}">${esc(SAVE.name[d.p])}</button> <span class="small muted">${esc(savePos().str[d.p] || "")} · ${d.g} goal${d.g === 1 ? "" : "s"}, ${d.a} assist${d.a === 1 ? "" : "s"}</span></li>`).join("")}</ul>` : ""}
     <h4>When they score and concede</h4>${tw.length ? `<ul class="mxblist">${tw.slice(0, 2).map(x => `<li>${x}</li>`).join("")}</ul>` : `<p class="small muted">No strong pattern in their last ${tm.games} games.</p>`}
-  </section>${typeof gpHtml === "function" ? gpHtml(B, P.pick, true) : ""}${ol ? olHtml(B, P.pick, true).replace('class="panel"', 'class="panel mxbrief"') : ""}`;
+  </section>`;
+  // wide screens: brief and line-ups on the left, the game plan on the right (narrow screens and print: one column)
+  const gp = typeof gpHtml === "function" ? gpHtml(B, P.pick, true) : "", lu = ol ? olHtml(B, P.pick, true).replace('class="panel"', 'class="panel mxbrief"') : "";
+  return `<div class="mxbgrid"><div class="mxbcol">${brief}${lu}</div>${gp ? `<div class="mxbcol">${gp}</div>` : ""}</div>`;
 }
 document.addEventListener("click", e => { if (e.target.closest('[data-mxact="print"]')) window.print(); });
 // ---------- Search box in the top bar: any player or club in the loaded save, from any tab ----------
@@ -15004,7 +15020,7 @@ function renderScoutKnowledge() {
   const natN = new Map(); pool.forEach(i => sKnow(i).forEach(([n, v]) => { if (v >= KNOW_MIN) natN.set(n, (natN.get(n) || 0) + 1); }));
   const nat = S.sKNat != null && natN.has(S.sKNat) ? S.sKNat : null;
   let rows = staffFilter(pool); if (nat != null) rows = rows.filter(i => knowLevel(i, nat) >= KNOW_MIN);
-  h += `<p class="small muted rolehow"><b>Overall</b> (out of 100) = ${KNOW_MIX.rating * 100}% his ${esc(role.toLowerCase())} rating + ${KNOW_MIX.know * 100}% his nation knowledge, each judged against the ${pool.length.toLocaleString()} people here. Knowledge points: each nation at Average or better counts (${Object.entries(KNOW_WEIGHT).map(([w, x]) => w + " " + x).join(", ")}). This score is only used on this tab; the Scouts tab still rates scouting ability alone.</p>`;
+  h += `<details class="rolehow"><summary class="small muted"><b>Overall</b> (out of 100) mixes his scouting rating and the nations he knows. <span class="howlink">How the score works</span></summary><p class="small muted"><b>Overall</b> (out of 100) = ${KNOW_MIX.rating * 100}% his ${esc(role.toLowerCase())} rating + ${KNOW_MIX.know * 100}% his nation knowledge, each judged against the ${pool.length.toLocaleString()} people here. Knowledge points: each nation at Average or better counts (${Object.entries(KNOW_WEIGHT).map(([w, x]) => w + " " + x).join(", ")}). This score is only used on this tab; the Scouts tab still rates scouting ability alone.</p></details>`;
   const extra = `<label class="fl"><span class="small muted">Must know (Average or better)</span><select id="sKNat"><option value="">Any nation</option>${[...natN].sort((a, b) => knowNation(a[0]).localeCompare(knowNation(b[0]))).map(([n, c]) => `<option value="${n}" ${n === nat ? "selected" : ""}>${esc(knowNation(n))} (${c.toLocaleString()})</option>`).join("")}</select></label>`;
   h += staffFiltersHtml(extra);
   const mineIn = pool.filter(i => d.mine.has(i)), myBest = mineIn[0], best = rows[0];
@@ -15018,11 +15034,8 @@ function renderScoutKnowledge() {
       <span class="cscore">${Math.round(over.get(i))}<small>/100 · rating ${rat[i].toFixed(1)}</small></span>
       <span class="cmeta">${esc(knowTxt(i))}: ${esc(knowShort(i, 4)) || "none"}</span>
       <span class="ctags">${isFreeStaff(i) ? `<span class="tag good">Free agent</span>` : `<span class="tag">${esc(sWage(i))}</span>`}${d.mine.has(i) ? `<span class="tag good">Your club</span>` : ""}</span></button>`).join("") || `<p class="muted">Nobody matches the filters.</p>`}</div></section>`;
-  h += `<section><div class="sh"><h3>Quick picks</h3><span class="muted small">from the people shown</span></div><div class="tiers">
-    <div class="tier"><h4>Most nations known</h4>${most.slice(0, 5).map(i => knowRow(i, rat, over, rank)).join("") || `<p class="muted small">Nobody.</p>`}</div>
-    <div class="tier"><h4>Most complete nations</h4>${[...rows].sort((a, b) => kd.comp[b] - kd.comp[a] || kd.cnt[b] - kd.cnt[a] || rat[b] - rat[a]).slice(0, 5).map(i => knowRow(i, rat, over, rank)).join("") || `<p class="muted small">Nobody.</p>`}</div>
-    <div class="tier"><h4>Best overall aged 40 or under</h4>${rows.filter(i => sAge(i) != null && sAge(i) <= 40).slice(0, 5).map(i => knowRow(i, rat, over, rank)).join("") || `<p class="muted small">Nobody.</p>`}</div>
-    <div class="tier"><h4>Free agents (no club to pay)</h4>${rows.filter(isFreeStaff).slice(0, 5).map(i => knowRow(i, rat, over, rank)).join("") || `<p class="muted small">${who === "emp" ? "Free agents are hidden: set Who to include them." : "No free agent here."}</p>`}</div></div></section>`;
+  h += `<section><div class="sh"><h3>Quick picks</h3><span class="muted small">from the people shown</span></div>${staffTiersHtml([["Most nations known", most], ["Most complete nations", [...rows].sort((a, b) => kd.comp[b] - kd.comp[a] || kd.cnt[b] - kd.cnt[a] || rat[b] - rat[a])],
+    ["Best overall aged 40 or under", rows.filter(i => sAge(i) != null && sAge(i) <= 40)], ["Free agents (no club to pay)", rows.filter(isFreeStaff)]], i => knowRow(i, rat, over, rank), "Nobody matches the filters.")}</section>`;
   h += `<section class="panel tablepanel">${knowTable(rows, rat, over, rank, nat)}</section>`;
   return h;
 }
@@ -15094,6 +15107,13 @@ function knowPlayerTag(p) {
     : v >= KNOW_MIN ? `<span class="tag warn" title="Best at your club: ${esc(SAVE.staff.name[who])}, ${esc(knowWord(v))}. His attributes in FM may be rough estimates.">Your scouts know ${nn} a little</span>`
     : `<span class="tag bad" title="His attributes in FM may be hidden or rough until a scout who knows ${nn} watches him. Staff › Scout knowledge finds one.">Nobody at your club knows ${nn}</span>`;
 }
+
+// a row of short lists; lists with nobody in them are left out, and if all are empty one line says so (used by Staff pages)
+function staffTiersHtml(lists, row, none) {
+  const full = lists.filter(([, ix]) => ix.length);
+  if (!full.length) return `<p class="muted small">${none}</p>`;
+  return `<div class="tiers">${full.map(([h, ix]) => `<div class="tier"><h4>${esc(h)}</h4>${ix.slice(0, 5).map(row).join("")}</div>`).join("")}</div>`;
+}
 // ---------- Home > Since your last save: your squad now against the snapshot of your previous save (35-development-planner) ----------
 // who improved, who dropped off (ability and attributes), who arrived, who left, and the squad's value
 function homeChangesHtml() {
@@ -15102,7 +15122,7 @@ function homeChangesHtml() {
   const m = SAVE.meta.managed && SAVE.meta.managed[0], club = m ? m.club : "", cur = SAVE.meta.gameDate;
   const base = SNAPS.filter(x => x.club === club && x.gameDate < cur).pop();
   const head = `<div class="ph"><h3>Since your last save</h3>`;
-  if (!base) return `<section class="panel">${head}</div><p class="small muted">Nothing to compare yet. Next time you load a later save, this shows who improved, who dropped off, who arrived and who left.</p></section>`;
+  if (!base) return "";   // nothing to compare yet: the box appears once a later save is loaded
   const map = new Map(); for (let k = 0; k < base.uid.length; k++) map.set(base.uid[k], k);
   const amap = new Map(); for (let k = 0; k < base.mu.length; k++) amap.set(base.mu[k], k);
   const mine = saveManagedIdx(), nowU = new Set(mine.map(i => SAVE.uid[i])), ux = saveUidIndex();

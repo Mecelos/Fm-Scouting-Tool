@@ -16,7 +16,7 @@ function mxBrief(B) {
     const gap = Math.abs(a - b) / (Math.abs(a) + Math.abs(b) || 1), edge = gap < 0.03 ? 0 : (hi ? a > b : a < b) ? 1 : -1;
     return `<tr><td>${esc(HUB_M[m][0])}</td><td class="num"><b class="${edge > 0 ? "okc" : ""}">${hubFmt(m, a)}</b></td><td class="num"><b class="${edge < 0 ? "bad" : ""}">${hubFmt(m, b)}</b></td><td class="small ${edge > 0 ? "okc" : edge < 0 ? "bad" : "muted"}">${edge > 0 ? "You" : edge < 0 ? "Them" : "Even"}</td></tr>`;
   }).join("");
-  return `<section class="panel mxbrief">
+  const brief = `<section class="panel mxbrief">
     <div class="ph"><h3>Matchday brief</h3><span class="mxbbtns"><button class="ghost small" data-mxtab="opp">Full report</button><button class="ghost small" data-mxact="print">Print</button></span></div>
     <div class="mxbhead"><b class="mxsc">${esc(name)}</b><span class="small muted">${isNext ? `Your next game · ${esc(mxDay(next.date))}` : next ? `Not your next game (that's ${esc(mxClubName(B, next.team, next.club))}, ${esc(mxDay(next.date))})` : "Picked in Next opponent"}</span></div>
     ${od.outside ? `<p class="small mxnote">Not in ${esc(lg)}: their numbers come from their own league, so they flatter them against a stronger side.</p>` : ""}
@@ -27,6 +27,9 @@ function mxBrief(B) {
     ${ois.length ? `<h4>Opposition instructions</h4><ol class="mxblist">${ois.map(x => `<li>${x.w}<div class="small muted">${x.why}</div></li>`).join("")}</ol>` : ""}
     ${danger.length ? `<h4>Danger men</h4><ul class="mxblist">${danger.slice(0, 3).map(d => `<li><button class="linkbtn" data-sci="${d.p}">${esc(SAVE.name[d.p])}</button> <span class="small muted">${esc(savePos().str[d.p] || "")} · ${d.g} goal${d.g === 1 ? "" : "s"}, ${d.a} assist${d.a === 1 ? "" : "s"}</span></li>`).join("")}</ul>` : ""}
     <h4>When they score and concede</h4>${tw.length ? `<ul class="mxblist">${tw.slice(0, 2).map(x => `<li>${x}</li>`).join("")}</ul>` : `<p class="small muted">No strong pattern in their last ${tm.games} games.</p>`}
-  </section>${typeof gpHtml === "function" ? gpHtml(B, P.pick, true) : ""}${ol ? olHtml(B, P.pick, true).replace('class="panel"', 'class="panel mxbrief"') : ""}`;
+  </section>`;
+  // wide screens: brief and line-ups on the left, the game plan on the right (narrow screens and print: one column)
+  const gp = typeof gpHtml === "function" ? gpHtml(B, P.pick, true) : "", lu = ol ? olHtml(B, P.pick, true).replace('class="panel"', 'class="panel mxbrief"') : "";
+  return `<div class="mxbgrid"><div class="mxbcol">${brief}${lu}</div>${gp ? `<div class="mxbcol">${gp}</div>` : ""}</div>`;
 }
 document.addEventListener("click", e => { if (e.target.closest('[data-mxact="print"]')) window.print(); });

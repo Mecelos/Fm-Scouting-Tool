@@ -62,9 +62,9 @@ main > * { min-width: 0; }
 section > .chips { max-width: 100%; }
 .panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 9px 11px; min-width: 0; }
 .ph { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 10px; margin-bottom: 6px; }
-h3 { font-family: var(--f-display); font-weight: 600; font-size: 16.5px; letter-spacing: .03em; text-transform: uppercase; margin: 0; }
-h4 { font-family: var(--f-display); font-weight: 600; font-size: 14.5px; letter-spacing: .05em; text-transform: uppercase; margin: 10px 0 5px; color: var(--ink2); }
-h5 { margin: 0 0 4px; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+h3 { font-family: var(--f-display); font-weight: 600; font-size: 19px; letter-spacing: .01em; margin: 0; }
+h4 { font-family: var(--f-display); font-weight: 600; font-size: 16px; letter-spacing: .01em; margin: 10px 0 5px; color: var(--ink2); }
+h5 { margin: 0 0 4px; font-size: 12.5px; font-weight: 600; color: var(--muted); }
 
 /* loaded files */
 .setsbar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
@@ -140,3 +140,9 @@ svg text { font-family: var(--f-body); }
 .bar-row { cursor: pointer; }
 .bar-row:hover .hit { fill: var(--panel2); }
 
+/* wide screens: one fixed order. Row 1 = brand, pages, search, (save note), Data and Help on the right; row 2 = the page's tabs */
+@media (min-width: 701px) {
+  .top .gsearch { order: 1; } #savenote { order: 2; } #savenote:empty { display: none; }
+  .top .databtn { order: 3; margin-left: auto; } .top .helpmenu { order: 4; }
+  .top .ptabs { order: 5; flex-basis: 100%; } .top .ptabs:empty { display: none; }
+}
