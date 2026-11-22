@@ -1,6 +1,7 @@
-// ---------- Opponent game plan: a 6-step checklist built from their last team sheets (olData), for any club ----------
+// ---------- Opponent game plan: a 7-step checklist built from their last team sheets (olData), for any club ----------
 // 1 how they build (back 3 or 4) → your plan, 2 their mentality (check in FM), 3 opposition instructions by role,
-// 4 where the space is behind them, 5 weaknesses and team news (check in FM), 6 in-match checklist with their usual subs.
+// 4 pressing trap (inside / outside), 5 where the space is behind them, 6 weaknesses and team news (check in FM),
+// 7 in-match checklist with their usual subs.
 const GP_ATT_FB = new Set(["Wing-Back", "Advanced Wing-Back", "Playmaking Wing-Back"]);        // gets forward on the outside
 const GP_INV_FB = new Set(["Inverted Wing-Back", "Inside Wing-Back"]);                          // tucks into midfield
 const GP_STEP_IN = new Set(["Inverted Full-Back", "Inside Full-Back"]);                         // steps into the back line
@@ -57,6 +58,42 @@ function gpSpace(X) {
   return [...new Set(out)].slice(0, 3);
 }
 
+// pressing trap: where their danger comes from (centre or flanks) and where your players win the ball best
+const GP_DEEP_PM = new Set(["Deep-Lying Playmaker", "Roaming Playmaker", "Regista", "Playmaker", "Half-Back", "Anchor Playmaker"]);
+const GP_CUT_IN = new Set(["Inside Forward", "Inside Winger", "Half-Space Winger", "Inverted Winger", "Inverting Outlet Winger"]);
+const GP_TOUCHLINE = new Set(["Winger", "Wide Outlet Winger", "Playmaking Winger", "Wide Midfielder", "Wide Outlet Midfielder"]);
+function gpWinners() {   // your regulars' ball-winning (Tackling, Anticipation, Positioning, 1-20): centre vs flanks
+  const Q = typeof homeSquad === "function" ? homeSquad() : null; if (!Q || !SAVE || !SAVE.attrs) return null;
+  const ix = ["Tackling", "Anticipation", "Positioning"].map(l => (ATTR_COLS.find(a => a[0] === l) || [])[1]).filter(k => k != null); if (!ix.length) return null;
+  const ux = saveUidIndex(), win = x => { const i = ux.get(x.r.p.uid); if (i == null) return null; const v = ix.map(k => SAVE.attrs[i * 52 + k]).filter(v => v > 0); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; };
+  const pick = (gs, n) => { const seen = new Set(); return Q.players.filter(x => gs.includes(x.pos) && !seen.has(x.r.p.uid) && seen.add(x.r.p.uid)).sort((a, b) => b.mins - a.mins).slice(0, n).map(x => [x.r.p.name, win(x)]).filter(x => x[1] != null); };
+  const mid = pick(["DM", "CM"], 3), wide = pick(["FB", "W"], 4), avg = l => l.length ? l.reduce((s, x) => s + x[1], 0) / l.length : null;
+  return { mid, wide, m: avg(mid), w: avg(wide) };
+}
+function gpTrap(X) {
+  const c = [], w = [], nm = x => `${esc(x.n)} (${esc(x.ip)})`;
+  X.forEach(x => {
+    if (["AMC", "MC"].includes(x.code) && GP_POCKET.has(x.ip)) c.push(nm(x));
+    else if (["DM", "MC"].includes(x.code) && GP_DEEP_PM.has(x.ip)) c.push(nm(x));
+    else if (GP_WIDE.includes(x.code) && GP_CUT_IN.has(x.ip)) c.push(nm(x) + " cuts inside");
+    else if (GP_FB.includes(x.code) && GP_INV_FB.has(x.ip)) c.push(nm(x) + " comes inside");
+    if (GP_WIDE.includes(x.code) && GP_TOUCHLINE.has(x.ip)) w.push(nm(x));
+    else if (GP_FB.includes(x.code) && GP_ATT_FB.has(x.ip)) w.push(nm(x));
+    else if (x.code === "ST" && x.ip === "Target Forward") w.push(nm(x) + " to cross to");
+  });
+  const narrow = !X.some(x => GP_WIDE.includes(x.code)), cs = c.length + (narrow ? 1 : 0), ws = w.length, W = gpWinners();
+  const youMid = W && W.m != null && W.w != null && W.m - W.w >= 0.7, youWide = W && W.m != null && W.w != null && W.w - W.m >= 0.7;
+  const who = l => l.map(x => esc(x[0])).join(", ");
+  let pick, why;
+  if (cs - ws >= 2 && !youMid) { pick = "Trap Outside"; why = `Their danger is through the middle: ${c.join(", ")}${narrow ? "; and they play without wide men" : ""}. Trap Outside pushes the ball to the touchline, which acts as an extra defender, and keeps it away from those players.${ws ? "" : " They have little width, so being forced wide hurts them."}`; }
+  else if (ws - cs >= 2 && !youWide) { pick = "Trap Inside"; why = `Their danger is out wide: ${w.join(", ")}. Trap Inside forces the ball into the middle${W && W.mid.length ? `, where ${who(W.mid)} win it` : ""}, and away from their wide players.`; }
+  else if (youMid && cs < 2) { pick = "Trap Inside"; why = `Their threat is fairly even, and your central midfielders (${who(W.mid)}) win the ball better than your full-backs and wingers: let them do it.`; }
+  else if (youWide && ws < 2) { pick = "Trap Outside"; why = `Their threat is fairly even, and your full-backs and wingers (${who(W.wide)}) win the ball better than your central midfielders: push play to them.`; }
+  else { pick = "Balanced"; why = `No clear side to trap them on${cs || ws ? ` (centre: ${c.length ? c.join(", ") : "nobody special"}; wide: ${w.length ? w.join(", ") : "nobody special"})` : ""}.`; }
+  const risk = pick === "Trap Inside" ? "Watch out: it stretches your lines, so their pocket player gets more room if they have one. Keep your Tight marking on him." : pick === "Trap Outside" ? `Watch out: a quick switch of play to the other flank beats it${ws ? `, especially to ${w[0]}` : ""}. Your recoveries are safer, but your counters start from the touchline.` : "";
+  const yours = W && W.m != null && W.w != null ? `Your ball-winning (Tackling, Anticipation, Positioning): central midfield ${W.m.toFixed(1)}, full-backs and wingers ${W.w.toFixed(1)}.` : "";
+  return `<p><b>${pick}</b>. ${why}</p>${risk ? `<p class="small">${risk}</p>` : ""}<p class="small muted">Set it in your out-of-possession team instructions (Pressing trap). ${yours}</p>`;
+}
 // a manager who took over recently: [name, start date] (his team sheets may be mixed with his predecessor's)
 const GP_NEW_DAYS = 60;
 function gpNewManager(club) {
@@ -97,7 +134,7 @@ function gpHtml(B, t, brief) {
     ${ois.map(([x, w, y]) => `<tr><td>${nm(x)} <span class="small muted">${esc(x.slot)}</span></td><td><b>${w}</b></td><td class="small">${y}</td></tr>`).join("")}</tbody></table></div>
     <p class="small muted">Leave inverted full-backs and wing-backs alone (they come inside, not forward) and leave Channel and Centre Forwards to your centre-backs.</p>`
     : `<p class="small muted">No obvious targets in their roles: use the opposition instructions FM's report suggests.</p>`;
-  return `<section class="panel${brief ? " mxbrief" : ""}"><div class="ph"><h3>Game plan against ${esc(name)}</h3><span class="small muted">6 checks, from their last ${G.length} team sheets</span></div>
+  return `<section class="panel${brief ? " mxbrief" : ""}"><div class="ph"><h3>Game plan against ${esc(name)}</h3><span class="small muted">7 checks, from their last ${G.length} team sheets</span></div>
     ${nm8 ? `<p class="readbox warn small"><b>New manager:</b> ${esc(nm8[0])} took over on ${esc(nm8[1])}. Some of these ${G.length} team sheets may be from the previous manager, so trust the most recent games most and check his tactic in FM's report.</p>` : ""}
     <h4>1. How they build</h4>${build}
     <h4>2. Their mentality <span class="small muted">(check the manager card in FM's report)</span></h4>
@@ -106,13 +143,14 @@ function gpHtml(B, t, brief) {
       <li><b>Adventurous / Attacking:</b> they leave space behind. Mid block (low block if they're much stronger) and counter quickly.</li>
       <li><b>Man marking</b> on their card: players who swap positions (inverted full-backs, roaming midfielders, runners in behind) drag their markers out of shape.</li></ul>
     <h4>3. Opposition instructions <span class="small muted">(none of these cost familiarity)</span></h4>${oiRows}
-    <h4>4. Where the space is</h4>${space.length ? `<ul class="why">${space.map(s => `<li>${s}.</li>`).join("")}</ul>` : `<p class="small muted">Their out-of-possession roles keep everyone compact: be patient and use set pieces.</p>`}
-    <h4>5. Weaknesses and team news <span class="small muted">(check in FM)</span></h4>
+    <h4>4. Pressing trap</h4>${gpTrap(X)}
+    <h4>5. Where the space is</h4>${space.length ? `<ul class="why">${space.map(s => `<li>${s}.</li>`).join("")}</ul>` : `<p class="small muted">Their out-of-possession roles keep everyone compact: be patient and use set pieces.</p>`}
+    <h4>6. Weaknesses and team news <span class="small muted">(check in FM)</span></h4>
     <ul class="why"><li><b>Weak at near-post set pieces</b> in the report: aim your corners at the near post with your best header there.</li>
       <li><b>Strong at corners:</b> man-mark their best headers and keep a tall player zonal at the near post.</li>
       <li><b>Assists conceded from one side:</b> put your best wide runner on that side.</li>
       <li><b>Injured or unregistered centre-back:</b> their back line is weaker, so run at it.</li></ul>
-    <h4>6. During the match</h4>
+    <h4>7. During the match</h4>
     <ul class="why"><li><b>15':</b> check their in-possession formation on the match stats. If it isn't the shape above, switch plan.</li>
       <li><b>About 50':</b> fresh legs in central midfield, and <b>move your opposition instructions onto their subs</b>: instructions stay on the player who went off.${subs.length ? ` They usually bring on ${subs.map(([n, c]) => `<b>${esc(n)}</b> <span class="small muted">(${c}×)</span>`).join(", ")}.` : ""}</li>
       <li><b>Half-time, leading:</b> team talk "Don't get complacent" or "Demand more", not praise. Praise makes a winning team sloppy straight after the break.</li></ul>
