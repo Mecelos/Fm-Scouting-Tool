@@ -14865,7 +14865,13 @@ function olHtml(B, t, brief) {
 // the two changes for the game: their line-up first (roles are certain), advice that keeps your roles ahead of role changes, then their numbers; OIs don't touch familiarity
 function olChanges(B, t, numTips) {
   const L = olTips(olData(B, t)), free = x => /^none/i.test(x.cost), out = L.filter(x => !x.oi).sort((a, b) => free(b) - free(a)).map(x => [x.w, x.why + ` (cost: ${x.cost})`]);
-  return out.concat(numTips || []).slice(0, 2);
+  // their numbers can say "press high" while their line-up builds with three at the back (Game plan: mid block). Keep one answer:
+  // still press them hard, but from a mid block, once the ball goes into midfield
+  const O = olData(B, t), three = O && O.xi.length >= 10 && typeof gpBuild === "function" && gpBuild(O.xi).three;
+  const nums = (numTips || []).map(([w, y]) => three && /High Press/.test(w)
+    ? ["Press them in midfield: <b>Line of engagement: Mid Block</b>, <b>Trigger press: More Often</b>", y + "; but they build with three at the back, so a high press gets played through: let them have it at the back and jump on them as soon as it reaches midfield"]
+    : [w, y]);
+  return out.concat(nums).slice(0, 2);
 }
 function olOIs(B, t, ois) {
   const L = olTips(olData(B, t)).filter(x => x.oi), seen = new Set((ois || []).map(x => x.w));
