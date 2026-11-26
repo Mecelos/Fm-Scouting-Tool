@@ -111,6 +111,7 @@ Everything the tool does, one feature per file. All files share one scope, so a 
 | `src/app/55-sell-loan.js` | Scouting › Sell & loan: who to sell (declining, ageing, fringe, under-performing, contract running out, each with its reasons) and young players to loan out (with the level of club) | 50 | 7 KB |
 | `src/app/56-plan-review.js` | Matches › Last game / Results: "Did the game plan work?" (the plan for your next game is kept in this browser when a save loads, `planTake`; a later save checks the result and whether the targeted players scored or assisted) | 37 | 5 KB |
 | `src/app/57-player-career.js` | Player career page (S.mode "career", link #career=<id>, opened from Season by season in the player panel): how he's doing now vs last season and career, season trend charts + season table, all-time totals, by club, best seasons, ability over time from save snapshots | 126 | 17 KB |
+| `src/app/58-squad-lineup.js` | My squad › Overview lineup: FM-style cards on a pitch (Score / Depth), click a position for everyone who plays it (in this shape, FM position, score, vs age, value, contract, role picker, better on your shortlist), "My tactic" formation from your loaded tactic file, Formations view ranking every shape (best XI, 2nd XI, weakest spot) | 116 | 14 KB |
 
 ## FM save reader (src/save-reader)
 

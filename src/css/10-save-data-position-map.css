@@ -57,3 +57,21 @@ details.rolehow > p { margin: 6px 0 0; }
 .carchart { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; } .carchart svg { width: 100%; height: auto; display: block; margin-top: 4px; }
 .carchart .cax { fill: var(--muted); font-size: 10px; }
 .cargrid { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 18px; } @media (max-width: 900px) { .cargrid { grid-template-columns: 1fr; } }
+/* My squad lineup (58-squad-lineup) */
+.sqctl { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 4px 0 12px; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; } .seg button { border: 0; border-radius: 0; background: transparent; color: var(--ink2); padding: 4px 12px; }
+.seg button[aria-pressed="true"] { background: var(--accent); color: #111; font-weight: 600; }
+.sqgrid { display: grid; grid-template-columns: minmax(340px, 470px) minmax(0, 1fr); gap: 18px; align-items: start; } @media (max-width: 1000px) { .sqgrid { grid-template-columns: 1fr; } }
+.sqpitch { position: relative; aspect-ratio: 100 / 128; border-radius: 10px; overflow: hidden; border: 1px solid var(--line);
+  background: repeating-linear-gradient(180deg, #1b3527 0 10%, #1e3a2b 10% 20%); }
+.sqpitch::before { content: ""; position: absolute; inset: 3%; border: 1px solid rgba(255,255,255,.16); border-radius: 2px;
+  background: linear-gradient(rgba(255,255,255,.16), rgba(255,255,255,.16)) center / 100% 1px no-repeat; }
+.sqpitch::after { content: ""; position: absolute; left: 50%; top: 50%; width: 22%; aspect-ratio: 1; transform: translate(-50%, -50%); border: 1px solid rgba(255,255,255,.16); border-radius: 50%; }
+.sqcard { position: absolute; z-index: 1; transform: translate(-50%, -50%); width: 17%; min-width: 64px; padding: 3px 4px 4px; border-radius: 6px; border: 1px solid var(--line);
+  border-bottom: 3px solid var(--c); background: rgba(14,20,28,.92); color: var(--ink); text-align: center; line-height: 1.15; cursor: pointer; }
+.sqcard:hover, .sqcard:focus-visible { border-color: var(--accent); } .sqcard.on { outline: 2px solid var(--accent); outline-offset: 1px; } .sqcard.empty { opacity: .6; }
+.sqc1 { display: flex; justify-content: center; gap: 5px; font-size: 10px; color: var(--muted); } .sqc1 i { font-style: normal; color: var(--ink2); }
+.sqc2 { display: block; font-size: 12.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sqc3 { display: block; font-size: 14px; font-weight: 700; color: var(--c); } .sqc3 small { font-size: 9.5px; color: var(--muted); font-weight: 400; }
+.sqc4 { display: block; font-size: 10.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-top: 1px solid var(--line); margin-top: 2px; padding-top: 2px; }
+.sqside .ph { align-items: end; } .sqtab td.left .inf { margin-left: 6px; } .sqtab th:first-child, .sqtab td:first-child { width: 30px; padding-right: 8px; }

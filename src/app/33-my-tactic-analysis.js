@@ -301,6 +301,7 @@ async function tacLoadFile(file) {
     if (file.size > 5e6) throw new Error("That file is too big to be a tactic.");
     const buf = await file.arrayBuffer(), T = await readTacticFile(buf), u8 = new Uint8Array(buf);
     S.myTac = { file: T, edits: {}, fname: file.name, raw: u8[2] === 0x61 && typeof b64e === "function" ? b64e(u8) : null }; tacSave();
+    S.formation = "My tactic"; if (S.lineups) delete S.lineups["My tactic"]; S.sqSlot = null;   // the squad lineup now uses this tactic (58-squad-lineup)
   } catch (e) { S.tacErr = e.message || String(e); }
   render();
 }

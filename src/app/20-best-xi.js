@@ -69,13 +69,16 @@ function posCodes(s) {
   }
   return out;
 }
+// the formation in use: a preset, or "My tactic" (your loaded tactic file, 58-squad-lineup) when one is loaded
+function lineupName() { return S.formation === "My tactic" && typeof tacLineupSlots === "function" && tacLineupSlots() ? "My tactic" : FORMATION_PRESETS[S.formation] ? S.formation : "4-4-2"; }
 function currentSlots() {
-  const name = FORMATION_PRESETS[S.formation] ? S.formation : "4-4-2";
+  const name = lineupName();
   const saved = (S.lineups || {})[name];
   if (Array.isArray(saved) && saved.length === 11 && saved.every(s => CODE_GROUP[s.code])) return saved.map(s => codeRoles(s.code).includes(s.role) ? s : { ...s, role: codeRoles(s.code)[0] });
+  if (name === "My tactic") return tacLineupSlots().map(s => codeRoles(s.code).includes(s.role) ? s : { ...s, role: codeRoles(s.code)[0] });
   return [{ code: "GK", x: 50, role: "Goalkeeper" }, ...FORMATION_PRESETS[name].map(([code, x, role]) => ({ code, x, role }))];
 }
-function setSlots(slots) { S.lineups = { ...(S.lineups || {}), [FORMATION_PRESETS[S.formation] ? S.formation : "4-4-2"]: slots }; }
+function setSlots(slots) { S.lineups = { ...(S.lineups || {}), [lineupName()]: slots }; }
 // the role this position tab opens with: the first slot of that group in your shape, unless you picked one in the tab
 function lineupRole(pos) { const s = currentSlots().find(x => CODE_GROUP[x.code] === pos); return s ? s.role : null; }
 function slotFit(r, mode) {

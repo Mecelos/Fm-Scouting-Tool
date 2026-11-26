@@ -196,7 +196,7 @@ function renderSquadOverview(sq, evals, X) {
   const t = [["Senior players", `${seniors.length}<small> of ${all.length}</small>`], ["Median age (seniors)", median(seniors.map(p => p.age)) ?? "–"], ["Squad value", esc(fmtMoney(tval))],
     ["League", `${esc(div || "–")}${lg ? `<small> · strength ${lg.k.toFixed(2)}</small>` : ""}`], ["Positions with a scouting file", `${cmpN}<small> of 7</small>`]];
   let h = `<section class="tiles">${t.map(([l, v]) => `<div class="tile"><span class="tv">${v}</span><span class="tl">${esc(l)}</span></div>`).join("")}</section>`;
-  h += renderLineup(X);
+  h += typeof sqLineupHtml === "function" ? sqLineupHtml(X) : renderLineup(X);
   // position table
   const rowsHtml = POSITIONS.map(pos => {
     const e = evals[pos], st = X.xi[pos], need = X.f[pos], v = verdict(e, st, need);
